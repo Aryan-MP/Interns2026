@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Portfolio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Internal CSS -->
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f6f8;
+            color: #333;
+        }
+
+        header {
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            color: white;
+            padding: 50px 20px;
+            text-align: center;
+        }
+
+        header img {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 4px solid white;
+            margin-bottom: 15px;
+        }
+
+        section {
+            padding: 50px 20px;
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #4f46e5;
+        }
+
+        .about {
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .skills, .projects {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .projects img {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .contact {
+            text-align: center;
+        }
+
+        footer {
+            background: #111827;
+            color: #d1d5db;
+            text-align: center;
+            padding: 15px;
+            margin-top: 40px;
+        }
+
+        a {
+            color: #4f46e5;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <img src="https://i.imgur.com/1X6R7oO.png" alt="Profile Image">
+        <h1>Siva Kumar</h1>
+        <p>Data Scientist | Cloud & AI Enthusiast</p>
+    </header>
+
+    <!-- About -->
+    <section>
+        <h2>About Me</h2>
+        <p class="about">
+            I am a passionate Data Scientist with experience in Machine Learning, 
+            Python, Azure Cloud, and deployment. I love building real-world solutions
+            and learning new technologies.
+        </p>
+    </section>
+
+    <!-- Skills -->
+    <section>
+        <h2>Skills</h2>
+        <div class="skills">
+            <div class="card">Python</div>
+            <div class="card">Machine Learning</div>
+            <div class="card">Deep Learning</div>
+            <div class="card">Azure Cloud</div>
+            <div class="card">Flask & APIs</div>
+            <div class="card">SQL & Databases</div>
+        </div>
+    </section>
+
+    <!-- Projects -->
+    <section>
+        <h2>Projects</h2>
+        <div class="projects">
+
+            <div class="card">
+                <img src="https://images.unsplash.com/photo-1555949963-aa79dcee981c" alt="ML Project">
+                <h3>House Price Prediction</h3>
+                <p>Built a regression model using ensemble techniques to predict house prices.</p>
+            </div>
+
+            <div class="card">
+                <img src="https://images.unsplash.com/photo-1556155092-8707de31f9c4" alt="AI Project">
+                <h3>Fraud Detection System</h3>
+                <p>Detected fraudulent transactions using anomaly detection and ML models.</p>
+            </div>
+
+            <div class="card">
+                <img src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5" alt="Cloud Project">
+                <h3>Azure ML Deployment</h3>
+                <p>Deployed ML models using Flask, Docker, and Azure services.</p>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Contact -->
+    <section>
+        <h2>Contact</h2>
+        <div class="contact">
+            <p>Email: <a href="mailto:sivakumar@email.com">sivakumar@email.com</a></p>
+            <p>LinkedIn: <a href="#">linkedin.com/in/sivakumar</a></p>
+            <p>GitHub: <a href="#">github.com/sivakumar</a></p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        © 2026 Siva Kumar | Portfolio Website
+    </footer>
+
+</body>
+</html>
