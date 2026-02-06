@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fireworks Composer - New Year 2026</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Work+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="tooplate-fireworks-style.css">
+<!--
+
+Tooplate 2153 Fireworks Composer
+
+https://www.tooplate.com/view/2153-fireworks-composer
+
+Free HTML CSS Template
+
+-->
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="year-display">
+        <span class="year-line1">Happy New Year</span>
+        <span class="year-line2">2026</span>
+    </div>
+
+    <div class="ui-container">
+        <button class="fullscreen-btn" id="fullscreenBtn" title="Toggle Fullscreen">⛶</button>
+        
+        <button class="eye-btn" id="toggleUI" title="Toggle UI Visibility">
+            <span class="eye-icon">👁</span>
+        </button>
+        
+        <div class="developer-credit">
+            Developed by <a rel="nofollow" href="https://www.tooplate.com" target="_blank">Tooplate</a>
+        </div>
+
+        <header>
+            <h1>Fireworks Composer</h1>
+            <p class="subtitle">Create Your Celebration</p>
+        </header>
+
+        <div class="instructions">
+            <h2>Click anywhere to launch fireworks</h2>
+            <p>Choose your colors and patterns below</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <span class="control-label">Color</span>
+                <div class="color-palette">
+                    <div class="color-option burgundy active" data-color="#FF5A6E"></div>
+                    <div class="color-option gold" data-color="#FFD700"></div>
+                    <div class="color-option emerald" data-color="#3FE0A0"></div>
+                    <div class="color-option purple" data-color="#B377FF"></div>
+                    <div class="color-option champagne" data-color="#FFFEF7"></div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <span class="control-label">Pattern</span>
+                <div class="firework-types">
+                    <button class="type-btn active" data-type="burst">Burst</button>
+                    <button class="type-btn" data-type="ring">Ring</button>
+                    <button class="type-btn" data-type="willow">Willow</button>
+                    <button class="type-btn" data-type="spiral">Spiral</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <span class="control-label">Actions</span>
+                <div class="action-buttons">
+                    <button class="action-btn" id="autoShow">
+                        <span class="play-icon">▶</span>
+                        <span class="stop-icon">⏹</span>
+                        <span class="button-text">Play</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+<script src="tooplate-fireworks-composer.js"></script>
+</body>
+</html>
