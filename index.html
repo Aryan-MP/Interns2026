@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mario Adventure 556</title>
+  <style>
+    /* ====== Base Styling ====== */
+    body {
+      margin: 0;
+      font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(-45deg, #ff2e63, #ff512f, #00b4d8, #0096c7);
+      background-size: 400% 400%;
+      animation: gradientShift 18s ease infinite;
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* ====== Layout Screens ====== */
+    #homeScreen, #gameScreen {
+      text-align: center;
+      margin-top: 60px;
+      animation: fadeIn 1.2s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ====== Title ====== */
+    h1 {
+      font-size: 3em;
+      margin-bottom: 12px;
+      text-shadow: 0 0 12px rgba(0, 0, 0, 0.6), 0 0 24px #fff;
+      background: linear-gradient(to right, #fff8b0, #ffe259);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: glowPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes glowPulse {
+      0%, 100% { text-shadow: 0 0 12px #ffd700, 0 0 20px #fff59d; }
+      50% { text-shadow: 0 0 24px #ffcc00, 0 0 30px #ffeaa7; }
+    }
+
+    /* ====== Start Button ====== */
+    button#startBtn {
+      background: linear-gradient(135deg, #ff4b2b, #ffcc00);
+      color: #2c3e50;
+      padding: 14px 42px;
+      font-size: 18px;
+      font-weight: bold;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      transition: all 0.25s ease;
+      animation: breathe 2.5s ease-in-out infinite;
+      backdrop-filter: blur(6px);
+    }
+
+    button#startBtn:hover {
+      transform: translateY(-3px) scale(1.07);
+      box-shadow: 0 12px 25px rgba(255, 255, 0, 0.7);
+      background: linear-gradient(135deg, #ffb703, #ff9f1c);
+    }
+
+    @keyframes breathe {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 20px rgba(255, 230, 0, 0.6);
+      }
+      50% {
+        transform: scale(1.1);
+        box-shadow: 0 0 35px rgba(255, 230, 0, 0.9);
+      }
+    }
+
+    /* ====== Mario Avatar ====== */
+    .mario-avatar {
+      font-size: 90px;
+      margin: 25px auto 12px;
+      text-shadow: 3px 3px 8px rgba(0, 0, 0, 0.5);
+      animation: bounce 2s ease-in-out infinite;
+    }
+
+    /* 🧢 New Mario-themed emoji */
+    .mario-avatar::before {
+      content: "🧢";
+      display: inline-block;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-18px); }
+    }
+
+    .mario-name {
+      font-size: 22px;
+      margin-bottom: 25px;
+      font-weight: 600;
+      opacity: 0.95;
+      color: #ffeaa7;
+      letter-spacing: 1px;
+      text-shadow: 0 0 10px rgba(255,255,255,0.4);
+    }
+
+    /* ====== Game Canvas ====== */
+    canvas {
+      background: radial-gradient(circle at top, #ffde7d, #ff8c42);
+      border: 4px solid #2c3e50;
+      border-radius: 16px;
+      display: block;
+      margin: 25px auto;
+      box-shadow: 0 0 25px rgba(0,0,0,0.4), inset 0 0 12px rgba(255,255,255,0.3);
+      animation: pulseGlow 3.5s ease-in-out infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.3); }
+      50% { box-shadow: 0 0 30px rgba(255, 255, 255, 0.7); }
+    }
+
+    /* ====== Scoreboard ====== */
+    #score {
+      font-size: 24px;
+      font-weight: bold;
+      background: rgba(255, 255, 255, 0.15);
+      display: inline-block;
+      padding: 12px 30px;
+      border-radius: 14px;
+      box-shadow: 0 0 18px rgba(0,0,0,0.3);
+      margin-bottom: 20px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+
+    /* ====== Responsive ====== */
+    @media (max-width: 768px) {
+      h1 { font-size: 2em; }
+      .mario-avatar { font-size: 70px; }
+      #score { font-size: 18px; }
+      button#startBtn {
+        font-size: 16px;
+        padding: 10px 28px;
+      }
+      canvas {
+        width: 90% !important;
+        height: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div id="homeScreen" class="active">
+  <div class="mario-avatar"></div>
+  <div class="mario-name">Mario the Hero</div>
+  <h1>Welcome to Mario Adventure</h1>
+  <button id="startBtn">Start Game</button>
+</div>
+
+<div id="gameScreen">
+  <div id="score">Distance: 0</div>
+  <canvas id="game" width="800" height="400"></canvas>
+</div>
+
+<script src="main.js"></script>
+</body>
+</html>
