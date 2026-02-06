@@ -1,0 +1,31 @@
+# --- CONFIGURATION ---
+$AccountName   = "ass0402026"
+$ContainerName = "training-material"
+$BlobName      = "MODU 4.pdf"
+$DownloadPath  = "$env:USERPROFILE\Downloads"
+
+# Paste your SAS Token here (ensure it starts with '?')
+$SasToken      = "?sp=r&st=2026-02-05T08:26:13Z&se=2026-02-05T16:41:13Z&spr=https&sv=2024-11-04&sr=b&sig=%2F4ln5KKBiUxOjO5BsoScTGhTlT6ANpAMntf12uspb6A%3D"
+
+# --- AUTOMATION ---
+try {
+    Write-Host "Connecting to Azure Storage..." -ForegroundColor Cyan
+
+    # 1. Create a "Context" (Like logging in with the specific key)
+    $Context = New-AzStorageContext -StorageAccountName $AccountName -SasToken $SasToken
+
+    # 2. Download the file using the official Azure command
+    #    -Force overwrites the file if it exists
+    Get-AzStorageBlobContent -Container $ContainerName `
+                             -Blob $BlobName `
+                             -Destination $DownloadPath `
+                             -Context $Context `
+                             -Force `
+                             -ErrorAction Stop
+
+    Write-Host "Success! File downloaded to: $DownloadPath\$BlobName" -ForegroundColor Green
+    Invoke-Item "$DownloadPath\$BlobName"
+}
+catch {
+    Write-Host "Error: " $_.Exception.Message -ForegroundColor Red
+}
