@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloud Engineer Portfolio</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: white;
+}
+
+/* Navigation */
+nav {
+    background: #020617;
+    padding: 15px;
+    position: fixed;
+    width: 100%;
+    top: 0;
+}
+
+nav a {
+    color: white;
+    margin: 15px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+/* Sections */
+section {
+    padding: 80px 20px;
+    text-align: center;
+}
+
+.hero {
+    height: 100vh;
+    background: linear-gradient(135deg,#2563eb,#7c3aed);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.skills span {
+    display: inline-block;
+    background: #1e293b;
+    padding: 10px 15px;
+    margin: 8px;
+    border-radius: 8px;
+}
+
+.project {
+    background: #1e293b;
+    margin: 10px auto;
+    padding: 15px;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 500px;
+}
+
+footer {
+    background: #020617;
+    padding: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<nav>
+    <a href="#home">Home</a>
+    <a href="#about">About</a>
+    <a href="#skills">Skills</a>
+    <a href="#projects">Projects</a>
+    <a href="#contact">Contact</a>
+</nav>
+
+<section id="home" class="hero">
+    <h1>Hello, I'm Kiran</h1>
+    <h2>Cloud Engineer</h2>
+    <p>"Building scalable solutions in the cloud."</p>
+</section>
+
+<section id="about">
+    <h2>About Me</h2>
+    <p>I am a Cloud Engineer passionate about Azure, Virtual Machines,
+    Storage Accounts, and Linux administration. I enjoy building
+    scalable and reliable cloud solutions.</p>
+</section>
+
+<section id="skills">
+    <h2>Skills</h2>
+    <div class="skills">
+        <span>Microsoft Azure</span>
+        <span>Virtual Machines</span>
+        <span>Azure Storage</span>
+        <span>Linux</span>
+        <span>Shell Scripting</span>
+        <span>Networking Basics</span>
+    </div>
+</section>
+
+<section id="projects">
+    <h2>Projects</h2>
+
+    <div class="project">
+        <h3>Download File from Azure Blob</h3>
+        <p>Automated file download from Azure Blob Storage using Shell Script and PowerShell.</p>
+    </div>
+
+    <div class="project">
+        <h3>Website Hosting on Azure VM</h3>
+        <p>Hosted static website using Apache Web Server on Azure Virtual Machine.</p>
+    </div>
+</section>
+
+<section id="contact">
+    <h2>9380028763</h2>
+    <p>Email: kiranup1816@gmail.com</p>
+    <p>LinkedIn: linkedin.com/in/kiranup</p>
+</section>
+
+<footer>
+    <p>© 2026 Kiran | Cloud Engineer Portfolio</p>
+</footer>
+
+</body>
+</html>
