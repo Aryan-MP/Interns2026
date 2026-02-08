@@ -1,0 +1,38 @@
+Day 5 – Assessment: The Infrastructure Challenge
+
+important to note the location to keep it specific - EastUS
+
+## Virtual Network -
+Name: vmvnet1
+Region: East US 
+Address space: 10.10.0.0/16   ← large enough for scaling
+
+## NSG -
+Name: vmnsg-01
+Region: East US
+
+Added remote management rule to port 3389 for RDP
+
+## Public IP -
+Name: pip-vm-01
+SKU: Standard   ← better performance & zone-aware
+Assignment: Static
+Region: East US
+
+Why Standard SKU:
+Better resiliency
+Required for production-style NIC configs
+Lower jitter/latency vs legacy Basic
+
+## Managed Disk
+Name: disk-data-01
+Region: East US
+Source type: None (empty disk)
+Size: 64 GB (example)
+SKU: Standard SSD  ← cost efficient + low latency
+
+## VM
+created a windows vm and connected to it via RDP by running mstsc
+the seperate components such as vnet, nic, managed disk, nsg and public IP were all attached
+
+Was able to succesfully run and connect the machine and the extra managed disk was visible too
