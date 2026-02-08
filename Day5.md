@@ -1,1 +1,0 @@
-Start of Day 5 fesghjkl;jhcvgbhnj
