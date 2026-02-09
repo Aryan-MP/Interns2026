@@ -1,34 +1,42 @@
 ## Custom data script to install google chrome + IIS
-$ErrorActionPreference = "Stop"
+$InstallIIS    = $true
+$InstallChrome = $true
+$IISData       = "this is me"
 
-Write-Output "Installing Chrome..."
-$chromeUrl = "https://dl.google.com/chrome/install/latest/chrome_installer.exe"
-$chromeInstaller = "$env:TEMP\chrome_installer.exe"
-Invoke-WebRequest -Uri $chromeUrl -OutFile $chromeInstaller
-Start-Process -FilePath $chromeInstaller -ArgumentList "/silent /install" -Wait
+# ==============================
+# INSTALL IIS (Windows 11)
+# ==============================
+if ($InstallIIS) {
+    dism /online /enable-feature /featurename:IIS-WebServerRole /all /norestart
+    iisreset
 
-Write-Output "Installing IIS..."
-Install-WindowsFeature -Name Web-Server -IncludeManagementTools
-
-Write-Output "Creating test HTML page..."
-$html = @"
+    $html = @"
 <!DOCTYPE html>
 <html>
 <head>
-<title>VMSS IIS Test Successful</title>
+    <title>IIS Page is Running - Danish</title>
 </head>
 <body>
-<h1>IIS is running on VM Scale Set</h1>
-<p>Served from: $env:COMPUTERNAME</p>
+    <h1>$IISData</h1>
 </body>
 </html>
 "@
 
-$html | Out-File "C:\inetpub\wwwroot\index.html" -Encoding utf8 -Force
+    $html | Out-File "C:\inetpub\wwwroot\index.html" -Encoding utf8 -Force
+}
 
-Write-Output "Starting IIS service..."
-Start-Service W3SVC
-Set-Service W3SVC -StartupType Automatic
+# ==============================
+# INSTALL GOOGLE CHROME
+# ==============================
+if ($InstallChrome) {
+    $TempPath = "C:\Temp"
+    New-Item -ItemType Directory -Path $TempPath -Force | Out-Null
 
-Write-Output "Setup complete"
+    $ChromeInstaller = "$TempPath\chrome.exe"
+    Invoke-WebRequest `
+        -Uri "https://dl.google.com/chrome/install/latest/chrome_installer.exe" `
+        -OutFile $ChromeInstaller
+
+    Start-Process $ChromeInstaller -ArgumentList "/silent /install" -Wait
+}
 
