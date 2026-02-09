@@ -1,0 +1,92 @@
+## Day 3 – Assessment
+
+### Task
+Create an **Azure Storage Account** with **LRS (Locally Redundant Storage)** redundancy.  
+Then complete the following:
+
+- Create a **Blob Storage** service
+- Create a **Blob container**
+- Upload a **text file** to the container
+
+# Challenge – Azure Storage Account
+
+## Objective
+Create and use an **Azure Storage Account** to understand the core storage services:
+**Blob, File Share, Queue, and Table**.
+
+---
+
+## Scenario
+You are working on an online learning platform that requires different types of storage for content, documents, messages, and metadata.
+
+Your task is to design and implement this using an **Azure Storage Account**.
+
+---
+
+## Tasks
+
+### Task 1: Create a Storage Account
+- Create an **Azure Storage Account**
+- Configuration:
+  - Performance: **Standard**
+  - Redundancy: **LRS (Locally Redundant Storage)**
+- Note the following:
+  - Storage account name
+  - Region
+  - Replication type
+
+---
+
+### Task 2: Blob Storage
+- Create a **Blob container** named:  
+  `training-content`
+- Upload:
+  - One video or large file
+  - One PDF or text file
+- Set the container access level to **Private**
+
+---
+
+### Task 3: File Share
+- Create an **Azure File Share** named:  
+  `team-docs`
+- Upload any document (txt, pdf, or docx)
+
+---
+
+### Task 4: Queue Storage
+- Create a **Queue** named:  
+  `user-registration`
+- Add at least **3 messages**
+- View and delete one message
+
+---
+
+### Task 5: Table Storage
+- Create a **Table** named:  
+  `students`
+- Add at least **3 entities** with the following fields:
+  - PartitionKey
+  - RowKey
+  - Name
+  - Course
+
+---
+
+
+### Task 6: Blob Soft Delete & Recovery
+- Enable **Soft Delete** for Blob Storage
+- Delete one blob from the `training-content` container
+- Restore the deleted blob
+
+---
+
+### Task 7: Access Control using SAS
+- Generate a **Shared Access Signature (SAS)** for one blob
+- Configure it as **read-only**
+- Verify that the file can be accessed using the SAS URL
+
+### Task 8: Blob Storage Access Tiers
+- Change the access tier of one blob from **Hot** to **Cool**
+- Observe the available access tier options
+- Note when each tier should be used (Hot vs Cool vs Archive)
