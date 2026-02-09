@@ -1,34 +1,23 @@
-<h1>🚀 Install IIS and Google Chrome on Azure Windows VM using Custom Data</h1>
+🚀 Install IIS and Google Chrome on Azure Windows VM using Custom Data
 
 This repository demonstrates how to automatically install IIS (Web Server) and Google Chrome on an Azure Windows Virtual Machine using Custom Data (User Data) during0 VM creation.
 
 📌 Problem Statement
-
 When creating a Windows VM in Azure, we want to:
-
 Automatically install IIS Web Server
-
 Install Google Chrome
-
 Deploy a sample web page
 
 
 🧠 Concept: Azure Custom Data (User Data)
 
 Custom Data allows us to run scripts once at VM first boot.
-
 Key Characteristics
-
 Runs only once
-
 Executes before first login
-
 Best for initial configuration
-
 Supports PowerShell scripts on Windows
-
 Automatically Base64 encoded by Azure Portal
-
 Do this at first boot, without manual login
 
 
@@ -58,7 +47,6 @@ Port 80 allowed in NSG
 
 
 🧩 Script Used (PowerShell)
-
 📌 This script is Custom Data safe and tested on Azure Windows VMs.
 
 
@@ -106,36 +94,23 @@ Write-Host "Google Chrome Installed"
 Stop-Transcript
 </powershell>
 
+
+
 🛠 How to Use This Script in Azure Portal
 Step 1: Create a Windows VM
-
 Azure Portal → Create Virtual Machine
-
 Choose:
-
 Image: Windows Server 2019 / 2022
-
 Size: Any
-
 Step 2: Add Custom Data
-
 Go to Advanced tab
-
 Paste the entire script into Custom Data
-
 ❗ Do NOT manually Base64 encode
-
-
 Step 3: Configure Networking
-
 Ensure Port 80 (HTTP) is allowed in NSG
-
 Step 4: Create VM
-
 Click Create
-
 Wait for VM provisioning
-
 Verify Chrome
 
 RDP into VM
