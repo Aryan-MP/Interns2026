@@ -6,10 +6,10 @@ In this task, I successfully deployed an Azure Virtual Machine and created a reu
 ### Step 1: Virtual Machine Deployment
 - Created an Ubuntu-based Azure Virtual Machine
 - Configured required settings such as:
--- Resource Group
--- Virtual Network and Subnet
--- VM Size
--- OS Disk and Networking
+1. Resource Group
+2. Virtual Network and Subnet
+3. VM Size
+4. OS Disk and Networking
 - Verified that the VM was successfully deployed and running
 
 <img width="1920" height="1032" alt="image" src="https://github.com/user-attachments/assets/2f3ba9f2-4e66-47e3-8905-127f559ff96b" />
@@ -19,12 +19,12 @@ In this task, I successfully deployed an Azure Virtual Machine and created a reu
 ### Step 2: VM Image Creation
 - Created a custom VM image using the Capture option
 - The image captures:
--- OS type and configuration
--- Installed software and VM settings
+1. OS type and configuration
+2. Installed software and VM settings
 - This image can be reused to:
--- Deploy multiple VMs
--- Create Virtual Machine Scale Sets
--- Maintain consistency across environments
+1. Deploy multiple VMs
+2. Create Virtual Machine Scale Sets
+3. Maintain consistency across environments
 
 <img width="1920" height="1032" alt="image" src="https://github.com/user-attachments/assets/d7890a62-d2a2-4551-88ee-03753924162a" />
 
@@ -34,7 +34,7 @@ In this task, I successfully deployed an Azure Virtual Machine and created a reu
 
 ### Outcome
 - Successfully deployed an Azure VM
-- Created a reusable VM image
+- Created a reusable VM image (Virtual Image Scale set)
 - Improved deployment efficiency and scalability using Azure images
 
 ---
@@ -65,7 +65,6 @@ In this task, I created an Azure Virtual Machine, uploaded and executed a script
 
 ### Step 3: Application Deployment
 - Deployed a simple “Hello World” application on the VM
-- Configured firewall / Network Security Group rules to allow inbound traffic
 - ccessed the application using the VM’s public IP address
 
 <img width="1920" height="1080" alt="Hello World Application" src="https://github.com/user-attachments/assets/0e78e726-4209-4b8a-9511-6a72437898af" />
@@ -75,8 +74,8 @@ In this task, I created an Azure Virtual Machine, uploaded and executed a script
 ### Step 4: Remote Desktop Connection
 - Connected to the VM using Remote Desktop Protocol (RDP)
 - Installed required browsers:
--- Google Chrome
--- Microsoft Edge
+1. Google Chrome
+2. Microsoft Edge
 - Verified successful remote access and software installation
 
 <img width="786" height="593" alt="Remote Desktop Connection" src="https://github.com/user-attachments/assets/5654c757-3581-4927-85b3-61e534f0917a" />
