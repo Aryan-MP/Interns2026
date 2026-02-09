@@ -40,9 +40,7 @@ VM Ready with Web Server
 ✅ Prerequisites
 
 Azure Subscription
-
 Windows VM (Windows Server 2019 / 2022)
-
 Port 80 allowed in NSG
 
 
