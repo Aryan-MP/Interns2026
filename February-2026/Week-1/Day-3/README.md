@@ -210,8 +210,4 @@ After completing Day 3, the following outcomes were achieved:
 - Hands-on experience with real Azure storage operations
 - Ability to design storage for a simple cloud application
 
----
 
-## Assessment
-Detailed assessment tasks, explanations (what, why, how), and screenshots are documented here:  
-➡️ [View Day 3 Assessment & Solution](./ASSESSMENT.md)
