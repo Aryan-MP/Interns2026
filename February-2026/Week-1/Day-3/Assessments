@@ -1,0 +1,121 @@
+# Day 3 – Assessment & Solution (Azure Storage)
+
+## Objective
+To create and use an Azure Storage Account and perform hands-on operations with core Azure storage services including Blob Storage, File Share, Queue Storage, and Table Storage.
+
+---
+
+## Task 1: Storage Account Creation
+
+### What it is
+A Storage Account is the primary Azure resource required to use all Azure storage services.
+
+### Why it is done
+- All Azure storage services depend on a Storage Account
+- It defines region, redundancy, and performance
+- LRS is a low-cost and suitable option for learning
+
+### How it is done
+- Opened Azure Portal
+- Navigated to **Storage Accounts**
+- Clicked **Create**
+- Selected subscription and resource group
+- Entered a globally unique storage account name
+- Selected **Standard** performance
+- Selected **LRS (Locally Redundant Storage)**
+- Reviewed and created the storage account
+
+### Screenshot
+![Storage Account Overview](./Screenshots/task-1-storage-account.png)
+
+---
+
+## Task 2: Blob Storage – Container Creation and File Upload
+
+### What it is
+Blob Storage is used to store unstructured data such as documents, images, and media files.
+
+### Why it is done
+- Suitable for application content and files
+- Supports scalability and secure access
+- Private access improves data security
+
+### How it is done
+- Opened the Storage Account
+- Navigated to **Containers** under Blob service
+- Created a container named `training-content`
+- Set access level to **Private**
+- Uploaded one text/PDF file and one additional file
+
+### Screenshot
+![Blob Container](./Screenshots/task-2-blob-container.png)
+
+---
+
+## Task 3: Azure File Share
+
+### What it is
+Azure File Share is a cloud-based shared folder that works like a network drive.
+
+### Why it is done
+- Used for sharing files between users or virtual machines
+- Useful for shared storage scenarios
+
+### How it is done
+- Navigated to **File Shares** in the Storage Account
+- Created a file share named `team-docs`
+- Uploaded one document file
+
+### Screenshot
+![Azure File Share](./Screenshots/task-3-file-share.png)
+
+---
+
+## Task 4: Queue Storage
+
+### What it is
+Queue Storage is a message-based storage service used for asynchronous communication.
+
+### Why it is done
+- Helps in background and decoupled processing
+- Used in event-driven architectures
+
+### How it is done
+- Navigated to **Queue Storage**
+- Created a queue named `user-registration`
+- Added multiple messages
+- Viewed and deleted one message
+
+### Screenshot
+![Queue Storage](./Screenshots/task-4-queue.png)
+
+---
+
+## Task 5: Table Storage
+
+### What it is
+Table Storage is a NoSQL key-value storage service used to store structured data.
+
+### Why it is done
+- Suitable for fast and scalable storage
+- Allows flexible schema design
+
+### How it is done
+- Navigated to **Table Storage**
+- Created a table named `students`
+- Added multiple entities with:
+  - PartitionKey
+  - RowKey
+  - Name
+  - Course
+
+### Screenshot
+![Table Storage](./Screenshots/task-5-table.png)
+
+---
+
+## Assessment Status
+- Core Azure Storage services were successfully created and tested
+- Hands-on tasks completed till **Table Storage**
+- Screenshots added as proof of completion
+- Advanced features (Soft Delete, SAS, Access Tier) can be added later if required
