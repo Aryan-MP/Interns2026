@@ -14,6 +14,7 @@ Pulled the official NGINX Docker image from Docker Hub
 Ran the NGINX container using Docker
 
 Verified NGINX service by accessing the VM’s public IP address
+<img width="1920" height="1080" alt="Screenshot (143)" src="https://github.com/user-attachments/assets/56f94226-c349-4e2a-a9c0-c833f5784bbe" />
 
 
 Outcome
@@ -43,6 +44,8 @@ Added custom data content
 Reloaded or restarted the NGINX container
 
 Verified updated content through the browser using public IP
+<img width="1920" height="1080" alt="Screenshot (142)" src="https://github.com/user-attachments/assets/1a791408-f29a-4038-a8be-c22c04b9c2ff" />
+
 
 Outcome
 
@@ -72,6 +75,9 @@ Created an Azure Container Registry (ACR)
 Logged in to ACR using Azure CLI
 
 Tagged and pushed the Docker image to ACR
+<img width="1920" height="1080" alt="Screenshot (144)" src="https://github.com/user-attachments/assets/4bfbaf8b-e59b-4850-8d4d-888faaca8582" />
+<img width="1920" height="1080" alt="Screenshot (142)" src="https://github.com/user-attachments/assets/0b59a7f6-b710-4e18-b4c6-371bee7a1215" />
+
 
 Outcome
 
