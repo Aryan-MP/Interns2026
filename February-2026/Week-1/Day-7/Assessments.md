@@ -1,10 +1,10 @@
 # Day 7 – Assessment & Solution  
-## Docker, Containers & Azure Container Registry
+## Docker, Containers & Azure Container Registry (ACR)
 
 ---
 
 ## Assessment Objective
-To deploy a web application using Docker, package it as a container image, store it securely in Azure Container Registry, and verify successful deployment.
+To deploy a web application using Docker, package it as a container image, and store the image in Docker Hub and Azure Container Registry (ACR) using command-line tools.
 
 ---
 
@@ -14,173 +14,111 @@ To deploy a web application using Docker, package it as a container image, store
 Creating a Linux Virtual Machine to act as the Docker host.
 
 ### Why it is done
-- Docker requires a host machine
-- VM provides compute, OS, and network
-- Used as build and run environment
+- Docker needs a host machine to run
+- VM provides OS, CPU, RAM, and network
+- Used as build and test environment
 
 ### How it is done
-- Created an Ubuntu Linux VM
-- VM was prepared for Docker installation
+- Created an Ubuntu Linux Virtual Machine
+- Used the VM to install and run Docker
+
+### Screenshot
+![VM Overview](./Screenshots/day7-vm-overview.png)
 
 ---
 
-## Task 2: Install Docker on VM
+## Task 2: Install Docker on Virtual Machine
 
 ### What it is
-Installing Docker engine on the Virtual Machine.
+Installing Docker Engine on the VM.
 
 ### Why it is done
 - Docker is required to build and run containers
-- Without Docker, containers cannot be created
+- Without Docker, images cannot be created or pushed
 
 ### How it is done
-- Installed Docker using package manager
-- Verified Docker installation
-- Ensured Docker service was running
+- Installed Docker on Ubuntu VM
+- Verified Docker installation using CLI
+- Confirmed Docker service was running
 
 ---
 
-## Task 3: Create Custom HTML Website
+## Task 3: Create and Build Docker Image
 
 ### What it is
-Creating a simple static web application.
+Packaging a web application into a Docker image.
 
 ### Why it is done
-- To have content for containerized application
-- HTML file represents the application
-
-### How it is done
-- Created index.html
-- Added custom web content
-
----
-
-## Task 4: Create Dockerfile
-
-### What it is
-A Dockerfile defines how the Docker image is built.
-
-### Why it is done
-- Required to package the application into an image
-- Ensures consistent builds
-
-### How it is done
-- Used nginx as base image
-- Copied index.html into nginx directory
-- Configured container to serve website on port 80
-
----
-
-## Task 5: Build Docker Image
-
-### What it is
-Creating a Docker image from the Dockerfile.
-
-### Why it is done
+- Docker image contains application and dependencies
 - Image is portable and reusable
-- Used to create containers
 
 ### How it is done
-- Ran Docker build command
-- Image was created and stored locally on VM
+- Created a simple HTML website
+- Created a Dockerfile using nginx as base image
+- Built Docker image using Docker CLI
 
 ---
 
-## Task 6: Test Application Locally
+## Task 4: Push Docker Image to Docker Hub (CLI)
 
 ### What it is
-Running the Docker image as a container.
+Uploading the Docker image to Docker Hub using command line.
 
 ### Why it is done
-- To verify application works before pushing to registry
-- Ensures correct configuration
+- Docker Hub is a public container registry
+- Allows sharing and testing of container images
 
 ### How it is done
-- Ran container from image
-- Accessed website using VM public IP and port 80
-- Verified website loaded successfully
+- Logged in to Docker Hub using Docker CLI
+- Tagged the image using Docker Hub format
+- Pushed the image using `docker push`
+- Verified successful upload from CLI output
+
+### Screenshot
+![Docker Hub CLI Push](./Screenshots/day7-dockerhub-cli.png)
 
 ---
 
-## Task 7: Create Azure Container Registry (ACR)
+## Task 5: Create Azure Container Registry (ACR)
 
 ### What it is
 Creating a private container registry in Azure.
 
 ### Why it is done
-- To store Docker images securely
-- Used instead of public registries for production
+- To store container images securely
+- Recommended for enterprise and production workloads
 
 ### How it is done
 - Created Azure Container Registry
-- Used ACR as image repository
+- Used ACR as private image repository
 
 ---
 
-## Task 8: Authenticate to ACR
+## Task 6: Push Docker Image to Azure Container Registry (CLI)
 
 ### What it is
-Logging in to Azure Container Registry from Docker.
+Uploading Docker image to Azure Container Registry using command line.
 
 ### Why it is done
-- Authentication is required to push images
-- Prevents unauthorized access
+- To integrate Docker workflow with Azure services
+- To securely store images in Azure
 
 ### How it is done
-- Enabled admin user (training purpose)
-- Logged in to ACR using Docker login
+- Logged in to Azure Container Registry from VM
+- Tagged Docker image using ACR login server name
+- Pushed the image using `docker push`
+- Verified successful upload from CLI output
 
----
-
-## Task 9: Tag Docker Image for ACR
-
-### What it is
-Renaming the Docker image to match ACR format.
-
-### Why it is done
-- Required before pushing image to ACR
-- Includes registry name, repository, and tag
-
-### How it is done
-- Tagged image using ACR login server name
-
----
-
-## Task 10: Push Image to ACR
-
-### What it is
-Uploading Docker image to Azure Container Registry.
-
-### Why it is done
-- To store image in Azure
-- To make image available for deployment
-
-### How it is done
-- Pushed Docker image to ACR
-- Upload completed successfully
-
----
-
-## Task 11: Verify Image in ACR
-
-### What it is
-Confirming that the image exists in Azure Container Registry.
-
-### Why it is done
-- To ensure image push was successful
-- To validate ACR configuration
-
-### How it is done
-- Checked ACR repositories
-- Verified image name and tag
+### Screenshot
+![ACR CLI Push](./Screenshots/day7-acr-cli.png)
 
 ---
 
 ## Assessment Outcome
-- Ubuntu VM created as Docker host
-- Docker installed and verified
-- Web application containerized successfully
-- Docker image built and tested
+- Ubuntu VM successfully created as Docker host
+- Docker installed and verified using CLI
+- Web application containerized using Docker
+- Docker image pushed to Docker Hub using CLI
 - Azure Container Registry created
-- Image pushed and verified in ACR
-- Understood Docker and Azure container workflow
+- Docker image pushed to ACR using CLI
+- Understood end-to-end container workflow with Azure
