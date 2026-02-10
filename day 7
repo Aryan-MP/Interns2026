@@ -1,0 +1,12 @@
+Docker–Nginx Deployment (Short)
+1.	Created an Azure VM (Ubuntu) and installed Docker
+2.	Created a Dockerfile with Nginx and custom index.html
+3.	Built a Docker image using:
+4.	docker build -t custom-nginx .
+5.	Tagged and pushed the image to Docker Hub
+6.	Pulled the image from Docker Hub and ran the container on port 80
+7.	Created Azure Container Registry (ACR)
+8.	Logged in to ACR using admin credentials
+9.	Tagged the same image and pushed it to ACR
+10.	Verified the image in ACR repositories
+11.	Accessed the Nginx app using the VM Public IP
