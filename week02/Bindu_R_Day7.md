@@ -15,6 +15,7 @@ Ran the NGINX container using Docker
 
 Verified NGINX service by accessing the VM’s public IP address
 
+
 Outcome
 
 Azure VM successfully created
