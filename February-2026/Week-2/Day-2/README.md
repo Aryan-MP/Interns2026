@@ -1,139 +1,164 @@
-# Day 7 – Docker, Containers & Azure Container Registry (ACR)
+# Day 7 – Docker, Containers & Azure Container Registry (ACR) & Azure Container Instance (ACI)
 
 ## Author
 Manoj Gowda
 
 ---
 
-## Day 7 Objective
-- Understand how applications are built and packaged using containers
-- Learn Docker fundamentals
-- Understand container-based application deployment
-- Store Docker images securely in Azure Container Registry (ACR)
-- Deploy and test a web application using Docker and Azure
+## Assessment Objective
+To build a containerized web application using Docker, store the image in Azure Container Registry, and run the container directly in Azure using Azure Container Instance without managing a Virtual Machine.
 
 ---
 
-## 1. Azure Virtual Machines – Recap and Context
-Virtual Machines were revisited to understand where Docker runs.
+## Task 1: Create Ubuntu Virtual Machine (Docker Host)
 
-### Key Understanding
-- A Virtual Machine acts as a host machine
-- Docker runs inside a VM
-- VM provides:
-  - Operating System
-  - CPU
-  - RAM
-  - Network
+### What it is
+Creating a Linux Virtual Machine to install Docker and build container images.
 
-Containers do not replace VMs.  
-Containers usually run on top of VMs.
+### Why it is done
+- Docker needs a host machine to build images
+- VM provides OS, CPU, RAM, and network
+- Used as build and testing environment
 
----
-
-## 2. Docker Basics
-
-### What is Docker
-Docker is a containerization platform used to package applications with their dependencies.
-
-### Image vs Container
-- Image:
-  - Blueprint or template
-  - Read-only
-  - Used to create containers
-- Container:
-  - Running instance of an image
-  - Lightweight and fast
-
-### Why Containers are Lightweight
-- Share the host OS kernel
-- No separate OS per container
-- Faster startup than VMs
-- Lower resource usage
-
-### Understanding
-- VM = OS + Application
-- Container = Application only
+### How it is done
+- Created an Ubuntu Linux Virtual Machine
+- Used the VM to install and run Docker
 
 ---
 
-## 3. Web Application Hosting Basics
+## Task 2: Install Docker on Virtual Machine
 
-### HTML Website
-- Simple static website
-- Uses HTML for content
+### What it is
+Installing Docker Engine on the VM.
 
-### Nginx Web Server
-- Lightweight web server
-- Commonly used inside containers
-- Serves static content
+### Why it is done
+- Docker is required to build and run containers
+- Without Docker, images cannot be created
 
-### Understanding
-- Nginx listens on port 80
-- Browser accesses application through port 80
-
----
-
-## 4. Dockerfile and Image Creation
-
-### What is a Dockerfile
-A Dockerfile is a text file that contains instructions to build a Docker image.
-
-### Instructions Learned
-- FROM – base image (nginx)
-- COPY – copy files into image
-- EXPOSE – expose port
-- CMD – start application
-
-### Understanding
-- Dockerfile converts application into a Docker image
+### How it is done
+- Installed Docker on Ubuntu
+- Verified Docker installation using CLI
+- Ensured Docker service was running
 
 ---
 
-## 5. Container Registries – Concept
+## Task 3: Create Web Application and Docker Image
 
-### Docker Hub
-- Public container registry
-- Stores Docker images
+### What it is
+Packaging a web application into a Docker image.
 
-### Why Azure Container Registry (ACR)
-- Private registry
-- Integrated with Azure
-- Better security and control
-- Suitable for production workloads
+### Why it is done
+- Docker image contains application and dependencies
+- Image is reusable and portable
 
----
-
-## 6. Azure Container Registry (ACR)
-
-### What is ACR
-Azure Container Registry is a private Docker image registry in Azure.
-
-### Concepts Learned
-- Repository – image name
-- Tag – image version
-- Authentication required to push and pull images
+### How it is done
+- Created a simple HTML file (index.html)
+- Created a Dockerfile using nginx as base image
+- Built Docker image using Docker CLI
 
 ---
 
-## 7. Day 7 Hands-On Summary
-- Created Ubuntu Virtual Machine
-- Installed Docker on VM
-- Built a custom HTML web application
-- Created Dockerfile
-- Built Docker image
-- Ran and tested containerized application
+## Task 4: Push Docker Image to Docker Hub
+
+### What it is
+Uploading Docker image to Docker Hub (public registry).
+
+### Why it is done
+- Docker Hub allows sharing and testing images
+- Helps understand public container registries
+
+### How it is done
+- Logged in to Docker Hub using Docker CLI
+- Tagged the image correctly
+- Pushed the image successfully
+
+---
+
+## Task 5: Create Azure Container Registry (ACR)
+
+### What it is
+Creating a private container registry in Azure.
+
+### Why it is done
+- To store images securely
+- Recommended for production workloads
+- Better control compared to public registries
+
+### How it is done
 - Created Azure Container Registry
-- Pushed Docker image to ACR
-- Verified image in Azure
+- Used ACR as private image repository
 
 ---
 
-## 8. Day 7 Outcome
-After Day 7, the following outcomes were achieved:
-- Understood container-based application deployment
-- Clearly explained Docker image vs container
-- Packaged applications using Dockerfile
-- Ran web applications using containers
-- Used Azure Container Registry for image storage
-- Connected Docker workflows with Azure services
+## Task 6: Push Docker Image to Azure Container Registry (ACR)
+
+### What it is
+Uploading Docker image to Azure Container Registry.
+
+### Why it is done
+- To integrate Docker workflow with Azure
+- To store images securely inside Azure
+
+### How it is done
+- Authenticated to ACR from the VM
+- Tagged the image using ACR login server format
+- Pushed the image to ACR successfully
+
+---
+
+## Task 7: Run Container Using Azure Container Instance (ACI)
+
+### What it is
+Running a container directly in Azure without using a Virtual Machine.
+
+### Why it is done
+- To avoid managing VMs and OS
+- To run containers in the simplest way
+- To reduce cost and operational overhead
+
+### Simple Understanding
+- VM = full house (you manage everything)
+- ACI = hotel room (Azure manages everything)
+
+### How it is done
+- Used Docker image stored in Azure Container Registry
+- Created an Azure Container Instance
+- Provided:
+  - ACR image name
+  - Container port (80)
+  - Public IP
+- Azure automatically:
+  - Pulled the image from ACR
+  - Ran the container
+  - Exposed the application to the internet
+
+### Verification
+- Accessed the container’s public IP in browser
+- Website loaded successfully from Azure Container Instance
+
+---
+
+## Final Flow (End-to-End Understanding)
+
+HTML  
+↓  
+Dockerfile  
+↓  
+Docker Image  
+↓  
+Azure Container Registry (ACR)  
+↓  
+Azure Container Instance (ACI)  
+↓  
+Website accessible on browser
+
+---
+
+## Assessment Outcome
+- Docker installed and used to build container images
+- Web application successfully containerized
+- Docker image pushed to Docker Hub
+- Docker image pushed to Azure Container Registry
+- Container executed directly in Azure using ACI
+- Understood VM-based vs serverless container execution
+- Learned how Azure runs containers without managing servers
