@@ -7,6 +7,7 @@ Steps Performed
             Verified NGINX service by accessing the VM’s public IP address
 
 
+
 Task 02: Custom Content Deployment on NGINX
 Steps Performed
               Accessed the running NGINX Docker container
