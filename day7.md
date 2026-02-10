@@ -17,8 +17,10 @@ Steps Performed
               Reloaded or restarted the NGINX container
               Verified updated content through the browser using public IP
 
-              
-              <img width="1903" height="953" alt="Screenshot 2026-02-10 155057" src="https://github.com/user-attachments/assets/bd4c1527-65f1-48b2-ba5f-4837c06ec241" />
+
+             
+<img width="1898" height="951" alt="Screenshot 2026-02-10 174038" src="https://github.com/user-attachments/assets/7619767f-bba9-4cb7-9c92-60d5b4f261db" />
+
 
 
 Task 03: Docker Image Creation and Push to Docker Hub and Azure Container Registry (ACR)
@@ -30,5 +32,5 @@ Steps Performed
                
 <img width="1884" height="922" alt="Screenshot 2026-02-10 173548" src="https://github.com/user-attachments/assets/b9f7f518-bcbb-4bbf-a17b-ff410431e017" />
                
-               <img width="1906" height="962" alt="Screenshot 2026-02-10 171530" src="https://github.com/user-attachments/assets/c653910b-c156-4488-8f48-13eba5e7a3fa" />
-
+              
+<img width="1892" height="955" alt="Screenshot 2026-02-10 174110" src="https://github.com/user-attachments/assets/7141b1da-7d86-49d9-bd52-484c3e7febc2" />
