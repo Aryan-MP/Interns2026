@@ -196,9 +196,5 @@ docker push demogreg.azurecr.io/nginx:v1
 
 
 <img src="Images\Day-7\Screenshot 2026-02-10 191451.png">
-<<<<<<< HEAD
 
 ---
-
-=======
->>>>>>> 1a6d1ba6dc02b943e50743773c28f1c8e2ee87f5
