@@ -1,0 +1,9 @@
+task 2
+  install iis
+  install chrome
+  iis data = "welcome to my world" 
+
+  installed using custom script
+
+  task 1
+  capture a specialized images and generalized image and then ping them together
