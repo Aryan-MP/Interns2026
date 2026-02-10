@@ -2,13 +2,14 @@
 
 This project demonstrates how to build a Docker image, tag it, and push it to Azure Container Registry (ACR) from a Linux machine, and then verify it in Azure.
 
-📌 Problem Statement
+<h2>📌 Problem Statement</h2>
 
-We want to:
-Create a Docker image locally
-Push the image to Azure Container Registry (ACR)
-Store images securely in a private registry
-Make the image available for VMs, AKS, or CI/CD pipelines
+<ul>We want to:
+<li> Create a Docker image locally </li>
+<li>Push the image to Azure Container Registry (ACR)</li>
+<li>Store images securely in a private registry</li>
+<li>Make the image available for VMs, AKS, or CI/CD pipelines</li> </ul>
+
 
 
 🧠 What is Azure Container Registry (ACR)?
@@ -43,3 +44,4 @@ Push to ACR
    ↓
 
 Stored in Azure Container Registry
+
