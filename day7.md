@@ -8,6 +8,7 @@ Steps Performed
 
 
 
+
 Task 02: Custom Content Deployment on NGINX
 Steps Performed
               Accessed the running NGINX Docker container
