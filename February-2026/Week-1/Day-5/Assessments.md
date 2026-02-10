@@ -1,14 +1,16 @@
 # Day 5 – Assessment: The Infrastructure Challenge
 
 ## Objective
-To manually build and connect all required Azure components to deploy a functional Virtual Machine.  
-The goal is to understand how individual resources work together while keeping the setup cost-efficient and low latency.
+To manually create and connect all required Azure infrastructure components to deploy a functional Virtual Machine.  
+The goal is to understand how each resource works together instead of using the Quick Create option.
 
 ---
 
 ## Scenario
-Instead of using the Quick Create option, the Virtual Machine was deployed by creating and connecting each required resource manually.  
-This ensures better understanding of Azure networking, security, storage, and compute components.
+A standalone server needed to be deployed in Azure.  
+Instead of using automatic VM creation, all networking, security, storage, and compute components were created and connected step by step.
+
+This approach helps in understanding real-world infrastructure design and troubleshooting.
 
 ---
 
@@ -17,12 +19,12 @@ This ensures better understanding of Azure networking, security, storage, and co
 ## Task 1: Networking Setup
 
 ### What it is
-Creating the network where the Virtual Machine will run.
+Creating the network environment required for the Virtual Machine.
 
 ### Why it is done
 - Every VM needs a network to communicate
-- Proper address space allows future scaling
-- Network must exist before VM creation
+- Proper address space allows future expansion
+- Networking must exist before VM creation
 
 ### How it is done
 - Created a Virtual Network (VNet)
@@ -31,19 +33,19 @@ Creating the network where the Virtual Machine will run.
 
 ---
 
-## Task 2: Security & Entry Points
+## Task 2: Security and Entry Points
 
 ### What it is
-Setting up security rules and public access for remote management.
+Setting up security rules and external access.
 
 ### Why it is done
-- To control inbound and outbound traffic
-- To allow remote access to the VM
-- To keep the VM secure
+- To control inbound traffic
+- To allow remote management of the VM
+- To protect the VM from unwanted access
 
 ### How it is done
 - Created a Network Security Group (NSG)
-- Added an inbound rule to allow management access (RDP or SSH)
+- Added an inbound rule to allow remote access (RDP/SSH)
 - Created a Public IP Address for external connectivity
 
 ---
@@ -55,11 +57,11 @@ The Network Interface Card (NIC) connects the VM to the network.
 
 ### Why it is done
 - VM cannot communicate without a NIC
-- NIC acts as the connection point for network, security, and IP
+- NIC links networking, security, and public access
 
 ### How it is done
 - Created a Network Interface
-- Attached the NIC to:
+- Manually associated the NIC with:
   - Virtual Network
   - Subnet
   - Network Security Group
@@ -70,16 +72,16 @@ The Network Interface Card (NIC) connects the VM to the network.
 ## Task 4: Storage Allocation
 
 ### What it is
-Creating additional storage for the Virtual Machine.
+Allocating storage resources for the Virtual Machine.
 
 ### Why it is done
-- OS disk is not enough for all use cases
-- Data disk is used to store application or user data
+- OS disk alone is not enough for all workloads
+- Data disks are used to store application or user data
 - Disk must be in the same region to avoid latency
 
 ### How it is done
 - Created a Managed Data Disk
-- Ensured disk was created in the same region as the VM
+- Ensured the disk was in the same region as the VM
 
 ---
 
@@ -89,16 +91,15 @@ Creating additional storage for the Virtual Machine.
 Creating the Virtual Machine using pre-created resources.
 
 ### Why it is done
-- To understand how VM depends on existing resources
 - To avoid automatic resource creation
-- To ensure full control over infrastructure
+- To gain full control over infrastructure
+- To understand dependency between resources
 
 ### How it is done
 - Created a Virtual Machine
-- During VM creation:
-  - Attached the existing Network Interface
-  - Attached the existing Managed Data Disk
-- No new network or storage was created automatically
+- Attached the existing Network Interface
+- Attached the existing Managed Data Disk
+- No new networking or storage was created during this step
 
 ---
 
@@ -108,40 +109,42 @@ Creating the Virtual Machine using pre-created resources.
 Verifying that the infrastructure was created correctly.
 
 ### Why it is done
-- To confirm VM is working
-- To ensure the data disk is attached and usable
+- To ensure the VM is working
+- To confirm resources are connected properly
 
 ### How it is done
-- Logged into the Virtual Machine
-- Verified that the extra data disk was visible inside the OS
-- Confirmed the disk was ready for use
+- Verified VM status from Azure Portal
+- Confirmed successful VM deployment
+- Checked that networking and connectivity were active
 
 ---
 
-## Deliverables
+## Screenshots
 
-The following deliverables were prepared:
+### Infrastructure Topology
+Shows the relationship between VM, NIC, NSG, VNet, Subnet, Public IP, and Disk.
 
-- Screenshot of **Topology view** showing the relationship between:
-  - VM
-  - NIC
-  - NSG
-  - VNet
-  - Subnet
-  - Public IP
-  - Data Disk
-- Screenshots from **Deployments page** showing resource creation
-- Documentation containing:
-  - VM details
-  - VNet and Subnet information
-  - Public IP details
-  - NSG rules
-  - Disk information
+![Topology View](./Screenshots/day5-topology.png)
+
+---
+
+### Deployment History
+Shows step-by-step creation of networking, security, storage, and compute resources.
+
+![Deployments](./Screenshots/day5-deployments.png)
+
+---
+
+### Virtual Machine Overview
+Shows VM status, region, and public IP confirming successful deployment.
+
+![VM Overview](./Screenshots/day5-vm-overview.png)
 
 ---
 
 ## Assessment Outcome
-- Successfully built a Virtual Machine using manual resource creation
+- Successfully deployed a Virtual Machine using manual infrastructure setup
 - Understood how networking, security, storage, and compute are connected
-- Gained confidence in troubleshooting VM deployment issues
-- Learned infrastructure-level thinking instead of quick deployments
+- Gained confidence in infrastructure-level VM deployment
+- Learned to avoid dependency on automatic VM creation
+- Developed troubleshooting and design understanding
