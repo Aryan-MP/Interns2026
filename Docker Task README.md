@@ -1,4 +1,4 @@
-🚀 Push Docker Image to Azure Container Registry (ACR) from Linux
+<h1> 🚀 Push Docker Image to Azure Container Registry (ACR) from Linux </h1>
 
 This project demonstrates how to build a Docker image, tag it, and push it to Azure Container Registry (ACR) from a Linux machine, and then verify it in Azure.
 
@@ -41,4 +41,5 @@ Tag Image
    ↓
 Push to ACR
    ↓
+
 Stored in Azure Container Registry
