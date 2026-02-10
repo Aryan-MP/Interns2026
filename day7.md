@@ -1,5 +1,6 @@
 Task 01: Azure VM Creation with Docker and NGINX Installation
-Steps Performed
+
+  Steps Performed
             Created an Azure Virtual Machine
             Installed Docker Engine on the VM
             Pulled the official NGINX Docker image from Docker Hub
@@ -10,7 +11,7 @@ Steps Performed
 
 Task 02: Custom Content Deployment on NGINX
 
-Steps Performed
+   Steps Performed
               Accessed the running NGINX Docker container
               Modified the default NGINX HTML content
               Added custom content
@@ -24,7 +25,7 @@ Steps Performed
 
 
 Task 03: Docker Image Creation and Push to Docker Hub and Azure Container Registry (ACR)
-Steps Performed
+    Steps Performed
                Created a Dockerfile for custom NGINX content
                Built a custom Docker image locally
                Tagged the image appropriately
