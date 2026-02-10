@@ -1,109 +1,147 @@
-# Day 5 – Assessment & Solution  
-## Azure Virtual Machine (Linux)
-
----
+# Day 5 – Assessment: The Infrastructure Challenge
 
 ## Objective
-To create a Linux Virtual Machine in Azure, understand its components, connect using SSH, and perform basic Linux operations.
+To manually build and connect all required Azure components to deploy a functional Virtual Machine.  
+The goal is to understand how individual resources work together while keeping the setup cost-efficient and low latency.
 
 ---
 
-## Task 1: Linux Virtual Machine Creation
-
-### What it is
-Creating a Linux Virtual Machine in Azure using the Azure Portal.
-
-### Why it is done
-- To run applications on Linux in the cloud
-- To understand how Azure resources work together
-- To gain hands-on experience with VM creation
-
-### How it is done
-- Opened Azure Portal
-- Selected subscription and resource group
-- Chose Ubuntu Linux image
-- Selected a small VM size
-- Configured SSH authentication
-- Allowed SSH (port 22)
-- Reviewed and created the VM
+## Scenario
+Instead of using the Quick Create option, the Virtual Machine was deployed by creating and connecting each required resource manually.  
+This ensures better understanding of Azure networking, security, storage, and compute components.
 
 ---
 
-## Task 2: Understanding VM Components
+# Exercise 1
+
+## Task 1: Networking Setup
 
 ### What it is
-Understanding the Azure resources created along with the VM.
+Creating the network where the Virtual Machine will run.
 
 ### Why it is done
-- VM depends on multiple Azure resources
-- Helps in troubleshooting and cost management
+- Every VM needs a network to communicate
+- Proper address space allows future scaling
+- Network must exist before VM creation
 
 ### How it is done
-- Observed resources created during VM deployment:
-  - OS Disk
+- Created a Virtual Network (VNet)
+- Defined an address space
+- Created a Subnet inside the VNet
+
+---
+
+## Task 2: Security & Entry Points
+
+### What it is
+Setting up security rules and public access for remote management.
+
+### Why it is done
+- To control inbound and outbound traffic
+- To allow remote access to the VM
+- To keep the VM secure
+
+### How it is done
+- Created a Network Security Group (NSG)
+- Added an inbound rule to allow management access (RDP or SSH)
+- Created a Public IP Address for external connectivity
+
+---
+
+## Task 3: The Connection Layer (NIC)
+
+### What it is
+The Network Interface Card (NIC) connects the VM to the network.
+
+### Why it is done
+- VM cannot communicate without a NIC
+- NIC acts as the connection point for network, security, and IP
+
+### How it is done
+- Created a Network Interface
+- Attached the NIC to:
+  - Virtual Network
+  - Subnet
+  - Network Security Group
+  - Public IP Address
+
+---
+
+## Task 4: Storage Allocation
+
+### What it is
+Creating additional storage for the Virtual Machine.
+
+### Why it is done
+- OS disk is not enough for all use cases
+- Data disk is used to store application or user data
+- Disk must be in the same region to avoid latency
+
+### How it is done
+- Created a Managed Data Disk
+- Ensured disk was created in the same region as the VM
+
+---
+
+## Task 5: Final Assembly (Compute)
+
+### What it is
+Creating the Virtual Machine using pre-created resources.
+
+### Why it is done
+- To understand how VM depends on existing resources
+- To avoid automatic resource creation
+- To ensure full control over infrastructure
+
+### How it is done
+- Created a Virtual Machine
+- During VM creation:
+  - Attached the existing Network Interface
+  - Attached the existing Managed Data Disk
+- No new network or storage was created automatically
+
+---
+
+## Task 6: Validation
+
+### What it is
+Verifying that the infrastructure was created correctly.
+
+### Why it is done
+- To confirm VM is working
+- To ensure the data disk is attached and usable
+
+### How it is done
+- Logged into the Virtual Machine
+- Verified that the extra data disk was visible inside the OS
+- Confirmed the disk was ready for use
+
+---
+
+## Deliverables
+
+The following deliverables were prepared:
+
+- Screenshot of **Topology view** showing the relationship between:
+  - VM
   - NIC
   - NSG
   - VNet
   - Subnet
   - Public IP
-- Understood network flow from VM to VNet
-
----
-
-## Task 3: Connecting to Linux VM using SSH
-
-### What it is
-Connecting to the Linux VM remotely using SSH.
-
-### Why it is done
-- Linux VMs are managed through terminal access
-- SSH provides secure remote access
-
-### How it is done
-- Opened Git Bash
-- Navigated to SSH key location
-- Used SSH command with private key and public IP
-- Successfully logged into the VM
-
----
-
-## Task 4: Performing Basic Linux Operations
-
-### What it is
-Executing basic Linux commands inside the VM.
-
-### Why it is done
-- To become comfortable working in Linux
-- To manage files and directories inside the VM
-
-### How it is done
-- Checked directory and files
-- Created and deleted files
-- Created and removed directories
-- Read and wrote file content using commands
-
----
-
-## Task 5: VM Stop, Start and Cost Awareness
-
-### What it is
-Managing VM state and understanding cost behavior.
-
-### Why it is done
-- To avoid unnecessary cost
-- To understand billing basics
-
-### How it is done
-- Stopped (deallocated) the VM
-- Observed that compute cost stopped
-- Understood that disk cost continues
-- Started the VM again when required
+  - Data Disk
+- Screenshots from **Deployments page** showing resource creation
+- Documentation containing:
+  - VM details
+  - VNet and Subnet information
+  - Public IP details
+  - NSG rules
+  - Disk information
 
 ---
 
 ## Assessment Outcome
-- Linux VM created successfully
-- VM components clearly understood
-- Secure SSH connection established
-- Basic Linux commands executed
-- Cost and VM lifecycle concepts understood
+- Successfully built a Virtual Machine using manual resource creation
+- Understood how networking, security, storage, and compute are connected
+- Gained confidence in troubleshooting VM deployment issues
+- Learned infrastructure-level thinking instead of quick deployments
