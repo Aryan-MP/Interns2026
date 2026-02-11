@@ -1,6 +1,6 @@
 # Day 8 - Assignment
 
-## Task - 2 Use ARM templates and create a Storage Account then create a Managed Disk and attach it to the Virtual Machine (VM)
+## Task - 2 Using ARM templates and creating a Storage Account then creating a Managed Disk and attaching it to the Virtual Machine (VM)
 
 
 {
