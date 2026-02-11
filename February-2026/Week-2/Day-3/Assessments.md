@@ -39,7 +39,9 @@ Resources created:
 ### Screenshot – CLI Deployment (VS Code)
 Shows successful ARM deployment execution.
 
+<img width="1920" height="1080" alt="day8-cli-deployment" src="https://github.com/user-attachments/assets/a6721a20-a5bf-4bc7-9c86-f59f7d501885" />
 ![ARM CLI Deployment](./Screenshots/day8-cli-deployment.png)
+![Uploading day8-cli-deployment.png…]()
 
 ---
 
@@ -49,6 +51,8 @@ After CLI deployment, the VM was verified in Azure.
 
 ### Screenshot – VM in Azure Portal
 Shows VM successfully created.
+
+<img width="1920" height="1080" alt="day8-vm-overview" src="https://github.com/user-attachments/assets/ec16e8e0-c702-4fa3-8814-16150e4d29ca" />
 
 ![VM Overview](./Screenshots/day8-vm-overview.png)
 
@@ -73,6 +77,8 @@ Automatic configuration of Windows VM without manual login.
 ### Screenshot – Custom HTML Page Hosted
 Shows IIS running with custom content.
 
+<img width="1920" height="1080" alt="day8-iis-custom-page" src="https://github.com/user-attachments/assets/ec22f684-4d6f-4d1b-86a3-c0894ee1c5c1" />
+
 ![IIS Hosted Page](./Screenshots/day8-iis-custom-page.png)
 
 ---
@@ -96,6 +102,8 @@ Creating and attaching an additional managed disk to VM.
 
 ### Screenshot – Disk Created and Attached
 Shows managed disk attached to VM.
+
+<img width="1920" height="1080" alt="day8-disk-attached" src="https://github.com/user-attachments/assets/044bf95a-473d-43dc-85bd-d712bbf4adb2" />
 
 ![Managed Disk Attached](./Screenshots/day8-disk-attached.png)
 
@@ -135,8 +143,11 @@ Running a container directly in Azure without using a Virtual Machine.
 
 ### Screenshot – Nginx Running in ACI
 Shows nginx website successfully running from Azure Container Instance.
+<img width="1920" height="1080" alt="day8-aci-nginx" src="https://github.com/user-attachments/assets/93504a5c-fbd0-44e6-8faf-585588050c4f" />
 
-![ACI Nginx Output](./Screenshots/day8-aci-nginx.png)
+
+![ACI Nginx Output](./Screenshots/day8-aci-nginx.png)![Uploading day8-aci-nginx.png…]()
+
 
 ---
 
