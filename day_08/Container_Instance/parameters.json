@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "containerGroupName": {
+      "value": "acr-containerGroupName"
+    },
+    "location": {
+      "value": "eastus"
+    },
+    "acrLoginServer": {
+      "value": "acrLoginServer"
+    },
+    "acrUsername": {
+      "value": "acrUsername"
+    },
+    "acrPassword": {
+      "value": "PUT_YOUR_ACR_PASSWORD_HERE"
+    }
+  }
+}

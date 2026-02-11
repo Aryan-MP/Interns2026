@@ -1,0 +1,5 @@
+Azure Container Instances and Azure Container Apps were explored to understand how containerized applications can be deployed and managed on Microsoft Azure. An Azure Virtual Machine was launched, and Docker was installed on it to work with containers. Using Docker, the NGINX image was pulled and a container was run successfully. After deployment, the default index.html file was modified to include custom details, and the changes were verified through the browser.
+
+To understand persistent storage in containers, a Docker volume was created and attached to the NGINX container. Data was added to the container using the attached volume. After deleting the container, the data was retained, demonstrating how volumes help in preserving data even when containers are removed.
+
+Finally, a Dockerfile was created to build a custom NGINX image with modified content. This image was then pushed to Azure Container Registry, making it available for deployment using Azure Container Instances or Azure Container Apps. This exercise provided hands-on experience with container creation, storage management, image building, and deploying containers using Azure services.
