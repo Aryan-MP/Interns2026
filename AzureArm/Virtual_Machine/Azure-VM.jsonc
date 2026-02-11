@@ -1,28 +1,57 @@
 {
+  // ARM template schema reference (defines template structure & validation rules)
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+
+  // Template version (for tracking template updates)
   "contentVersion": "1.0.0.0",
+
+  // ===== PARAMETERS =====
+  // Used to pass values during deployment so template can be reused
   "parameters": {
-    "vmName": { "type": "String", "defaultValue": "Azureiaacvm" },
-    "adminUsername": { "type": "String", "defaultValue": "azureuser" },
-    "adminPassword": { "type": "SecureString" },
-    "location": { "type": "String", "defaultValue": "centralindia" }
+    "vmName": { 
+      "type": "String", // VM name datatype
+      "defaultValue": "Azureiaacvm" // default if user doesn't provide value
+    },
+    "adminUsername": { 
+      "type": "String",
+      "defaultValue": "azureuser" // login username for VM
+    },
+    "adminPassword": { 
+      "type": "SecureString" // hides password in logs/output for security
+    },
+    "location": { 
+      "type": "String",
+      "defaultValue": "centralindia" // deployment region
+    }
   },
+
+  // ===== VARIABLES =====
+  // Variables help avoid repetition and make template dynamic
   "variables": {
-    "vnetName": "[concat(parameters('vmName'), '-vnet')]",
-    "subnetName": "default",
-    "publicIPName": "[concat(parameters('vmName'), '-ip')]",
-    "nsgName": "[concat(parameters('vmName'), '-nsg')]",
-    "nicName": "[concat(parameters('vmName'), '-nic')]"
+    "vnetName": "[concat(parameters('vmName'), '-vnet')]", // VNet name based on VM name
+    "subnetName": "default", // subnet name
+    "publicIPName": "[concat(parameters('vmName'), '-ip')]", // public IP name
+    "nsgName": "[concat(parameters('vmName'), '-nsg')]", // NSG name
+    "nicName": "[concat(parameters('vmName'), '-nic')]" // network interface name
   },
+
+  // ===== RESOURCES SECTION =====
+  // All Azure resources are defined here
   "resources": [
+
+    // ---- PUBLIC IP ----
     {
-      "type": "Microsoft.Network/publicIPAddresses",
-      "apiVersion": "2023-11-01",
+      "type": "Microsoft.Network/publicIPAddresses", // resource type
+      "apiVersion": "2023-11-01", // API version for resource provider
       "name": "[variables('publicIPName')]",
       "location": "[parameters('location')]",
-      "sku": { "name": "Standard" },
-      "properties": { "publicIPAllocationMethod": "Static" }
+      "sku": { "name": "Standard" }, // Standard SKU recommended for production
+      "properties": { 
+        "publicIPAllocationMethod": "Static" // IP won't change after restart
+      }
     },
+
+    // ---- NETWORK SECURITY GROUP ----
     {
       "type": "Microsoft.Network/networkSecurityGroups",
       "apiVersion": "2023-11-01",
@@ -31,20 +60,20 @@
       "properties": {
         "securityRules": [
           {
-            "name": "AllowHTTP",
+            "name": "AllowHTTP", // Rule to allow web traffic
             "properties": {
-              "priority": 100,
+              "priority": 100, // lower number = higher priority
               "protocol": "Tcp",
               "access": "Allow",
               "direction": "Inbound",
-              "sourceAddressPrefix": "*",
+              "sourceAddressPrefix": "*", // allow from anywhere
               "sourcePortRange": "*",
               "destinationAddressPrefix": "*",
-              "destinationPortRange": "80"
+              "destinationPortRange": "80" // HTTP port
             }
           },
           {
-            "name": "AllowRDP",
+            "name": "AllowRDP", // Rule to allow remote login
             "properties": {
               "priority": 110,
               "protocol": "Tcp",
@@ -53,37 +82,48 @@
               "sourceAddressPrefix": "*",
               "sourcePortRange": "*",
               "destinationAddressPrefix": "*",
-              "destinationPortRange": "3389"
+              "destinationPortRange": "3389" // RDP port for Windows VM
             }
           }
         ]
       }
     },
+
+    // ---- VIRTUAL NETWORK ----
     {
       "type": "Microsoft.Network/virtualNetworks",
       "apiVersion": "2023-11-01",
       "name": "[variables('vnetName')]",
       "location": "[parameters('location')]",
       "properties": {
-        "addressSpace": { "addressPrefixes": [ "10.0.0.0/16" ] },
+        "addressSpace": { 
+          "addressPrefixes": [ "10.0.0.0/16" ] // main VNet IP range
+        },
         "subnets": [
           {
             "name": "[variables('subnetName')]",
-            "properties": { "addressPrefix": "10.0.0.0/24" }
+            "properties": { 
+              "addressPrefix": "10.0.0.0/24" // subnet range inside VNet
+            }
           }
         ]
       }
     },
+
+    // ---- NETWORK INTERFACE ----
     {
       "type": "Microsoft.Network/networkInterfaces",
       "apiVersion": "2023-11-01",
       "name": "[variables('nicName')]",
       "location": "[parameters('location')]",
+
+      // Ensures these resources are created before NIC
       "dependsOn": [
         "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))]",
         "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
         "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
       ],
+
       "properties": {
         "ipConfigurations": [
           {
@@ -99,37 +139,49 @@
           }
         ],
         "networkSecurityGroup": {
-          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]" // attach NSG to NIC
         }
       }
     },
+
+    // ---- VIRTUAL MACHINE ----
     {
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2024-03-01",
       "name": "[parameters('vmName')]",
       "location": "[parameters('location')]",
+
+      // VM waits until NIC is created
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
       ],
+
       "properties": {
-        "hardwareProfile": { "vmSize": "Standard_D2s_v5" },
+        "hardwareProfile": { 
+          "vmSize": "Standard_D2s_v5" // VM size (2 vCPU, 8GB RAM approx)
+        },
+
         "storageProfile": {
           "imageReference": {
-            "publisher": "MicrosoftWindowsServer",
-            "offer": "WindowsServer",
-            "sku": "2022-datacenter-g2",
-            "version": "latest"
+            "publisher": "MicrosoftWindowsServer", // OS provider
+            "offer": "WindowsServer", // OS type
+            "sku": "2022-datacenter-g2", // version edition
+            "version": "latest" // always deploy newest image
           },
           "osDisk": {
-            "createOption": "FromImage",
-            "managedDisk": { "storageAccountType": "Premium_LRS" }
+            "createOption": "FromImage", // create disk from image
+            "managedDisk": { 
+              "storageAccountType": "Premium_LRS" // high-performance disk
+            }
           }
         },
+
         "osProfile": {
           "computerName": "[parameters('vmName')]",
           "adminUsername": "[parameters('adminUsername')]",
           "adminPassword": "[parameters('adminPassword')]"
         },
+
         "networkProfile": {
           "networkInterfaces": [
             {
@@ -137,31 +189,41 @@
             }
           ]
         },
+
+        // Trusted Launch security features (recommended for production VMs)
         "securityProfile": {
           "securityType": "TrustedLaunch",
           "uefiSettings": {
-            "secureBootEnabled": true,
-            "vTpmEnabled": true
+            "secureBootEnabled": true, // prevents boot-level malware
+            "vTpmEnabled": true // enables virtual TPM chip
           }
         }
       }
     },
+
+    // ---- VM EXTENSION (POST-DEPLOY SCRIPT) ----
     {
       "type": "Microsoft.Compute/virtualMachines/extensions",
       "apiVersion": "2024-03-01",
-      "name": "[concat(parameters('vmName'), '/InstallIIS')]",
+      "name": "[concat(parameters('vmName'), '/InstallIIS')]", // extension name
       "location": "[parameters('location')]",
+
+      // Extension runs after VM creation
       "dependsOn": [
         "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
       ],
+
       "properties": {
         "publisher": "Microsoft.Compute",
-        "type": "CustomScriptExtension",
+        "type": "CustomScriptExtension", // runs custom script inside VM
         "typeHandlerVersion": "1.10",
         "autoUpgradeMinorVersion": true,
-        "settings": {
-          "commandToExecute": "powershell -Command \"Install-WindowsFeature -Name Web-Server -IncludeManagementTools; Set-Content -Path 'C:\\inetpub\\wwwroot\\index.html' -Value '<html><body><h1>finally done</h1></body></html>'\""
 
+        "settings": {
+          // PowerShell command executed inside VM after deployment
+          "commandToExecute": "powershell -Command \"Install-WindowsFeature -Name Web-Server -IncludeManagementTools; Set-Content -Path 'C:\\inetpub\\wwwroot\\index.html' -Value '<html><body><h1>finally done</h1></body></html>'\""
+          // installs IIS web server
+          // creates a simple HTML page to verify deployment
         }
       }
     }
