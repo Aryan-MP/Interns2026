@@ -1,6 +1,6 @@
 # Day 8 -Assignment
 
-### Task - 3 : Using ARM templates create Azure Container Registry (ACR) and Azure Container Instance (ACI)
+## Task - 3 : Using ARM templates create Azure Container Registry (ACR) and Azure Container Instance (ACI)
 
 
 {
