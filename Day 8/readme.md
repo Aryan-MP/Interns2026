@@ -1,7 +1,7 @@
-Task 1:
-To use arm template to deploy a VM and use Custom Script Extension CSE to install IIS server.
-Conclusion:
-The server was installed by using included deployvm.json template on local machine and verified by the VM ip address.
+Task 1:<br />
+To use arm template to deploy a VM and use Custom Script Extension CSE to install IIS server.<br />
+Conclusion:<br />
+The server was installed by using included deployvm.json template on local machine and verified by the VM ip address.<br />
 
 Task 2:
 To create a storage account through arm template.
