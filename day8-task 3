@@ -1,0 +1,690 @@
+create arm termplates for vm,storages,container,acr
+
+
+
+vm-armtemplate.json
+
+
+{
+  "type": "Microsoft.Compute/virtualMachines",
+  "apiVersion": "2025-04-01",
+  "name": "string",
+  "extendedLocation": {
+    "name": "string",
+    "type": "string"
+  },
+  "identity": {
+    "type": "string",
+    "userAssignedIdentities": {
+      "{customized property}": {
+      }
+    }
+  },
+  "location": "string",
+  "placement": {
+    "excludeZones": [ "string" ],
+    "includeZones": [ "string" ],
+    "zonePlacementPolicy": "string"
+  },
+  "plan": {
+    "name": "string",
+    "product": "string",
+    "promotionCode": "string",
+    "publisher": "string"
+  },
+  "properties": {
+    "additionalCapabilities": {
+      "enableFips1403Encryption": "bool",
+      "hibernationEnabled": "bool",
+      "ultraSSDEnabled": "bool"
+    },
+    "applicationProfile": {
+      "galleryApplications": [
+        {
+          "configurationReference": "string",
+          "enableAutomaticUpgrade": "bool",
+          "order": "int",
+          "packageReferenceId": "string",
+          "tags": "string",
+          "treatFailureAsDeploymentFailure": "bool"
+        }
+      ]
+    },
+    "availabilitySet": {
+      "id": "string"
+    },
+    "billingProfile": {
+      "maxPrice": "int"
+    },
+    "capacityReservation": {
+      "capacityReservationGroup": {
+        "id": "string"
+      }
+    },
+    "diagnosticsProfile": {
+      "bootDiagnostics": {
+        "enabled": "bool",
+        "storageUri": "string"
+      }
+    },
+    "evictionPolicy": "string",
+    "extensionsTimeBudget": "string",
+    "hardwareProfile": {
+      "vmSize": "string",
+      "vmSizeProperties": {
+        "vCPUsAvailable": "int",
+        "vCPUsPerCore": "int"
+      }
+    },
+    "host": {
+      "id": "string"
+    },
+    "hostGroup": {
+      "id": "string"
+    },
+    "licenseType": "string",
+    "networkProfile": {
+      "networkApiVersion": "string",
+      "networkInterfaceConfigurations": [
+        {
+          "name": "string",
+          "properties": {
+            "auxiliaryMode": "string",
+            "auxiliarySku": "string",
+            "deleteOption": "string",
+            "disableTcpStateTracking": "bool",
+            "dnsSettings": {
+              "dnsServers": [ "string" ]
+            },
+            "dscpConfiguration": {
+              "id": "string"
+            },
+            "enableAcceleratedNetworking": "bool",
+            "enableFpga": "bool",
+            "enableIPForwarding": "bool",
+            "ipConfigurations": [
+              {
+                "name": "string",
+                "properties": {
+                  "applicationGatewayBackendAddressPools": [
+                    {
+                      "id": "string"
+                    }
+                  ],
+                  "applicationSecurityGroups": [
+                    {
+                      "id": "string"
+                    }
+                  ],
+                  "loadBalancerBackendAddressPools": [
+                    {
+                      "id": "string"
+                    }
+                  ],
+                  "primary": "bool",
+                  "privateIPAddressVersion": "string",
+                  "publicIPAddressConfiguration": {
+                    "name": "string",
+                    "properties": {
+                      "deleteOption": "string",
+                      "dnsSettings": {
+                        "domainNameLabel": "string",
+                        "domainNameLabelScope": "string"
+                      },
+                      "idleTimeoutInMinutes": "int",
+                      "ipTags": [
+                        {
+                          "ipTagType": "string",
+                          "tag": "string"
+                        }
+                      ],
+                      "publicIPAddressVersion": "string",
+                      "publicIPAllocationMethod": "string",
+                      "publicIPPrefix": {
+                        "id": "string"
+                      }
+                    },
+                    "sku": {
+                      "name": "string",
+                      "tier": "string"
+                    },
+                    "tags": {
+                      "{customized property}": "string"
+                    }
+                  },
+                  "subnet": {
+                    "id": "string"
+                  }
+                }
+              }
+            ],
+            "networkSecurityGroup": {
+              "id": "string"
+            },
+            "primary": "bool"
+          },
+          "tags": {
+            "{customized property}": "string"
+          }
+        }
+      ],
+      "networkInterfaces": [
+        {
+          "id": "string",
+          "properties": {
+            "deleteOption": "string",
+            "primary": "bool"
+          }
+        }
+      ]
+    },
+    "osProfile": {
+      "adminPassword": "string",
+      "adminUsername": "string",
+      "allowExtensionOperations": "bool",
+      "computerName": "string",
+      "customData": "string",
+      "linuxConfiguration": {
+        "disablePasswordAuthentication": "bool",
+        "enableVMAgentPlatformUpdates": "bool",
+        "patchSettings": {
+          "assessmentMode": "string",
+          "automaticByPlatformSettings": {
+            "bypassPlatformSafetyChecksOnUserSchedule": "bool",
+            "rebootSetting": "string"
+          },
+          "patchMode": "string"
+        },
+        "provisionVMAgent": "bool",
+        "ssh": {
+          "publicKeys": [
+            {
+              "keyData": "string",
+              "path": "string"
+            }
+          ]
+        }
+      },
+      "requireGuestProvisionSignal": "bool",
+      "secrets": [
+        {
+          "sourceVault": {
+            "id": "string"
+          },
+          "vaultCertificates": [
+            {
+              "certificateStore": "string",
+              "certificateUrl": "string"
+            }
+          ]
+        }
+      ],
+      "windowsConfiguration": {
+        "additionalUnattendContent": [
+          {
+            "componentName": "Microsoft-Windows-Shell-Setup",
+            "content": "string",
+            "passName": "OobeSystem",
+            "settingName": "string"
+          }
+        ],
+        "enableAutomaticUpdates": "bool",
+        "patchSettings": {
+          "assessmentMode": "string",
+          "automaticByPlatformSettings": {
+            "bypassPlatformSafetyChecksOnUserSchedule": "bool",
+            "rebootSetting": "string"
+          },
+          "enableHotpatching": "bool",
+          "patchMode": "string"
+        },
+        "provisionVMAgent": "bool",
+        "timeZone": "string",
+        "winRM": {
+          "listeners": [
+            {
+              "certificateUrl": "string",
+              "protocol": "string"
+            }
+          ]
+        }
+      }
+    },
+    "platformFaultDomain": "int",
+    "priority": "string",
+    "proximityPlacementGroup": {
+      "id": "string"
+    },
+    "scheduledEventsPolicy": {
+      "allInstancesDown": {
+        "automaticallyApprove": "bool"
+      },
+      "scheduledEventsAdditionalPublishingTargets": {
+        "eventGridAndResourceGraph": {
+          "enable": "bool",
+          "scheduledEventsApiVersion": "string"
+        }
+      },
+      "userInitiatedReboot": {
+        "automaticallyApprove": "bool"
+      },
+      "userInitiatedRedeploy": {
+        "automaticallyApprove": "bool"
+      }
+    },
+    "scheduledEventsProfile": {
+      "osImageNotificationProfile": {
+        "enable": "bool",
+        "notBeforeTimeout": "string"
+      },
+      "terminateNotificationProfile": {
+        "enable": "bool",
+        "notBeforeTimeout": "string"
+      }
+    },
+    "securityProfile": {
+      "encryptionAtHost": "bool",
+      "encryptionIdentity": {
+        "userAssignedIdentityResourceId": "string"
+      },
+      "proxyAgentSettings": {
+        "addProxyAgentExtension": "bool",
+        "enabled": "bool",
+        "imds": {
+          "inVMAccessControlProfileReferenceId": "string",
+          "mode": "string"
+        },
+        "keyIncarnationId": "int",
+        "mode": "string",
+        "wireServer": {
+          "inVMAccessControlProfileReferenceId": "string",
+          "mode": "string"
+        }
+      },
+      "securityType": "string",
+      "uefiSettings": {
+        "secureBootEnabled": "bool",
+        "vTpmEnabled": "bool"
+      }
+    },
+    "storageProfile": {
+      "alignRegionalDisksToVMZone": "bool",
+      "dataDisks": [
+        {
+          "caching": "string",
+          "createOption": "string",
+          "deleteOption": "string",
+          "detachOption": "string",
+          "diskIOPSReadWrite": "int",
+          "diskMBpsReadWrite": "int",
+          "diskSizeGB": "int",
+          "image": {
+            "uri": "string"
+          },
+          "lun": "int",
+          "managedDisk": {
+            "diskEncryptionSet": {
+              "id": "string"
+            },
+            "id": "string",
+            "securityProfile": {
+              "diskEncryptionSet": {
+                "id": "string"
+              },
+              "securityEncryptionType": "string"
+            },
+            "storageAccountType": "string"
+          },
+          "name": "string",
+          "sourceResource": {
+            "id": "string"
+          },
+          "toBeDetached": "bool",
+          "vhd": {
+            "uri": "string"
+          },
+          "writeAcceleratorEnabled": "bool"
+        }
+      ],
+      "diskControllerType": "string",
+      "imageReference": {
+        "communityGalleryImageId": "string",
+        "id": "string",
+        "offer": "string",
+        "publisher": "string",
+        "sharedGalleryImageId": "string",
+        "sku": "string",
+        "version": "string"
+      },
+      "osDisk": {
+        "caching": "string",
+        "createOption": "string",
+        "deleteOption": "string",
+        "diffDiskSettings": {
+          "option": "string",
+          "placement": "string"
+        },
+        "diskSizeGB": "int",
+        "encryptionSettings": {
+          "diskEncryptionKey": {
+            "secretUrl": "string",
+            "sourceVault": {
+              "id": "string"
+            }
+          },
+          "enabled": "bool",
+          "keyEncryptionKey": {
+            "keyUrl": "string",
+            "sourceVault": {
+              "id": "string"
+            }
+          }
+        },
+        "image": {
+          "uri": "string"
+        },
+        "managedDisk": {
+          "diskEncryptionSet": {
+            "id": "string"
+          },
+          "id": "string",
+          "securityProfile": {
+            "diskEncryptionSet": {
+              "id": "string"
+            },
+            "securityEncryptionType": "string"
+          },
+          "storageAccountType": "string"
+        },
+        "name": "string",
+        "osType": "string",
+        "vhd": {
+          "uri": "string"
+        },
+        "writeAcceleratorEnabled": "bool"
+      }
+    },
+    "userData": "string",
+    "virtualMachineScaleSet": {
+      "id": "string"
+    }
+  },
+  "tags": {
+    "{customized property}": "string"
+  },
+  "zones": [ "string" ]
+}
+
+
+container-armtemplate.json
+
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "containerName": {
+      "type": "string",
+      "defaultValue": "mycontainer",
+      "description": "Name of the container"
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "description": "Location for all resources."
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ContainerInstance/containerGroups",
+      "apiVersion": "2023-05-01",
+      "name": "[parameters('containerName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "containers": [
+          {
+            "name": "[parameters('containerName')]",
+            "properties": {
+              "image": "mcr.microsoft.com/azuredocs/container-helloworld",
+              "ports": [
+                {
+                  "port": 80,
+                  "protocol": "TCP"
+                }
+              ],
+              "resources": {
+                "requests": {
+                  "cpu": 1.0,
+                  "memoryInGB": 1.5
+                }
+              }
+            }
+          }
+        ],
+        "osType": "Linux",
+        "ipAddress": {
+          "type": "Public",
+          "ports": [
+            {
+              "protocol": "TCP",
+              "port": 80
+            }
+          ]
+        },
+        "restartPolicy": "OnFailure"
+      }
+    }
+  ]
+}
+
+
+storage-armtemplate.json
+
+{
+  "type": "Microsoft.Storage/storageAccounts",
+  "apiVersion": "2025-06-01",
+  "name": "string",
+  "extendedLocation": {
+    "name": "string",
+    "type": "string"
+  },
+  "identity": {
+    "type": "string",
+    "userAssignedIdentities": {
+      "{customized property}": {
+      }
+    }
+  },
+  "kind": "string",
+  "location": "string",
+  "placement": {
+    "zonePlacementPolicy": "string"
+  },
+  "properties": {
+    "accessTier": "string",
+    "allowBlobPublicAccess": "bool",
+    "allowCrossTenantReplication": "bool",
+    "allowedCopyScope": "string",
+    "allowSharedKeyAccess": "bool",
+    "azureFilesIdentityBasedAuthentication": {
+      "activeDirectoryProperties": {
+        "accountType": "string",
+        "azureStorageSid": "string",
+        "domainGuid": "string",
+        "domainName": "string",
+        "domainSid": "string",
+        "forestName": "string",
+        "netBiosDomainName": "string",
+        "samAccountName": "string"
+      },
+      "defaultSharePermission": "string",
+      "directoryServiceOptions": "string",
+      "smbOAuthSettings": {
+        "isSmbOAuthEnabled": "bool"
+      }
+    },
+    "customDomain": {
+      "name": "string",
+      "useSubDomainName": "bool"
+    },
+    "defaultToOAuthAuthentication": "bool",
+    "dnsEndpointType": "string",
+    "dualStackEndpointPreference": {
+      "publishIpv6Endpoint": "bool"
+    },
+    "enableExtendedGroups": "bool",
+    "encryption": {
+      "identity": {
+        "federatedIdentityClientId": "string",
+        "userAssignedIdentity": "string"
+      },
+      "keySource": "string",
+      "keyvaultproperties": {
+        "keyname": "string",
+        "keyvaulturi": "string",
+        "keyversion": "string"
+      },
+      "requireInfrastructureEncryption": "bool",
+      "services": {
+        "blob": {
+          "enabled": "bool",
+          "keyType": "string"
+        },
+        "file": {
+          "enabled": "bool",
+          "keyType": "string"
+        },
+        "queue": {
+          "enabled": "bool",
+          "keyType": "string"
+        },
+        "table": {
+          "enabled": "bool",
+          "keyType": "string"
+        }
+      }
+    },
+    "geoPriorityReplicationStatus": {
+      "isBlobEnabled": "bool"
+    },
+    "immutableStorageWithVersioning": {
+      "enabled": "bool",
+      "immutabilityPolicy": {
+        "allowProtectedAppendWrites": "bool",
+        "immutabilityPeriodSinceCreationInDays": "int",
+        "state": "string"
+      }
+    },
+    "isHnsEnabled": "bool",
+    "isLocalUserEnabled": "bool",
+    "isNfsV3Enabled": "bool",
+    "isSftpEnabled": "bool",
+    "keyPolicy": {
+      "keyExpirationPeriodInDays": "int"
+    },
+    "largeFileSharesState": "string",
+    "minimumTlsVersion": "string",
+    "networkAcls": {
+      "bypass": "string",
+      "defaultAction": "string",
+      "ipRules": [
+        {
+          "action": "Allow",
+          "value": "string"
+        }
+      ],
+      "ipv6Rules": [
+        {
+          "action": "Allow",
+          "value": "string"
+        }
+      ],
+      "resourceAccessRules": [
+        {
+          "resourceId": "string",
+          "tenantId": "string"
+        }
+      ],
+      "virtualNetworkRules": [
+        {
+          "action": "Allow",
+          "id": "string",
+          "state": "string"
+        }
+      ]
+    },
+    "publicNetworkAccess": "string",
+    "routingPreference": {
+      "publishInternetEndpoints": "bool",
+      "publishMicrosoftEndpoints": "bool",
+      "routingChoice": "string"
+    },
+    "sasPolicy": {
+      "expirationAction": "string",
+      "sasExpirationPeriod": "string"
+    },
+    "supportsHttpsTrafficOnly": "bool"
+  },
+  "sku": {
+    "name": "string"
+  },
+  "tags": {
+    "{customized property}": "string"
+  },
+  "zones": [ "string" ]
+}
+
+
+acr-armtemplate.json
+
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "acrName": {
+      "type": "string",
+      "defaultValue": "registry${uniqueString(resourceGroup().id)}",
+      "metadata": {
+        "description": "Unique name for the Azure Container Registry"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "acrSku": {
+      "type": "string",
+      "allowedValues": [
+        "Basic",
+        "Standard",
+        "Premium"
+      ],
+      "defaultValue": "Standard",
+      "metadata": {
+        "description": "The SKU for the Container Registry"
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2023-01-01-preview",
+      "name": "[parameters('acrName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('acrSku')]"
+      },
+      "properties": {
+        "adminUserEnabled": true
+      }
+    }
+  ],
+  "outputs": {
+    "acrLoginServer": {
+      "value": "[reference(resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName')), '2023-01-01-preview').loginServer]",
+      "type": "string"
+    }
+  }
+}
