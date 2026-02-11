@@ -1,0 +1,64 @@
+Day 3 - Azure Storage Account Assessment Task
+Task Overview
+As part of my internship, I am working on an online learning platform that requires different types of storage for content, documents, messages, and metadata. My task is to design and implement this using an Azure Storage Account.
+
+Task 1: Create a Storage Account
+- Created an Azure Storage Account with the following configuration:
+    - Storage account name: learnstorageaccount
+    - Region: East US
+    - Performance: Standard
+    - Redundancy: LRS (Locally Redundant Storage)
+
+Task 2: Blob Storage
+- Created a Blob container named: training-content
+- Uploaded:
+    - One video file: intro.mp4
+    - One PDF file: course_material.pdf
+- Set the container access level to Private
+
+Task 3: File Share
+- Created an Azure File Share named: team-docs
+- Uploaded a document: meeting_minutes.txt
+
+Task 4: Queue Storage
+- Created a Queue named: user-registration
+- Added the following messages:
+    - Message 1: User registered successfully
+    - Message 2: User verification pending
+    - Message 3: User registration failed
+- Viewed and deleted one message: User registered successfully
+
+Task 5: Table Storage
+- Created a Table named: students
+- Added the following entities:
+    - PartitionKey: student1, RowKey: 1, Name: John Doe, Course: Azure
+    - PartitionKey: student2, RowKey: 2, Name: Jane Doe, Course: AWS
+    - PartitionKey: student3, RowKey: 3, Name: Bob Smith, Course: GCP
+
+Task 6: Blob Soft Delete & Recovery
+- Enabled Soft Delete for Blob Storage
+- Deleted the intro.mp4 blob from the training-content container
+- Restored the deleted blob
+
+Task 7: Access Control using SAS
+- Generated a Shared Access Signature (SAS) for the course_material.pdf blob
+- Configured it as read-only
+- Verified that the file can be accessed using the SAS URL
+
+Task 8: Blob Storage Access Tiers
+- Changed the access tier of the course_material.pdf blob from Hot to Cool
+- Observed the available access tier options: Hot, Cool, Archive
+- Noted when each tier should be used:
+    - Hot: Frequently accessed data
+    - Cool: Infrequently accessed data
+    - Archive: Rarely accessed data
+
+Learnings
+- Azure Storage Account provides a scalable and secure storage solution for various data types.
+- Blob Storage is suitable for storing unstructured data like files and media.
+- File Share is suitable for storing shared files and folders.
+- Queue Storage is suitable for messaging and decoupling applications.
+- Table Storage is suitable for storing structured data like metadata.
+- Soft Delete provides a safety net for accidental deletions.
+- SAS provides secure access to blobs without sharing account keys.
+- Access Tiers provide cost-effective storage options for different data access patterns.
