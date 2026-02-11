@@ -240,5 +240,5 @@
 }
 
 
-<img width="1920" height="1080" alt="Screenshot 2026-02-11 184340" src="https://github.com/user-attachments/assets/93b3bdde-a3bf-4e51-862c-b38f545563a3" />
+<img width="1920" height="960" alt="Screenshot 2026-02-11 184340" src="https://github.com/user-attachments/assets/35d65cf3-e6ae-498c-9101-2ac78fcdebcd" />
 
