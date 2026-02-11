@@ -1,0 +1,5 @@
+
+az deployment group create \
+  --resource-group sumitspektra-rg \
+  --template-file template.json \
+  --parameters parameters.json

@@ -1,0 +1,4 @@
+az deployment group create \
+  --resource-group sumitspektra-rg \
+  --template-file vnvm.json \
+  --parameters adminPassword='Abc@123456789'

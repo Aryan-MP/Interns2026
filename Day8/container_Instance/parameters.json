@@ -1,0 +1,49 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "availabilityZones": {
+            "value": [
+                "1"
+            ]
+        },
+        "containerName": {
+            "value": "viteproject"
+        },
+        "location": {
+            "value": "eastus"
+        },
+        "imageType": {
+            "value": "Public"
+        },
+        "imageName": {
+            "value": "mcr.microsoft.com/azuredocs/aci-helloworld:latest"
+        },
+        "osType": {
+            "value": "Linux"
+        },
+        "numberCpuCores": {
+            "value": "1"
+        },
+        "memory": {
+            "value": "1.5"
+        },
+        "restartPolicy": {
+            "value": "OnFailure"
+        },
+        "sku": {
+            "value": "Standard"
+        },
+        "ipAddressType": {
+            "value": "Public"
+        },
+        "ports": {
+            "value": [
+                {
+                    "port": "80",
+                    "protocol": "TCP"
+                }
+            ]
+        }
+    }
+}
