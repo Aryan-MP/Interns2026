@@ -1,0 +1,74 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "acrName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of Azure Container Registry"
+      }
+    },
+    "containerGroupName": {
+      "type": "string",
+      "defaultValue": "my-container-group"
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2023-01-01-preview",
+      "name": "[parameters('acrName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Basic"
+      },
+      "properties": {
+        "adminUserEnabled": true
+      }
+    },
+    {
+      "type": "Microsoft.ContainerInstance/containerGroups",
+      "apiVersion": "2023-05-01",
+      "name": "[parameters('containerGroupName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName'))]"
+      ],
+      "properties": {
+        "containers": [
+          {
+            "name": "nginx-container",
+            "properties": {
+              "image": "mcr.microsoft.com/azuredocs/aci-helloworld:latest",
+              "resources": {
+                "requests": {
+                  "cpu": 1,
+                  "memoryInGB": 1.5
+                }
+              },
+              "ports": [
+                {
+                  "port": 80
+                }
+              ]
+            }
+          }
+        ],
+        "osType": "Linux",
+        "ipAddress": {
+          "type": "Public",
+          "ports": [
+            {
+              "protocol": "TCP",
+              "port": 80
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

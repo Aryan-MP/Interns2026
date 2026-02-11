@@ -1,0 +1,160 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+
+  "parameters": {
+    "vmName": { "type": "string", "defaultValue": "win-iis-vm" },
+    "adminUsername": { "type": "string", "defaultValue": "azureuser" },
+    "adminPassword": { "type": "secureString" },
+    "location": { "type": "string", "defaultValue": "centralus" }
+  },
+
+  "variables": {
+    "vnetName": "vnet-iis",
+    "subnetName": "subnet-iis",
+    "publicIPName": "pip-iis",
+    "nsgName": "nsg-iis",
+    "nicName": "nic-iis"
+  },
+
+  "resources": [
+
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2022-09-01",
+      "name": "[variables('publicIPName')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Standard" },
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2022-09-01",
+      "name": "[variables('nsgName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "AllowHTTP",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "80",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 1000,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "AllowRDP",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 1100,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2022-09-01",
+      "name": "[variables('vnetName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "addressSpace": { "addressPrefixes": [ "10.0.0.0/16" ] },
+        "subnets": [
+          {
+            "name": "[variables('subnetName')]",
+            "properties": {
+              "addressPrefix": "10.0.0.0/24",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2022-09-01",
+      "name": "[variables('nicName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('subnetName'))]"
+              },
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2022-11-01",
+      "name": "[parameters('vmName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+      ],
+      "properties": {
+        "hardwareProfile": { "vmSize": "Standard_D2s_v3" },
+
+        "storageProfile": {
+          "imageReference": {
+  "publisher": "MicrosoftWindowsServer",
+  "offer": "WindowsServer",
+  "sku": "2022-datacenter-azure-edition",
+  "version": "latest"
+}
+,
+          "osDisk": {
+            "createOption": "FromImage",
+            "managedDisk": { "storageAccountType": "Standard_LRS" }
+          }
+        },
+
+        "osProfile": {
+          "computerName": "[parameters('vmName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]",
+         "customData": "JEVycm9yQWN0aW9uUHJlZmVyZW5jZSA9ICJTaWxlbnRseUNvbnRpbnVlIg0KDQpJbnN0YWxsLVdpbmRvd3NGZWF0dXJlIC1OYW1lIFdlYi1TZXJ2ZXIgLUluY2x1ZGVNYW5hZ2VtZW50VG9vbHMNCg0KJGh0bWwgPSAiPGh0bWw+PGJvZHkgc3R5bGU9J2ZvbnQtZmFtaWx5OkFyaWFsO3RleHQtYWxpZ246Y2VudGVyO21hcmdpbi10b3A6ODBweDtiYWNrZ3JvdW5kOiMxMTE7Y29sb3I6d2hpdGU7Jz48aDE+SUlNIFVTRVI8L2gxPjxwPklJUyBkZXBsb3llZCBzdWNjZXNzZnVsbHkgdmlhIEFSTTwvcD48L2JvZHk+PC9odG1sPiINClNldC1Db250ZW50IEM6XGluZXRwdWJcd3d3cm9vdFxpbmRleC5odG1sICRodG1sDQoNClN0YXJ0LVNlcnZpY2UgVzNTVkMNClNldC1TZXJ2aWNlIFczU1ZDIC1TdGFydHVwVHlwZSBBdXRvbWF0aWMNCg0KTmV3LU5ldEZpcmV3YWxsUnVsZSAtRGlzcGxheU5hbWUgIkFsbG93IEhUVFAiIC1EaXJlY3Rpb24gSW5ib3VuZCAtUHJvdG9jb2wgVENQIC1Mb2NhbFBvcnQgODAgLUFjdGlvbiBBbGxvdw0KDQojIEluc3RhbGwgQ2hyb21lIChvcHRpb25hbCDigJQgd2lsbCBub3Qgc3RvcCBzY3JpcHQgaWYgZmFpbHMpDQp0cnkgew0KICAgIEludm9rZS1XZWJSZXF1ZXN0ICJodHRwczovL2RsLmdvb2dsZS5jb20vY2hyb21lL2luc3RhbGwvbGF0ZXN0L2Nocm9tZS9pbnN0YWxsZXJzL0dvb2dsZUNocm9tZVN0YW5kYWxvbmVFbnRlcnByaXNlNjQubXNpIiAtT3V0RmlsZSBDOlxjaHJvbWUubXNpDQogICAgU3RhcnQtUHJvY2VzcyBtc2lleGVjLmV4ZSAtV2FpdCAtQXJndW1lbnRMaXN0ICIvaSBDOlxjaHJvbWUubXNpIC9xdWlldCAvbm9yZXN0YXJ0Ig0KfSBjYXRjaCB7fQ0KDQppaXNyZXNldA0K
+
+"
+        },
+
+        "networkProfile": {
+          "networkInterfaces": [
+            { "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]" }
+          ]
+        }
+      }
+    }
+
+  ]
+}
