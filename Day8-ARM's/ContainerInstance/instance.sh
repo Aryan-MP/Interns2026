@@ -1,4 +1,4 @@
 az deployment group create \
   --resource-group FardeenAttar-rg \
-  --template-file acr.json \
-  --parameters param.acr.json
+  --template-file instance.json \
+  --parameters param.json
