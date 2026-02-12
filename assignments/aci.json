@@ -1,0 +1,65 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+
+  "parameters": {
+    "containerName": {
+      "type": "string",
+      "defaultValue": "kiran-container"
+    },
+    "acrUsername": {
+      "type": "string"
+    },
+    "acrPassword": {
+      "type": "secureString"
+    }
+  },
+
+  "resources": [
+    {
+      "type": "Microsoft.ContainerInstance/containerGroups",
+      "apiVersion": "2023-05-01",
+      "name": "[parameters('containerName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "containers": [
+          {
+            "name": "[parameters('containerName')]",
+            "properties": {
+              "image": "kiranacr2026new.azurecr.io/nginx:latest",
+              "resources": {
+                "requests": {
+                  "cpu": 1,
+                  "memoryInGB": 1.5
+                }
+              },
+              "ports": [
+                {
+                  "port": 80
+                }
+              ]
+            }
+          }
+        ],
+        "osType": "Linux",
+        "imageRegistryCredentials": [
+          {
+            "server": "kiranacr2026new.azurecr.io",
+            "username": "[parameters('acrUsername')]",
+            "password": "[parameters('acrPassword')]"
+          }
+        ],
+        "ipAddress": {
+          "type": "Public",
+          "ports": [
+            {
+              "protocol": "TCP",
+              "port": 80
+            }
+          ]
+        },
+        "restartPolicy": "Always"
+      }
+    }
+  ]
+}

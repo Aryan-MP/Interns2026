@@ -1,0 +1,53 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmName": {
+      "type": "string",
+      "defaultValue": "Windows1ARM"
+    }
+  },
+  "variables": {
+    "diskName": "myDataDisk1"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Compute/disks",
+      "apiVersion": "2023-01-02",
+      "name": "[variables('diskName')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "properties": {
+        "creationData": {
+          "createOption": "Empty"
+        },
+        "diskSizeGB": 32
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-03-01",
+      "name": "[parameters('vmName')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/disks', variables('diskName'))]"
+      ],
+      "properties": {
+        "storageProfile": {
+          "dataDisks": [
+            {
+              "lun": 0,
+              "name": "[variables('diskName')]",
+              "createOption": "Attach",
+              "managedDisk": {
+                "id": "[resourceId('Microsoft.Compute/disks', variables('diskName'))]"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

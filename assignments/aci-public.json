@@ -1,0 +1,52 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+
+  "parameters": {
+    "containerGroupName": {
+      "type": "string",
+      "defaultValue": "kiran-container"
+    }
+  },
+
+  "resources": [
+    {
+      "type": "Microsoft.ContainerInstance/containerGroups",
+      "apiVersion": "2023-05-01",
+      "name": "[parameters('containerGroupName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "containers": [
+          {
+            "name": "hello-container",
+            "properties": {
+              "image": "mcr.microsoft.com/azuredocs/aci-helloworld",
+              "resources": {
+                "requests": {
+                  "cpu": 1,
+                  "memoryInGB": 1.5
+                }
+              },
+              "ports": [
+                {
+                  "port": 80
+                }
+              ]
+            }
+          }
+        ],
+        "osType": "Linux",
+        "ipAddress": {
+          "type": "Public",
+          "ports": [
+            {
+              "protocol": "TCP",
+              "port": 80
+            }
+          ]
+        },
+        "restartPolicy": "Always"
+      }
+    }
+  ]
+}
