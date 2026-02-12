@@ -1,0 +1,8 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "acrAdminUser": { "value": "danishdemoacr" },
+    "acrAdminPassword": { "value": "4HwSV1Ya1Nok89Iyn7l5XsC20OZDPqZUI2p3guBVrQuukWsHvqETJQQJ99CBACYeBjFEqg7NAAACAZCRjiOe" }
+  }
+}

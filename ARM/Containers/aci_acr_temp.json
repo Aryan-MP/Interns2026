@@ -1,0 +1,121 @@
+
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+
+  "functions": [
+    {
+      "namespace": "util",
+      "members": {
+        "name": {
+          "parameters": [
+            { "name": "suffix", "type": "string" }
+          ],
+          "output": {
+            "type": "string",
+            "value": "[toLower(concat('danishdemo-', parameters('suffix')))]"
+          }
+        }
+      }
+    }
+  ],
+
+  "parameters": {
+    "acrAdminUser": { "type": "string" },
+    "acrAdminPassword": { "type": "securestring" },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources"
+      }
+    }
+  },
+
+  "variables": {
+    "acrName": "[replace(util.name('acr'), '-', '')]",
+    "aciName": "[util.name('aci')]",
+    "imageName": "danishdemoacr.azurecr.io/sampleapp:v1"
+  },
+
+  "resources": [
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2023-01-01-preview",
+      "name": "[variables('acrName')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Basic" },
+      "properties": {
+        "adminUserEnabled": true
+      }
+    },
+
+    {
+      "type": "Microsoft.ContainerInstance/containerGroups",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('aciName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerRegistry/registries', variables('acrName'))]"
+      ],
+      "properties": {
+        "containers": [
+          {
+            "name": "app",
+            "properties": {
+              "image": "[variables('imageName')]",
+              "resources": {
+                "requests": {
+                  "cpu": 1,
+                  "memoryInGB": 1
+                }
+              },
+              "ports": [
+                { "port": 80 }
+              ]
+            }
+          }
+        ],
+        "osType": "Linux",
+
+        "imageRegistryCredentials": [
+          {
+            "server": "[concat(variables('acrName'), '.azurecr.io')]",
+            "username": "[parameters('acrAdminUser')]",
+            "password": "[parameters('acrAdminPassword')]"
+          }
+        ],
+
+        "ipAddress": {
+          "type": "Public",
+          "ports": [
+            { "protocol": "Tcp", "port": 80 }
+          ]
+        }
+      }
+    }
+  ],
+
+  "outputs": {
+    "acrLoginServer": {
+      "type": "string",
+      "value": "[concat(variables('acrName'), '.azurecr.io')]"
+    },
+    "aciIP": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.ContainerInstance/containerGroups', variables('aciName'))).ipAddress.ip]"
+    }
+  }
+/*
+This ARM template deploys:
+- Azure Container Registry (ACR) with Basic SKU
+- Azure Container Instance (ACI) running a containerized application
+- Configures ACI to pull images from the ACR using admin credentials
+- Outputs the ACR login server and ACI public IP address
+
+ARM = create registry + container infra
+az acr build = put image into registry
+ACI = pulls image
+
+*/
+}
