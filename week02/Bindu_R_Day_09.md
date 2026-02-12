@@ -43,11 +43,15 @@ Installs IIS using:
 Install-WindowsFeature -name Web-Server -IncludeManagementTools
 
 
+![WhatsApp Image 2026-02-12 at 21 43 19](https://github.com/user-attachments/assets/ec73d131-ed9f-404b-9dbf-d1efe58558ef)
+
 IIS default webpage accessible via Public IP
 
 ✅ Case 2: osType = Linux
 
 Deploys Ubuntu VM
+
+<img width="1920" height="1080" alt="Screenshot (143)" src="https://github.com/user-attachments/assets/5926fca1-efd4-4933-a240-56ec1bee7134" />
 
 Uses Custom Script Extension / cloud-init
 
