@@ -4,7 +4,6 @@
 
 ## Created a customized Virtual Machine, capture a specialized image from it, and deploy a Virtual Machine Scale Set (VMSS) using that image.
 
-## Task Workflow
 ### 1. Virtual Machine Deployment
 Deployed a Virtual Machine
 Configured required networking and authentication
