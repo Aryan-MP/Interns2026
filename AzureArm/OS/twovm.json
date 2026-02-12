@@ -1,0 +1,177 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "projectPrefix": { "type": "string" },
+    "location": {
+      "type": "string",
+      "defaultValue": "eastus"
+    },
+    "osType": {
+      "type": "string",
+      "allowedValues": ["Windows", "Linux"]
+    },
+    "adminUsername": { "type": "string" },
+    "adminPassword": { "type": "secureString" },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_D2s_v3",
+      "allowedValues": ["Standard_B1s", "Standard_D2s_v3", "Standard_DS1_v2"]
+    }
+  },
+  "variables": {
+    "uniqueSuffix": "[uniqueString(resourceGroup().id, deployment().name)]",
+    "vmName": "[concat(parameters('projectPrefix'), '-vm-', variables('uniqueSuffix'))]",
+    "nicName": "[concat(parameters('projectPrefix'), '-nic-', variables('uniqueSuffix'))]",
+    "vnetName": "[concat(parameters('projectPrefix'), '-vnet-', variables('uniqueSuffix'))]",
+    "nsgName": "[concat(parameters('projectPrefix'), '-nsg-', variables('uniqueSuffix'))]",
+    "publicIpName": "[concat(parameters('projectPrefix'), '-pip-', variables('uniqueSuffix'))]",
+    "imagePublisher": "[if(equals(parameters('osType'), 'Windows'), 'MicrosoftWindowsDesktop', 'Canonical')]",
+    "imageOffer": "[if(equals(parameters('osType'), 'Windows'), 'windows-11', '0001-com-ubuntu-server-jammy')]",
+    "imageSku": "[if(equals(parameters('osType'), 'Windows'), 'win11-24h2-pro', '22_04-lts')]",
+
+    "windowsScript": "powershell -Command \"Enable-WindowsOptionalFeature -Online -FeatureName 'IIS-WebServerRole' -All; Set-Content -Path 'C:\\inetpub\\wwwroot\\index.html' -Value '<h1>Windows 11 IIS Running - Managed by Rishabhdev</h1>'\"",
+    "linuxScript": "sudo apt update -y && sudo apt install nginx -y && echo '<h1>Ubuntu NGINX Running on iaacvm</h1>' | sudo tee /var/www/html/index.html"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('nsgName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "AllowWebRdpSsh",
+            "properties": {
+              "priority": 1000,
+              "access": "Allow",
+              "direction": "Inbound",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRanges": ["80", "3389", "22"],
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('vnetName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+      ],
+      "properties": {
+        "addressSpace": { "addressPrefixes": ["10.0.0.0/16"] },
+        "subnets": [
+          {
+            "name": "default",
+            "properties": {
+              "addressPrefix": "10.0.1.0/24",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('publicIpName')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Standard" },
+      "properties": { "publicIPAllocationMethod": "Static" }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('nicName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), 'default')]"
+              },
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-09-01",
+      "name": "[variables('vmName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+      ],
+      "properties": {
+        "hardwareProfile": { "vmSize": "[parameters('vmSize')]" },
+        "osProfile": {
+          "computerName": "[substring(variables('vmName'), 0, 15)]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables('imagePublisher')]",
+            "offer": "[variables('imageOffer')]",
+            "sku": "[variables('imageSku')]",
+            "version": "latest"
+          },
+          "osDisk": {
+            "createOption": "FromImage",
+            "managedDisk": { "storageAccountType": "StandardSSD_LRS" }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2023-09-01",
+      "name": "[concat(variables('vmName'), '/customScript')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+      ],
+      "properties": {
+        "publisher": "[if(equals(parameters('osType'), 'Windows'), 'Microsoft.Compute', 'Microsoft.Azure.Extensions')]",
+        "type": "[if(equals(parameters('osType'), 'Windows'), 'CustomScriptExtension', 'CustomScript')]",
+        "typeHandlerVersion": "[if(equals(parameters('osType'), 'Windows'), '1.10', '2.1')]",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "commandToExecute": "[if(equals(parameters('osType'), 'Windows'), variables('windowsScript'), variables('linuxScript'))]"
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "webURL": {
+      "type": "string",
+      "value": "[concat('http://', reference(variables('publicIpName')).ipAddress)]"
+    }
+  }
+}

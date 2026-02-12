@@ -1,0 +1,13 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "projectPrefix": { "value": "linuxlab" },
+    "osType": { "value": "Linux" },
+    "adminUsername": { "value": "azureadmin" },
+    "adminPassword": { "value": "Rishabh@123#" },
+    "location": {
+      "value": "centralindia"
+    }
+  }
+}
