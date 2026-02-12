@@ -130,7 +130,7 @@ Screenshots
 ### Files
 
 **index.html**
-```html
+``html
 <h1>Hello from Custom Docker Image</h1>
 
 
@@ -186,7 +186,7 @@ Screenshots:
 ### Steps
 
 Create an Azure Container Registry:
-```bash
+``bash
 az acr create \
   --name myacrregistry \
   --resource-group myResourceGroup \
