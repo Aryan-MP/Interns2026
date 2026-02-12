@@ -26,6 +26,8 @@ A virtual machine (VM) is a software-based emulation of a physical computer that
 
 - Created a virtual Machine by using Vnet,NSG,Public IP,NIC,Data Disk 
   - Region: East US
+  - Name:   VM-day06
+  - OS  :   Windows 
 
 ---
 

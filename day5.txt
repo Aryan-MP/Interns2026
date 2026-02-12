@@ -1,2 +1,0 @@
-Day 5 
-Task 1 to understand the git and github tools
