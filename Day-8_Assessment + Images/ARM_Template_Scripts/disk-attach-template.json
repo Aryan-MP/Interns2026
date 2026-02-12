@@ -1,0 +1,80 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+
+  "parameters": {
+    "vmName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of existing VM"
+      }
+    },
+    "diskName": {
+      "type": "string",
+      "defaultValue": "denithDataDisk"
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "East US"
+    },
+    "diskSizeGB": {
+      "type": "int",
+      "defaultValue": 32
+    }
+  },
+
+  "variables": {
+    "storageAccountType": "Standard_LRS"
+  },
+
+  "resources": [
+
+    {
+      "type": "Microsoft.Compute/disks",
+      "apiVersion": "2023-04-02",
+      "name": "[parameters('diskName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[variables('storageAccountType')]"
+      },
+      "properties": {
+        "creationData": {
+          "createOption": "Empty"
+        },
+        "diskSizeGB": "[parameters('diskSizeGB')]"
+      }
+    },
+
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-03-01",
+      "name": "[parameters('vmName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/disks', parameters('diskName'))]"
+      ],
+      "properties": {
+        "storageProfile": {
+          "dataDisks": [
+            {
+              "lun": 0,
+              "name": "[parameters('diskName')]",
+              "createOption": "Attach",
+              "managedDisk": {
+                "id": "[resourceId('Microsoft.Compute/disks', parameters('diskName'))]"
+              }
+            }
+          ]
+        }
+      }
+    }
+
+  ],
+
+  "outputs": {
+    "diskName": {
+      "type": "string",
+      "value": "[parameters('diskName')]"
+    }
+  }
+}
