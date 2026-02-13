@@ -1,0 +1,214 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "6.0.0.0",
+
+  "parameters": {
+    "vmChoice": {
+      "type": "string",
+      "allowedValues": [ "Ubuntu24", "Windows11" ]
+    },
+    "adminUsername": {
+      "type": "string",
+      "defaultValue": "Azureuser"
+    },
+    "adminPassword": {
+      "type": "secureString"
+    }
+  },
+
+  "variables": {
+    "location": "[resourceGroup().location]",
+    "vmName": "[concat(parameters('vmChoice'), '-VM')]",
+    "publicIPName": "[concat(parameters('vmChoice'), '-PIP')]",
+    "nsgName": "[concat(parameters('vmChoice'), '-NSG')]",
+    "nicName": "[concat(parameters('vmChoice'), '-NIC')]",
+    "vnetName": "ProdVnet",
+
+    "vmConfigurations": {
+      "Ubuntu24": {
+        "vmSize": "Standard_DC1s_v3",
+        "publisher": "Canonical",
+        "offer": "0001-com-ubuntu-server-jammy",
+        "sku": "22_04-lts-gen2",
+        "version": "latest",
+        "ports": [22, 80],
+        "scriptUrl": "https://storageac1202.blob.core.windows.net/task/install-nginx.sh",
+        "extensionPublisher": "Microsoft.Azure.Extensions",
+        "extensionType": "CustomScript",
+        "handlerVersion": "2.1",
+        "command": "bash install-nginx.sh"
+      },
+
+      "Windows11": {
+        "vmSize": "Standard_DC1s_v3",
+        "publisher": "MicrosoftWindowsDesktop",
+        "offer": "windows-11",
+        "sku": "win11-25h2-pro",
+        "version": "latest",
+        "ports": [3389, 80],
+        "scriptUrl": "https://storageac1202.blob.core.windows.net/task/install-iis.ps1",
+        "extensionPublisher": "Microsoft.Compute",
+        "extensionType": "CustomScriptExtension",
+        "handlerVersion": "1.10",
+        "command": "powershell -ExecutionPolicy unrestricted -File install-iis.ps1"
+      }
+    },
+
+    "selectedConfig": "[variables('vmConfigurations')[parameters('vmChoice')]]"
+  },
+
+  "resources": [
+
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('publicIPName')]",
+      "location": "[variables('location')]",
+      "sku": { "name": "Standard" },
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('nsgName')]",
+      "location": "[variables('location')]",
+      "properties": {}
+    },
+
+    {
+      "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+      "apiVersion": "2023-04-01",
+      "copy": {
+        "name": "nsgLoop",
+        "count": "[length(variables('selectedConfig').ports)]"
+      },
+      "name": "[concat(variables('nsgName'), '/AllowPort', variables('selectedConfig').ports[copyIndex()])]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+      ],
+      "properties": {
+        "priority": "[add(100, copyIndex())]",
+        "protocol": "Tcp",
+        "access": "Allow",
+        "direction": "Inbound",
+        "sourceAddressPrefix": "*",
+        "sourcePortRange": "*",
+        "destinationPortRange": "[string(variables('selectedConfig').ports[copyIndex()])]",
+        "destinationAddressPrefix": "*"
+      }
+    },
+
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('vnetName')]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+      ],
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [ "10.1.0.0/16" ]
+        },
+        "subnets": [
+          {
+            "name": "default",
+            "properties": {
+              "addressPrefix": "10.1.0.0/24",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('nicName')]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), 'default')]"
+              },
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-03-01",
+      "name": "[variables('vmName')]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[variables('selectedConfig').vmSize]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables('selectedConfig').publisher]",
+            "offer": "[variables('selectedConfig').offer]",
+            "sku": "[variables('selectedConfig').sku]",
+            "version": "[variables('selectedConfig').version]"
+          },
+          "osDisk": { "createOption": "FromImage" }
+        },
+        "osProfile": {
+          "computerName": "[variables('vmName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2023-03-01",
+      "name": "[concat(variables('vmName'), '/CustomScript')]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+      ],
+      "properties": {
+        "publisher": "[variables('selectedConfig').extensionPublisher]",
+        "type": "[variables('selectedConfig').extensionType]",
+        "typeHandlerVersion": "[variables('selectedConfig').handlerVersion]",
+        "settings": {
+          "fileUris": [
+            "[variables('selectedConfig').scriptUrl]"
+          ],
+          "commandToExecute": "[variables('selectedConfig').command]"
+        }
+      }
+    }
+
+  ]
+}
