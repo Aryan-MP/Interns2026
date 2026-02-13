@@ -1,0 +1,132 @@
+| Alias   | Cmdlet                         | Description                                                               |
+| ------- | ------------------------------ | ------------------------------------------------------------------------- |
+| %       | ForEach-Object                 | Performs an operation against each item in a collection of input objects. |
+| ?       | Where-Object                   | Selects objects from a collection based on property values.               |
+| ac      | Add-Content                    | Appends content (words/data) to a file.                                   |
+| asnp    | Add-PSSnapin                   | Adds one or more PowerShell snap-ins to the current session.              |
+| cat     | Get-Content                    | Gets the contents of a file.                                              |
+| cd      | Set-Location                   | Sets the current working location.                                        |
+| chdir   | Set-Location                   | Sets the current working location.                                        |
+| clc     | Clear-Content                  | Deletes the contents of an item but not the item.                         |
+| clear   | Clear-Host                     | Clears the display in the host program.                                   |
+| clhy    | Clear-History                  | Deletes entries from command history.                                     |
+| cli     | Clear-Item                     | Deletes the contents of an item but not the item.                         |
+| clp     | Clear-ItemProperty             | Deletes the value of a property but not the property.                     |
+| cls     | Clear-Host                     | Clears the display in the host program.                                   |
+| clv     | Clear-Variable                 | Deletes the value of a variable.                                          |
+| cnsn    | Connect-PSSession              | Reconnects to disconnected sessions.                                      |
+| compare | Compare-Object                 | Compares two sets of objects.                                             |
+| copy    | Copy-Item                      | Copies an item from one location to another.                              |
+| cp      | Copy-Item                      | Copies an item from one location to another.                              |
+| cpi     | Copy-Item                      | Copies an item from one location to another.                              |
+| cpp     | Copy-ItemProperty              | Copies a property and value from one location to another.                 |
+| curl    | Invoke-WebRequest              | Gets content from a web page.                                             |
+| cvpa    | Convert-Path                   | Converts a PowerShell path to a provider path.                            |
+| dbp     | Disable-PSBreakpoint           | Disables breakpoints in the current console.                              |
+| del     | Remove-Item                    | Deletes files and folders.                                                |
+| diff    | Compare-Object                 | Compares two sets of objects.                                             |
+| dir     | Get-ChildItem                  | Gets files and folders in a drive.                                        |
+| dnsn    | Disconnect-PSSession           | Disconnects from a session.                                               |
+| ebp     | Enable-PSBreakpoint            | Enables breakpoints in the current console.                               |
+| echo    | Write-Output                   | Sends objects to the pipeline.                                            |
+| epal    | Export-Alias                   | Exports alias information to a file.                                      |
+| epcsv   | Export-Csv                     | Converts objects to CSV and saves to file.                                |
+| epsn    | Export-PSSession               | Imports commands from another session and saves them in a module.         |
+| erase   | Remove-Item                    | Deletes files and folders.                                                |
+| etsn    | Enter-PSSession                | Starts interactive session with remote computer.                          |
+| exsn    | Exit-PSSession                 | Ends interactive session.                                                 |
+| fc      | Format-Custom                  | Uses customized view to format output.                                    |
+| fl      | Format-List                    | Formats output as a list.                                                 |
+| foreach | ForEach-Object                 | Performs operation on each item in a collection.                          |
+| ft      | Format-Table                   | Formats output as a table.                                                |
+| fw      | Format-Wide                    | Formats objects as a wide table.                                          |
+| gal     | Get-Alias                      | Gets aliases for the current session.                                     |
+| gbp     | Get-PSBreakpoint               | Gets breakpoints set in session.                                          |
+| gc      | Get-Content                    | Gets contents of a file.                                                  |
+| gci     | Get-ChildItem                  | Gets files and folders.                                                   |
+| gcm     | Get-Command                    | Gets all commands.                                                        |
+| gcs     | Get-PSCallStack                | Displays current call stack.                                              |
+| gdr     | Get-PSDrive                    | Gets drives in current session.                                           |
+| ghy     | Get-History                    | Gets commands entered in session.                                         |
+| gi      | Get-Item                       | Gets files and folders.                                                   |
+| gjb     | Get-Job                        | Gets background jobs running.                                             |
+| gl      | Get-Location                   | Gets current working location.                                            |
+| gm      | Get-Member                     | Gets properties and methods of objects.                                   |
+| gmo     | Get-Module                     | Gets imported modules.                                                    |
+| gp      | Get-ItemProperty               | Gets properties of specified item.                                        |
+| gps     | Get-Process                    | Gets processes running locally or remotely.                               |
+| group   | Group-Object                   | Groups objects by property value.                                         |
+| gsn     | Get-PSSession                  | Gets PowerShell sessions.                                                 |
+| gsv     | Get-Service                    | Gets services.                                                            |
+| gu      | Get-Unique                     | Returns unique items from sorted list.                                    |
+| gv      | Get-Variable                   | Gets variables in console.                                                |
+| gwmi    | Get-WmiObject                  | Gets WMI class instances.                                                 |
+| h       | Get-History                    | Gets session command history.                                             |
+| history | Get-History                    | Gets session command history.                                             |
+| icm     | Invoke-Command                 | Runs commands locally/remotely.                                           |
+| iex     | Invoke-Expression              | Runs command/expression locally.                                          |
+| ihy     | Invoke-History                 | Runs commands from history.                                               |
+| ii      | Invoke-Item                    | Performs default action on item.                                          |
+| ipal    | Import-Alias                   | Imports alias list from file.                                             |
+| ipcsv   | Import-Csv                     | Creates objects from CSV file.                                            |
+| ipmo    | Import-Module                  | Adds modules to session.                                                  |
+| ipsn    | Import-PSSession               | Imports commands from another session.                                    |
+| irm     | Invoke-RestMethod              | Sends HTTP/HTTPS request to REST service.                                 |
+| ise     | powershell_ise.exe             | PowerShell ISE command-line tool.                                         |
+| iwmi    | Invoke-WmiMethod               | Calls WMI methods.                                                        |
+| iwr     | Invoke-WebRequest              | Gets web content.                                                         |
+| kill    | Stop-Process                   | Stops running processes.                                                  |
+| lp      | Out-Printer                    | Sends output to printer.                                                  |
+| ls      | Get-ChildItem                  | Gets files and folders.                                                   |
+| man     | help                           | Displays help information.                                                |
+| md      | mkdir                          | Creates new item.                                                         |
+| measure | Measure-Object                 | Calculates numeric properties of objects.                                 |
+| mi      | Move-Item                      | Moves item to new location.                                               |
+| mount   | New-PSDrive                    | Creates mapped network drives.                                            |
+| move    | Move-Item                      | Moves item.                                                               |
+| mp      | Move-ItemProperty              | Moves a property.                                                         |
+| mv      | Move-Item                      | Moves item.                                                               |
+| nal     | New-Alias                      | Creates new alias.                                                        |
+| ndr     | New-PSDrive                    | Creates mapped network drives.                                            |
+| ni      | New-Item                       | Creates new item.                                                         |
+| nmo     | New-Module                     | Creates dynamic module in memory.                                         |
+| npssc   | New-PSSessionConfigurationFile | Creates session configuration file.                                       |
+| nsn     | New-PSSession                  | Creates persistent connection.                                            |
+| nv      | New-Variable                   | Creates new variable.                                                     |
+| ogv     | Out-GridView                   | Sends output to interactive table window.                                 |
+| oh      | Out-Host                       | Sends output to command line.                                             |
+| popd    | Pop-Location                   | Changes location to previous.                                             |
+| ps      | Get-Process                    | Gets running processes.                                                   |
+| pushd   | Push-Location                  | Adds location to stack.                                                   |
+| pwd     | Get-Location                   | Gets current working location.                                            |
+| r       | Invoke-History                 | Runs command from history.                                                |
+| rbp     | Remove-PSBreakpoint            | Deletes breakpoints.                                                      |
+| rcjb    | Receive-Job                    | Gets results of background jobs.                                          |
+| rcsn    | Receive-PSSession              | Gets results of commands in disconnected sessions.                        |
+| rd      | Remove-Item                    | Deletes files and folders.                                                |
+| rdr     | Remove-PSDrive                 | Deletes temporary drives.                                                 |
+| ren     | Rename-Item                    | Renames item.                                                             |
+| ri      | Remove-Item                    | Deletes files and folders.                                                |
+| rjb     | Remove-Job                     | Deletes background job.                                                   |
+| rm      | Remove-Item                    | Deletes files and folders.                                                |
+| rmdir   | Remove-Item                    | Deletes files and folders.                                                |
+| rmo     | Remove-Module                  | Removes modules.                                                          |
+| rni     | Rename-Item                    | Renames item.                                                             |
+| rnp     | Rename-ItemProperty            | Renames property.                                                         |
+| rp      | Remove-ItemProperty            | Deletes property and value.                                               |
+| rsn     | Remove-PSSession               | Closes PSSessions.                                                        |
+| rsp     | Remove-PSSnapin                | Removes snap-ins.                                                         |
+| rujb    | Resume-Job                     | Restarts suspended job.                                                   |
+| rv      | Remove-Variable                | Deletes variable and value.                                               |
+| rvpa    | Resolve-Path                   | Resolves wildcard characters in path.                                     |
+| rwmi    | Remove-WmiObject               | Deletes WMI instance.                                                     |
+| sajb    | Start-Job                      | Starts background job.                                                    |
+| sal     | Set-Alias                      | Creates/changes alias.                                                    |
+| saps    | Start-Process                  | Starts processes.                                                         |
+| sasv    | Start-Service                  | Starts stopped services.                                                  |
+| sbp     | Set-PSBreakpoint               | Sets breakpoint.                                                          |
+| sc      | Set-Content                    | Replaces file contents.                                                   |
+| select  | Select-Object                  | Selects objects or properties.                                            |
+| set     | Set-Variable                   | Sets variable value.                                                      |
+| shcm    | Show-Command                   | Creates graphical command window.                                         |
+| si      | Set-Item                       | Changes value of item.                                                    |

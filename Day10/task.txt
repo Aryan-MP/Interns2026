@@ -1,0 +1,15 @@
+
+task  
+
+create vm inside vm create another vm create file and
+ those file save in parent vm using arm template
+
+
+
+            parent vm
+               /
+              /
+        child vm
+        (do any operation result should be reflect in parent vm)
+
+        
