@@ -68,6 +68,10 @@ Steps Performed
 5️⃣ Added OS-specific web server installation script
 6️⃣ Deployed template using Azure CLI
 
+<img width="1885" height="982" <img width="1888" height="963" alt="Screenshot 2026-02-10 155231" src="https://github.com/user-attachments/assets/35c023cb-0e02-4781-ac6b-5fed9e7c69af" />
+
+
+<img width="1888" height="963" alt="Screenshot 2026-02-10 155231" src="https://github.com/user-attachments/assets/52e773fe-0b04-4c94-a430-d2d82bdbc463" />
 
 
 Achieved OS-based conditional deployment
