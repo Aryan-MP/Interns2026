@@ -1,0 +1,81 @@
+🛠 Issues & Troubleshooting Log
+❌ Issue 1: Public Access Not Permitted
+
+Error:
+
+PublicAccessNotPermitted
+
+
+Cause:
+Storage account had public access disabled.
+
+Solution:
+Used protectedSettings with storageAccountKey instead of enabling public blob.
+
+❌ Issue 2: no-hardcoded-env-urls Warning
+
+Cause:
+Used core.windows.net directly.
+
+Solution:
+Replaced with:
+
+${environment().suffixes.storage}
+
+❌ Issue 3: Custom Script Exit Status = 1
+
+Cause:
+qemu-img used backing file without specifying backing format.
+
+Solution:
+Added:
+
+-F qcow2
+
+❌ Issue 4: Disk Created Before Base Image
+
+Cause:
+qemu-img executed before downloading base image.
+
+Solution:
+Corrected execution order in script.
+
+❌ Issue 5: Shared Folder Not Visible
+
+Cause:
+9p filesystem not auto-mounted in Ubuntu cloud image.
+
+Solution:
+Manually loaded modules:
+
+modprobe 9p
+modprobe 9pnet_virtio
+
+
+Mounted manually.
+
+❌ Issue 6: Inner VM Login Confusion
+
+Cause:
+Ubuntu cloud image default user is ubuntu.
+
+Solution:
+Logged in using:
+
+ubuntu / azureuser
+
+🎓 What This Project Demonstrates
+
+Cloud automation
+
+Secure extension usage
+
+Hypervisor setup
+
+Nested virtualization
+
+Linux debugging
+
+Infrastructure troubleshooting
+
+Real-world deployment debugging

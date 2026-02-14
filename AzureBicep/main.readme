@@ -1,0 +1,237 @@
+I understand. I will keep your original explanations exactly as you wrote them and simply wrap them in a clean, structured Markdown file with the proper headings and formatting so it's ready to use as a `README.md`.
+
+---
+
+# Project Documentation: Azure Nested Virtualization
+
+## 🔷 Part 1 — Bicep Infrastructure Explanation
+
+### 🔹 Deployment Scope
+
+**targetScope = 'resourceGroup'**
+The deployment is scoped at the Resource Group level. All resources created will belong to a single Azure Resource Group.
+
+### 🔹 Parameters
+
+* **param location string = 'eastus'** → Azure region for deployment.
+* **param adminUsername string** → VM login username.
+* **@secure() param adminPassword string** → Secure parameter for VM authentication.
+* **@secure()** ensures the password is not logged or exposed in deployment history.
+
+### 🔹 Variables
+
+Defines logical names for resources:
+
+* Virtual Machine
+* VNet
+* Subnet
+* NSG
+* Public IP
+* NIC
+* DNS Label
+
+This improves maintainability and avoids hardcoding values multiple times.
+
+---
+
+## 🔷 Networking Layer
+
+### 🔹 Virtual Network (VNet)
+
+**resource vnet 'Microsoft.Network/virtualNetworks@2023-05-01'**
+Creates a VNet with:
+
+* Address space: **10.0.0.0/16**
+* Subnet: **10.0.1.0/24**
+This isolates the VM within a private Azure network.
+
+### 🔹 Network Security Group (NSG)
+
+**resource nsg 'Microsoft.Network/networkSecurityGroups@2023-05-01'**
+Defines inbound security rule:
+
+* **Rule:** Allow-SSH
+* **Port:** 22
+* **Purpose:** Remote SSH access
+Only SSH is exposed publicly.
+
+### 🔹 Public IP
+
+**resource publicIp 'Microsoft.Network/publicIPAddresses@2023-05-01'**
+
+* SKU: **Standard**
+* Allocation: **Static**
+* DNS label enabled
+Provides internet connectivity to the outer VM.
+
+### 🔹 Network Interface (NIC)
+
+**resource nic 'Microsoft.Network/networkInterfaces@2023-05-01'**
+Connects Subnet and Public IP to bind networking to the VM.
+
+---
+
+## 🔷 Outer Virtual Machine
+
+**resource vm 'Microsoft.Compute/virtualMachines@2023-09-01'**
+**Configuration:**
+| Component | Value |
+| :--- | :--- |
+| VM Size | Standard_D4s_v3 |
+| OS | Ubuntu 22.04 |
+| Disk | Managed Disk (Standard_LRS) |
+| Authentication | Username + Password |
+
+**Why Standard_D4s_v3?**
+
+* Supports Nested Virtualization.
+* Provides sufficient vCPU & RAM for inner VM.
+
+---
+
+## 🔷 Custom Script Extension
+
+**resource vmExtension 'Microsoft.Compute/virtualMachines/extensions@2023-09-01'**
+
+* **Purpose:** Executes automation script (`setup.sh`) after VM provisioning.
+* **Configuration:**
+* Publisher: Microsoft.Azure.Extensions
+* Type: CustomScript
+* File source: Azure Blob Storage
+* Command: `bash setup.sh`
+This converts the outer VM into a hypervisor automatically.
+
+
+
+---
+
+## 🔷 Part 2 — setup.sh Script Explanation
+
+### 🔹 Shebang & Error Handling
+
+**#!/bin/bash set -e**
+
+* **#!/bin/bash** → Executes script in bash shell.
+* **set -e** → Stops execution if any command fails.
+Ensures predictable provisioning.
+
+### 🔹 KVM Installation
+
+**apt install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virtinst cloud-image-utils**
+**Installed Components:**
+
+* **qemu-kvm:** Hypervisor engine
+* **libvirt-daemon-system:** VM management service
+* **virtinst:** VM creation utility
+* **cloud-image-utils:** Cloud-init ISO creation
+* **bridge-utils:** Network bridging
+Enables virtualization on outer VM.
+
+### 🔹 Enable libvirt
+
+**systemctl enable libvirtd**
+**systemctl start libvirtd**
+Starts hypervisor service.
+
+### 🔹 Shared Data Folder
+
+**mkdir -p /shared-data chmod 777 /shared-data**
+Creates host directory for host ↔ guest file sharing.
+This folder is later attached to inner VM via:
+`--filesystem /shared-data,shared-data,mode=mapped`
+
+**How It Works:**
+
+* Uses 9p filesystem.
+* Host folder is mounted inside inner VM.
+* Enables bidirectional file sharing.
+
+---
+
+## 🔷 Inner VM Image Creation
+
+### Download Base Image
+
+**wget ... -O inner-base.img**
+Downloads official Ubuntu cloud image.
+
+### Create qcow2 Disk
+
+**qemu-img create -f qcow2 -F qcow2 -b inner-base.img inner-vm.qcow2 15G**
+
+* Creates 15GB virtual disk.
+* Uses base image as backing file.
+* Saves storage space and allows faster provisioning.
+
+---
+
+## 🔷 Cloud-init Configuration
+
+**cat > user-data <<EOF**
+Creates cloud-init file to:
+
+* Set password
+* Enable SSH password authentication
+
+**cloud-localds seed.img user-data**
+Creates ISO containing metadata for first boot configuration.
+
+---
+
+## 🔷 Inner VM Creation
+
+**virt-install**
+**Important Flags Explained:**
+
+* **--name:** VM name
+* **--memory:** RAM allocation
+* **--vcpus:** CPU allocation
+* **--disk:** Attach OS disk
+* **--disk (seed.img):** Attach cloud-init ISO
+* **--network network=default:** NAT networking
+* **--filesystem:** Attach shared folder
+* **--os-variant:** OS optimization
+* **--import:** Skip OS installer
+* **--noautoconsole:** No interactive console
+
+---
+
+## 🔷 Networking Model
+
+Inner VM uses **libvirt default network** in **NAT Mode** with IP Range: **192.168.122.0/24**.
+**Flow:**
+Internet → Azure Public IP → Outer VM → (NAT) → Inner VM.
+The inner VM accesses internet via NAT through outer VM.
+
+---
+
+## 🔷 Reverse Proxy Clarification
+
+In your current setup:
+
+* You did **NOT** configure an Nginx reverse proxy.
+* Traffic does not directly route from internet to inner VM.
+* Inner VM is private behind NAT.
+* **To implement reverse proxy:** Install Nginx on outer VM and forward traffic to inner VM IP.
+
+---
+
+## 🔷 Complete Architecture Summary
+
+* **Layer 1 — Azure Infrastructure:** VNet, NSG, Public IP, Outer VM.
+* **Layer 2 — Hypervisor Layer:** KVM, libvirt, qcow2 disk, cloud-init.
+* **Layer 3 — Guest Layer:** Inner Ubuntu VM, NAT networking, 9p shared filesystem.
+
+---
+
+## 🔷 Technologies Used
+
+* Azure Bicep (IaC)
+* Azure VM Extension
+* KVM / QEMU / libvirt
+* qcow2 disk format
+* Cloud-init
+* 9p filesystem
+* NAT networking
+
+---

@@ -1,0 +1,105 @@
+📄 README FILE (Project Documentation)
+
+You can copy this into README.md.
+
+📘 Nested Virtualization on Azure
+📌 Overview
+
+This project demonstrates how to implement nested virtualization on Azure using Bicep and Custom Script Extension. An outer Azure VM acts as a hypervisor running KVM, which hosts an inner Ubuntu VM.
+
+🏗 Architecture
+
+Azure Resource Group
+
+VNet + Subnet
+
+NSG (SSH allowed)
+
+Public IP (Static)
+
+Outer VM (Standard_D4s_v3)
+
+Custom Script Extension
+
+KVM + libvirt
+
+Inner Ubuntu VM
+
+Shared folder via 9p
+
+🚀 Deployment Steps
+Step 1: Create Storage Account
+
+Upload setup.sh script to private blob container.
+
+Step 2: Secure Storage
+
+Disabled public blob access.
+
+Used protectedSettings in Custom Script Extension.
+
+Step 3: Write Bicep Template
+
+Included:
+
+VNet
+
+NSG
+
+Public IP
+
+NIC
+
+VM
+
+VM Extension
+
+Step 4: Deploy
+az deployment group create \
+  --resource-group <rg-name> \
+  --template-file twovm.bicep \
+  --parameters @pm.json
+
+🔐 Security Implementations
+
+Storage account not public
+
+Used protectedSettings for storage key
+
+Parameterized secrets
+
+Used environment().suffixes.storage
+
+SSH restricted via NSG
+
+🧪 Verification
+
+SSH into outer VM:
+
+ssh azureuser@<public-ip>
+
+
+Check inner VM:
+
+sudo virsh list --all
+
+
+Get inner VM IP:
+
+sudo virsh domifaddr inner-vm
+
+
+SSH into inner VM:
+
+ssh ubuntu@192.168.122.x
+
+📂 Shared Directory Test
+
+Inside inner VM:
+
+echo "Hello" > /shared-data/test.txt
+
+
+Inside outer VM:
+
+cat /shared-data/test.txt
