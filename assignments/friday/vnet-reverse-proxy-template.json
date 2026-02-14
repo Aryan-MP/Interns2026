@@ -1,0 +1,465 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "projectName": {
+      "type": "string",
+      "defaultValue": "myProject",
+      "metadata": {
+        "description": "Prefix for all resource names"
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "defaultValue": "azureuser",
+      "metadata": {
+        "description": "Admin username for both VMs"
+      }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Admin password for both VMs"
+      }
+    },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_D2s_v3",
+      "metadata": {
+        "description": "Size of the virtual machines"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "Eastus2",
+      "metadata": {
+        "description": "Location for all resources"
+      }
+    }
+  },
+  "variables": {
+    "vnetName": "[concat(parameters('projectName'), '-vnet')]",
+    "publicSubnetName": "public-subnet",
+    "privateSubnetName": "private-subnet",
+    "publicNsgName": "[concat(parameters('projectName'), '-public-nsg')]",
+    "privateNsgName": "[concat(parameters('projectName'), '-private-nsg')]",
+    "publicVmName": "[concat(parameters('projectName'), '-public-vm')]",
+    "privateVmName": "[concat(parameters('projectName'), '-private-vm')]",
+    "publicNicName": "[concat(variables('publicVmName'), '-nic')]",
+    "privateNicName": "[concat(variables('privateVmName'), '-nic')]",
+    "publicIpName": "[concat(variables('publicVmName'), '-pip')]",
+    "vnetAddressPrefix": "10.0.0.0/16",
+    "publicSubnetPrefix": "10.0.1.0/24",
+    "privateSubnetPrefix": "10.0.2.0/24",
+    "ubuntuOSVersion": "22_04-lts-gen2"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('publicNsgName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "AllowSSH",
+            "properties": {
+              "priority": 1000,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "22",
+              "description": "Allow SSH access from internet"
+            }
+          },
+          {
+            "name": "AllowHTTP",
+            "properties": {
+              "priority": 1001,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "80",
+              "description": "Allow HTTP access from internet for reverse proxy"
+            }
+          },
+          {
+            "name": "AllowHTTPS",
+            "properties": {
+              "priority": 1002,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "443",
+              "description": "Allow HTTPS access from internet"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('privateNsgName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "AllowSSHFromPublicSubnet",
+            "properties": {
+              "priority": 1000,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "[variables('publicSubnetPrefix')]",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "22",
+              "description": "Allow SSH from public subnet only"
+            }
+          },
+          {
+            "name": "AllowHTTPFromPublicSubnet",
+            "properties": {
+              "priority": 1001,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "[variables('publicSubnetPrefix')]",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "80",
+              "description": "Allow HTTP from public subnet only"
+            }
+          },
+          {
+            "name": "DenyAllInbound",
+            "properties": {
+              "priority": 4096,
+              "protocol": "*",
+              "access": "Deny",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "*",
+              "description": "Deny all other inbound traffic"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('vnetName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('publicNsgName'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('privateNsgName'))]"
+      ],
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('vnetAddressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('publicSubnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('publicSubnetPrefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('publicNsgName'))]"
+              }
+            }
+          },
+          {
+            "name": "[variables('privateSubnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('privateSubnetPrefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('privateNsgName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('publicIpName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[toLower(concat(parameters('projectName'), '-public-', uniqueString(resourceGroup().id)))]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('publicNicName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))]"
+              },
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('publicSubnetName'))]"
+              }
+            }
+          }
+        ],
+        "enableIPForwarding": true
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('privateNicName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('privateSubnetName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-03-01",
+      "name": "[variables('publicVmName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('publicNicName'))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[variables('publicVmName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]",
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": false,
+            "provisionVMAgent": true
+          }
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "Canonical",
+            "offer": "0001-com-ubuntu-server-jammy",
+            "sku": "[variables('ubuntuOSVersion')]",
+            "version": "latest"
+          },
+          "osDisk": {
+            "name": "[concat(variables('publicVmName'), '-osdisk')]",
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('publicNicName'))]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-03-01",
+      "name": "[variables('privateVmName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('privateNicName'))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[variables('privateVmName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]",
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": false,
+            "provisionVMAgent": true
+          }
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "Canonical",
+            "offer": "0001-com-ubuntu-server-jammy",
+            "sku": "[variables('ubuntuOSVersion')]",
+            "version": "latest"
+          },
+          "osDisk": {
+            "name": "[concat(variables('privateVmName'), '-osdisk')]",
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('privateNicName'))]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2023-03-01",
+      "name": "[concat(variables('privateVmName'), '/installNginx')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', variables('privateVmName'))]"
+      ],
+      "properties": {
+        "publisher": "Microsoft.Azure.Extensions",
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.1",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+              "commandToExecute": "[concat('sudo apt-get update -y; sudo apt-get install -y nginx; PRIVATE_IP=', reference(resourceId('Microsoft.Network/networkInterfaces', variables('privateNicName'))).ipConfigurations[0].properties.privateIPAddress, '; echo \"server { listen 80; location / { proxy_pass http://', reference(resourceId('Microsoft.Network/networkInterfaces', variables('privateNicName'))).ipConfigurations[0].properties.privateIPAddress, '; proxy_set_header Host $host; proxy_set_header X-Real-IP $remote_addr; proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; } }\" | sudo tee /etc/nginx/sites-available/default; sudo nginx -t; sudo systemctl restart nginx; sudo systemctl enable nginx')]"
+
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2023-03-01",
+      "name": "[concat(variables('publicVmName'), '/setupReverseProxy')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', variables('publicVmName'))]",
+        "[resourceId('Microsoft.Compute/virtualMachines/extensions', variables('privateVmName'), 'installNginx')]"
+      ],
+      "properties": {
+        "publisher": "Microsoft.Azure.Extensions",
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.1",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "commandToExecute": "[concat('sudo apt-get update && sudo apt-get install -y nginx && PRIVATE_VM_IP=', reference(resourceId('Microsoft.Network/networkInterfaces', variables('privateNicName'))).ipConfigurations[0].properties.privateIPAddress, ' && sudo tee /etc/nginx/sites-available/default > /dev/null <<EOF\nserver {\n    listen 80 default_server;\n    listen [::]:80 default_server;\n\n    server_name _;\n\n    # Reverse proxy to private VM\n    location / {\n        proxy_pass http://$PRIVATE_VM_IP:80;\n        proxy_set_header Host \\$host;\n        proxy_set_header X-Real-IP \\$remote_addr;\n        proxy_set_header X-Forwarded-For \\$proxy_add_x_forwarded_for;\n        proxy_set_header X-Forwarded-Proto \\$scheme;\n        \n        # WebSocket support (if needed)\n        proxy_http_version 1.1;\n        proxy_set_header Upgrade \\$http_upgrade;\n        proxy_set_header Connection \"upgrade\";\n        \n        # Timeouts\n        proxy_connect_timeout 60s;\n        proxy_send_timeout 60s;\n        proxy_read_timeout 60s;\n    }\n\n    # Health check endpoint\n    location /health {\n        access_log off;\n        return 200 \"Reverse Proxy is healthy\\n\";\n        add_header Content-Type text/plain;\n    }\n\n    # Proxy status page\n    location /proxy-status {\n        access_log off;\n        return 200 \"Reverse Proxy Status: Active\\nBackend: $PRIVATE_VM_IP:80\\nPublic VM: ', variables('publicVmName'), '\\n\";\n        add_header Content-Type text/plain;\n    }\n}\nEOF\n&& sudo nginx -t && sudo systemctl restart nginx && sudo systemctl enable nginx && echo \"Reverse proxy configured for $PRIVATE_VM_IP\" > /tmp/proxy-setup.log')]"
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "vnetName": {
+      "type": "string",
+      "value": "[variables('vnetName')]"
+    },
+    "vnetAddressSpace": {
+      "type": "string",
+      "value": "[variables('vnetAddressPrefix')]"
+    },
+    "publicSubnetName": {
+      "type": "string",
+      "value": "[variables('publicSubnetName')]"
+    },
+    "publicSubnetAddressPrefix": {
+      "type": "string",
+      "value": "[variables('publicSubnetPrefix')]"
+    },
+    "privateSubnetName": {
+      "type": "string",
+      "value": "[variables('privateSubnetName')]"
+    },
+    "privateSubnetAddressPrefix": {
+      "type": "string",
+      "value": "[variables('privateSubnetPrefix')]"
+    },
+    "publicVmName": {
+      "type": "string",
+      "value": "[variables('publicVmName')]"
+    },
+    "publicVmPublicIP": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))).ipAddress]"
+    },
+    "publicVmPrivateIP": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('publicNicName'))).ipConfigurations[0].properties.privateIPAddress]"
+    },
+    "publicVmFQDN": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))).dnsSettings.fqdn]"
+    },
+    "privateVmName": {
+      "type": "string",
+      "value": "[variables('privateVmName')]"
+    },
+    "privateVmPrivateIP": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('privateNicName'))).ipConfigurations[0].properties.privateIPAddress]"
+    },
+    "reverseProxyURL": {
+      "type": "string",
+      "value": "[concat('http://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))).ipAddress)]"
+    },
+    "reverseProxyFQDN": {
+      "type": "string",
+      "value": "[concat('http://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))).dnsSettings.fqdn)]"
+    },
+    "proxyHealthCheck": {
+      "type": "string",
+      "value": "[concat('http://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))).ipAddress, '/health')]"
+    },
+    "proxyStatus": {
+      "type": "string",
+      "value": "[concat('http://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))).ipAddress, '/proxy-status')]"
+    },
+    "accessInstructions": {
+      "type": "string",
+      "value": "[concat('Access the private VM Nginx server through the reverse proxy at: http://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))).ipAddress, ' | Check proxy status: http://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))).ipAddress, '/proxy-status | SSH to public VM: ssh ', parameters('adminUsername'), '@', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))).ipAddress)]"
+    },
+    "quickTestCommand": {
+      "type": "string",
+      "value": "[concat('curl http://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))).ipAddress)]"
+    }
+  }
+}
