@@ -1,0 +1,31 @@
+powershell -ExecutionPolicy Unrestricted -Command "
+
+$InstallIIS = 'true'
+$InstallChrome = 'true'
+
+if ($InstallIIS -eq 'true') {
+    Install-WindowsFeature -Name Web-Server -IncludeManagementTools
+}
+
+$html = @'
+<html>
+<body>
+<h1>IIS Installed via CSE</h1>
+<p>Chrome Installed via CSE</p>
+<p>Hostname: $env:COMPUTERNAME</p>
+</body>
+</html>
+'@
+
+Set-Content C:\inetpub\wwwroot\index.html $html
+
+if ($InstallChrome -eq 'true') {
+    $url='https://dl.google.com/chrome/install/375.126/chrome/install/GoogleChromeStandaloneEnterprise64.msi'
+    $out='C:\Temp\chrome.msi'
+    New-Item C:\Temp -ItemType Directory -Force
+    Invoke-WebRequest $url -OutFile $out
+    Start-Process msiexec.exe -ArgumentList '/i C:\Temp\chrome.msi /qn /norestart' -Wait
+}
+
+Start-Service W3SVC
+"
