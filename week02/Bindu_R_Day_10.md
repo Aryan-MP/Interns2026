@@ -50,6 +50,8 @@ Public/Management subnet (for secure access)
 
 Private subnet (for application VM)
 
+<img width="1920" height="1080" alt="Screenshot (151)" src="https://github.com/user-attachments/assets/91aea0f9-71de-4cf2-9b6c-40a17f03bd86" />
+
 2️⃣ Private VM Deployment
 
 Deployed a Virtual Machine inside the private subnet
@@ -75,3 +77,5 @@ Used a secure method to access the VM:
 Jump Host VM / Bastion / VPN connection
 
 Logged into the private VM through the secure channel
+<img width="1920" height="1080" alt="Screenshot (149)" src="https://github.com/user-attachments/assets/b2f25f05-05f1-4265-b6f4-efa6607dfec8" />
+
