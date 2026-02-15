@@ -1,0 +1,278 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "adminUsername": { 
+        "type": "string",
+        "defaultValue": "azureuser"
+     },
+    "adminPassword": { 
+        "type": "secureString"
+     },
+    "vmSize": { 
+        "type": "string", 
+        "defaultValue": "Standard_D2s_v3"
+     },
+     "location":{
+        "type": "string",
+        "defaultValue": "eastus2"
+     }
+  },
+  "variables": {
+    "vnetName": "myVNet",
+    "publicSubnetName": "publicSubnet",
+    "privateSubnetName": "privateSubnet",
+    "publicSubnetPrefix": "10.0.1.0/24",
+    "privateSubnetPrefix": "10.0.2.0/24",
+    "vnetAddressPrefix": "10.0.0.0/16",
+    "privateVMName": "privateWebVM",
+    "publicProxyName": "publicProxyVM",
+    "locationRS":"[parameters('location')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2024-05-01",
+      "name": "[variables('vnetName')]",
+      "location": "[variables('locationRS')]",
+      "properties": {
+        "addressSpace": { "addressPrefixes": ["[variables('vnetAddressPrefix')]"] },
+        "subnets": [
+          {
+            "name": "[variables('publicSubnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('publicSubnetPrefix')]"
+            }
+          },
+          {
+            "name": "[variables('privateSubnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('privateSubnetPrefix')]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2024-05-01",
+      "name": "publicProxyPublicIP",
+      "location": "[variables('locationRS')]",
+      "sku": { "name": "Standard" },
+      "properties": { "publicIPAllocationMethod": "Dynamic" }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2024-05-01",
+      "name": "privateNSG",
+      "location": "[variables('locationRS')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "AllowProxyToWeb",
+            "properties": {
+              "priority": 100,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "10.0.1.0/24",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "443"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2024-05-01",
+      "name": "publicNSG",
+      "location": "[variables('locationRS')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "AllowHTTPS",
+            "properties": {
+              "priority": 100,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "443"
+            }
+          },
+          {
+            "name": "AllowSSH",
+            "properties": {
+              "priority": 101,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "22",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "22"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2024-05-01",
+      "name": "[concat(variables('privateVMName'),'-nic')]",
+      "location": "[variables('locationRS')]",
+      "dependsOn": ["[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]", "[resourceId('Microsoft.Network/networkSecurityGroups', 'privateNSG')]" ],
+      "properties": {
+        "ipConfigurations": [{
+          "name": "ipconfig1",
+          "properties": {
+            "privateIPAllocationMethod": "Dynamic",
+            "subnet": { "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('privateSubnetName'))]" },
+            "publicIPAddress": { "id": null }
+          }
+        }],
+        "networkSecurityGroup": { "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'privateNSG')]" }
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2024-05-01",
+      "name": "[concat(variables('publicProxyName'),'-nic')]",
+      "location": "[variables('locationRS')]",
+      "dependsOn": ["[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]", "[resourceId('Microsoft.Network/publicIPAddresses', 'publicProxyPublicIP')]", "[resourceId('Microsoft.Network/networkSecurityGroups', 'publicNSG')]" ],
+      "properties": {
+        "ipConfigurations": [{
+          "name": "ipconfig1",
+          "properties": {
+            "privateIPAllocationMethod": "Dynamic",
+            "subnet": { "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('publicSubnetName'))]" },
+            "publicIPAddress": { "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'publicProxyPublicIP')]" }
+          }
+        }],
+        "networkSecurityGroup": { "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'publicNSG')]" }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2024-04-01",
+      "name": "[variables('privateVMName')]",
+      "location": "[variables('locationRS')]",
+      "dependsOn": ["[resourceId('Microsoft.Network/networkInterfaces', concat(variables('privateVMName'), '-nic'))]" ],
+      "properties": {
+        "hardwareProfile": { "vmSize": "[parameters('vmSize')]" },
+        "osProfile": {
+          "computerName": "[variables('privateVMName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]",
+          "customData": "[base64(concat('#cloud-config
+package_update: true
+packages:
+- nginx
+- openssl
+write_files:
+- path: /var/www/html/index.html
+  content: |
+    <html><body><h1>Private VM Static App!</h1></body></html>
+  owner: www-data:www-data
+- path: /etc/nginx/sites-available/default
+  content: |
+    server { listen 443 ssl; ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt; ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key; root /var/www/html; index index.html; location / { try_files $uri $uri/ /index.html; } }
+  owner: root:root
+runcmd:
+- openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/nginx-selfsigned.key -out /etc/ssl/certs/nginx-selfsigned.crt -subj "/CN=localhost"
+- chown -R www-data:www-data /var/www/html
+- ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
+- nginx -t && systemctl restart nginx
+- systemctl enable nginx'))]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "Canonical",
+            "offer": "0001-com-ubuntu-server-jammy",
+            "sku": "24_04-lts",
+            "version": "latest"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [{
+            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('privateVMName'), '-nic'))]"
+          }]
+        },
+        "osProfile": {
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": false
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2024-04-01",
+      "name": "[variables('publicProxyName')]",
+      "location": "[variables('locationRS')]",
+      "dependsOn": ["[resourceId('Microsoft.Network/networkInterfaces', concat(variables('publicProxyName'), '-nic'))]" ],
+      "properties": {
+        "hardwareProfile": { "vmSize": "[parameters('vmSize')]" },
+        "osProfile": {
+          "computerName": "[variables('publicProxyName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]",
+          "customData": "[base64(concat('#cloud-config
+package_update: true
+packages:
+- nginx
+write_files:
+- path: /etc/nginx/sites-available/default
+  content: |
+    server {
+      listen 443 ssl http2;
+      server_name _;
+      ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
+      ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
+      location / {
+        proxy_pass https://10.0.2.4:443;
+        proxy_ssl_verify off;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+      }
+    }
+    server { listen 80; return 301 https://$host$request_uri; }
+runcmd:
+- openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/nginx-selfsigned.key -out /etc/ssl/certs/nginx-selfsigned.crt -subj "/CN=proxy.local"
+- rm /etc/nginx/sites-enabled/default
+- ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
+- nginx -t && systemctl restart nginx
+- systemctl enable nginx'))]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "Canonical",
+            "offer": "0001-com-ubuntu-server-jammy",
+            "sku": "24_04-lts",
+            "version": "latest"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [{
+            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('publicProxyName'), '-nic'))]"
+          }]
+        },
+        "osProfile": {
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": false
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "publicProxyIP": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', 'publicProxyPublicIP')).ipAddress]"
+    }
+  }
+}
