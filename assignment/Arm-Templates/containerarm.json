@@ -1,0 +1,24 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "resources": [
+    {
+      "type": "Microsoft.ContainerInstance/containerGroups",
+      "apiVersion": "2023-05-01",
+      "name": "my-simple-container",
+      "location": "centralindia",
+      "properties": {
+        "containers": [
+          {
+            "name": "heybuddy",
+            "properties": {
+              "image": "mcr.microsoft.com/azuredocs/aci-helloworld",
+              "resources": { "requests": { "cpu": 1, "memoryInGB": 1.5 } }
+            }
+          }
+        ],
+        "osType": "Linux"
+      }
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "resources": [
+    {
+        "type": "Microsoft.Storage/StorageAccounts",
+        "apiVersion": "2025-06-06",
+        "name": "{vishardstore}",
+        "location": "centralindia",
+        "sku": {
+            "name": "Standard_LRS"
+        },
+        "kind": "StorageV2",
+        "properties": {
+            "supportHttpsTrafficOnly": {
+                "name": "route-name",
+                "type": "Microsoft.Network/routeTables/routes",
+                "apiVersion": "2018-08-01",
+                "properties": {
+                   "addressPrefix": "address-prefix",
+                   "nextHopType": "VirtualNetworkGateway",
+                   "nextHopIpAddress": "next-hop-ip"
+                }
+              }
+        }
+        
+    }
+  ]
+}

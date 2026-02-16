@@ -1,0 +1,233 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+
+  "parameters": {
+    "adminUsername": { "type": "string" },
+    "adminPassword": { "type": "securestring" },
+    "location": {
+      "type": "string",
+      "defaultValue": "centralindia"
+    }
+  },
+
+  "variables": {
+    "vnetName": "DHH-VNet",
+    "pubSubnet": "PublicSubnet",
+    "privSubnet": "PrivateSubnet",
+    "privVmIp": "10.0.2.4"
+  },
+
+  "resources": [
+
+    /* ================= VNET ================= */
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('vnetName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "addressSpace": { "addressPrefixes": ["10.0.0.0/16"] },
+        "subnets": [
+          {
+            "name": "[variables('pubSubnet')]",
+            "properties": { "addressPrefix": "10.0.1.0/24" }
+          },
+          {
+            "name": "[variables('privSubnet')]",
+            "properties": { "addressPrefix": "10.0.2.0/24" }
+          }
+        ]
+      }
+    },
+
+    /* ================= NSG (Bridge Only) ================= */
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2023-05-01",
+      "name": "bridge-nsg",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "Allow-SSH",
+            "properties": {
+              "priority": 100,
+              "access": "Allow",
+              "direction": "Inbound",
+              "protocol": "Tcp",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "22",
+              "destinationAddressPrefix": "*"
+            }
+          },
+          {
+            "name": "Allow-HTTP",
+            "properties": {
+              "priority": 110,
+              "access": "Allow",
+              "direction": "Inbound",
+              "protocol": "Tcp",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "80",
+              "destinationAddressPrefix": "*"
+            }
+          }
+        ]
+      }
+    },
+
+    /* ================= PUBLIC IP ================= */
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2023-05-01",
+      "name": "Public-IP",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Standard" },
+      "properties": { "publicIPAllocationMethod": "Static" }
+    },
+
+    /* ================= BRIDGE NIC ================= */
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2023-05-01",
+      "name": "bridge-nic",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', 'Public-IP')]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', 'bridge-nsg')]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "properties": {
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'bridge-nsg')]"
+        },
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('pubSubnet'))]"
+              },
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'Public-IP')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+
+    /* ================= PRIVATE NIC ================= */
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2023-05-01",
+      "name": "private-nic",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('privSubnet'))]"
+              },
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "[variables('privVmIp')]"
+            }
+          }
+        ]
+      }
+    },
+
+    /* ================= BRIDGE VM ================= */
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-07-01",
+      "name": "Bridge-VM",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', 'bridge-nic')]"
+      ],
+      "properties": {
+        "hardwareProfile": { "vmSize": "Standard_D2s_v3" },
+        "osProfile": {
+          "computerName": "bridge",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "Canonical",
+            "offer": "0001-com-ubuntu-server-jammy",
+            "sku": "22_04-lts",
+            "version": "latest"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            { "id": "[resourceId('Microsoft.Network/networkInterfaces', 'bridge-nic')]" }
+          ]
+        }
+      }
+    },
+
+    /* ================= PRIVATE VM ================= */
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-07-01",
+      "name": "Private-Nginx-VM",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', 'private-nic')]"
+      ],
+      "properties": {
+        "hardwareProfile": { "vmSize": "Standard_D2s_v3" },
+        "osProfile": {
+          "computerName": "secure-nginx",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "Canonical",
+            "offer": "0001-com-ubuntu-server-jammy",
+            "sku": "22_04-lts",
+            "version": "latest"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            { "id": "[resourceId('Microsoft.Network/networkInterfaces', 'private-nic')]" }
+          ]
+        }
+      }
+    },
+
+    /* ================= INSTALL NGINX PRIVATE ================= */
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2023-07-01",
+      "name": "Private-Nginx-VM/installNginx",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', 'Private-Nginx-VM')]"
+      ],
+      "properties": {
+        "publisher": "Microsoft.Azure.Extensions",
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.1",
+        "settings": {
+          "commandToExecute": "sudo apt-get update && sudo apt-get install -y nginx && echo 'Private Server Running' | sudo tee /var/www/html/index.html && sudo systemctl restart nginx"
+        }
+      }
+    }
+
+  ]
+}

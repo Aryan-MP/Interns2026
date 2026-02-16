@@ -1,0 +1,324 @@
+{
+  // ARM template schema version
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+
+  // Version of this template
+  "contentVersion": "1.0.0.0",
+
+  // =========================
+  // PARAMETERS (User Inputs)
+  // =========================
+  "parameters": {
+
+    // Boolean parameter to decide OS type
+    // true  = Windows Server + IIS
+    // false = Linux (Ubuntu) + Nginx
+    "isWindows": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Set true for Windows+IIS, false for Linux+Nginx."
+      }
+    },
+
+    // Admin username for VM login
+    "adminUsername": {
+      "type": "string"
+    },
+
+    // Secure password for VM login
+    "adminPassword": {
+      "type": "securestring"
+    },
+
+    // Name of Virtual Machine
+    "vmName": {
+      "type": "string",
+      "defaultValue": "vishal-web-vm"
+    },
+
+    // Azure region
+    "location": {
+      "type": "string",
+      "defaultValue": "centralindia"
+    }
+  },
+
+  // =========================
+  // VARIABLES (Internal Logic)
+  // =========================
+  "variables": {
+
+    // VM size
+    "vmSize": "Standard_D2s_v5",
+
+    // Network Interface name
+    "nicName": "[concat(parameters('vmName'), '-nic')]",
+
+    // Virtual Network name
+    "vnetName": "vishal-vnet",
+
+    // Subnet name
+    "subnetName": "default",
+
+    // Public IP name
+    "publicIPName": "[concat(parameters('vmName'), '-pip')]",
+
+    // Network Security Group name
+    "nsgName": "[concat(parameters('vmName'), '-nsg')]",
+
+    // Allowed port based on OS
+    // Windows → RDP (3389)
+    // Linux → HTTP (80)
+    "allowedPort": "[if(parameters('isWindows'), '3389', '80')]",
+
+    // OS image publisher
+    "osPublisher": "[if(parameters('isWindows'), 'MicrosoftWindowsServer', 'Canonical')]",
+
+    // OS offer
+    "osOffer": "[if(parameters('isWindows'), 'WindowsServer', 'UbuntuServer')]",
+
+    // OS SKU
+    "osSku": "[if(parameters('isWindows'), '2022-datacenter-azure-edition', '18.04-LTS')]"
+  },
+
+  // =========================
+  // RESOURCES
+  // =========================
+  "resources": [
+
+    // ---------------------------------
+    // 1️⃣ Public IP Address
+    // ---------------------------------
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2023-09-01",
+      "name": "[variables('publicIPName')]",
+      "location": "[parameters('location')]",
+
+      // Standard SKU is required for production workloads
+      "sku": {
+        "name": "Standard"
+      },
+
+      "properties": {
+        // Static IP (won’t change after restart)
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+
+    // ---------------------------------
+    // 2️⃣ Network Security Group (NSG)
+    // ---------------------------------
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2023-09-01",
+      "name": "[variables('nsgName')]",
+      "location": "[parameters('location')]",
+
+      "properties": {
+        "securityRules": [
+          {
+            "name": "AllowOSSpecificPort",
+            "properties": {
+              "priority": 1000,
+              "access": "Allow",
+              "direction": "Inbound",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+
+              // Allows 3389 or 80 depending on OS
+              "destinationPortRange": "[variables('allowedPort')]",
+
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*"
+            }
+          }
+        ]
+      }
+    },
+
+    // ---------------------------------
+    // 3️⃣ Virtual Network
+    // ---------------------------------
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-09-01",
+      "name": "[variables('vnetName')]",
+      "location": "[parameters('location')]",
+
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.0.0.0/16"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('subnetName')]",
+            "properties": {
+              "addressPrefix": "10.0.0.0/24"
+            }
+          }
+        ]
+      }
+    },
+
+    // ---------------------------------
+    // 4️⃣ Network Interface (NIC)
+    // ---------------------------------
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2023-09-01",
+      "name": "[variables('nicName')]",
+      "location": "[parameters('location')]",
+
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+      ],
+
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+
+              // Attach subnet
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('subnetName'))]"
+              },
+
+              // Attach public IP
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))]"
+              }
+            }
+          }
+        ],
+
+        // Attach NSG to NIC
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+        }
+      }
+    },
+
+    // ---------------------------------
+    // 5️⃣ Virtual Machine
+    // ---------------------------------
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-09-01",
+      "name": "[parameters('vmName')]",
+      "location": "[parameters('location')]",
+
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+      ],
+
+      "properties": {
+
+        // VM size
+        "hardwareProfile": {
+          "vmSize": "[variables('vmSize')]"
+        },
+
+        // OS Image
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables('osPublisher')]",
+            "offer": "[variables('osOffer')]",
+            "sku": "[variables('osSku')]",
+            "version": "latest"
+          }
+        },
+
+        // Login credentials
+        "osProfile": {
+          "computerName": "[parameters('vmName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+
+        // Attach NIC
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+            }
+          ]
+        }
+      }
+    },
+
+    // ---------------------------------
+    // 6️⃣ Windows Extension - Install IIS
+    // ---------------------------------
+    {
+      "condition": "[parameters('isWindows')]",
+
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2023-09-01",
+      "name": "[concat(parameters('vmName'), '/InstallIIS')]",
+
+      "location": "[parameters('location')]",
+
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
+      ],
+
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.10",
+
+        "settings": {
+          // PowerShell command to install IIS
+          "commandToExecute": "powershell.exe Install-WindowsFeature -name Web-Server"
+        }
+      }
+    },
+
+    // ---------------------------------
+    // 7️⃣ Linux Extension - Install Nginx
+    // ---------------------------------
+    {
+      "condition": "[not(parameters('isWindows'))]",
+
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2023-09-01",
+      "name": "[concat(parameters('vmName'), '/InstallNginx')]",
+
+      "location": "[parameters('location')]",
+
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
+      ],
+
+      "properties": {
+        "publisher": "Microsoft.Azure.Extensions",
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.1",
+
+        "settings": {
+          // Install Nginx on Ubuntu
+          "commandToExecute": "apt-get update && apt-get install -y nginx"
+        }
+      }
+    }
+  ],
+
+  // =========================
+  // OUTPUTS
+  // =========================
+  "outputs": {
+
+    // Returns Web URL using Public IP
+    "webUrl": {
+      "type": "string",
+      "value": "[concat('http://', reference(variables('publicIPName')).ipAddress)]"
+    }
+  }
+}
