@@ -38,6 +38,8 @@ Deploys Windows Server VM
 
 Uses Custom Script Extension / PowerShell
 
+<img width="1885" height="982" alt="Screenshot 2026-02-12 163357" src="https://github.com/user-attachments/assets/47022457-2bf4-4f4c-9811-ec7752f9067e" />
+
 Installs IIS using:
 
 Install-WindowsFeature -name Web-Server -IncludeManagementTools
@@ -50,6 +52,7 @@ IIS default webpage accessible via Public IP
 Deploys Ubuntu VM
 
 Uses Custom Script Extension / cloud-init
+/>
 
 Installs NGINX using:
 
@@ -61,7 +64,7 @@ NGINX default page accessible via Public IP
 
 Steps Performed
 
-1️⃣ Created ARM template (azuredeploy.json)
+1️⃣ Created ARM template 
 2️⃣ Defined parameter for OS selection
 3️⃣ Used condition logic in resource configuration
 4️⃣ Configured appropriate VM image reference
@@ -71,7 +74,6 @@ Steps Performed
 <img width="1885" height="982" <img width="1888" height="963" alt="Screenshot 2026-02-10 155231" src="https://github.com/user-attachments/assets/35c023cb-0e02-4781-ac6b-5fed9e7c69af" />
 
 
-<img width="1888" height="963" alt="Screenshot 2026-02-10 155231" src="https://github.com/user-attachments/assets/52e773fe-0b04-4c94-a430-d2d82bdbc463" />
 
 
 Achieved OS-based conditional deployment
