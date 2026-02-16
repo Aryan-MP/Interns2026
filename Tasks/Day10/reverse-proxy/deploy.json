@@ -1,0 +1,349 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+
+    "parameters": {
+        "vmName": { 
+            "type": "string",
+            "metadata": {
+                "description": "Name for the Nginx VM"
+            }
+        },
+        "adminUsername": { 
+            "type": "string",
+            "metadata": {
+                "description": "Admin username for the VM"
+            }
+        },
+        "adminPassword": { 
+            "type": "securestring",
+            "metadata": {
+                "description": "Admin password for the VM"
+            }
+        },
+        "vmSize": { 
+            "type": "string",
+            "metadata": {
+                "description": "VM size"
+            }
+        },
+        "virtualNetworkName": { 
+            "type": "string",
+            "metadata": {
+                "description": "Name of the virtual network"
+            }
+        },
+        "subnetName": { 
+            "type": "string",
+            "metadata": {
+                "description": "Name of the public subnet"
+            }
+        },
+        "networkSecurityGroupName": { 
+            "type": "string",
+            "metadata": {
+                "description": "Name of the NSG for public subnet"
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location for all resources"
+            }
+        }
+    },
+
+    "variables": {
+        // Nginx VM variables
+        "vmNameSafe": "[substring(parameters('vmName'), 0, min(length(parameters('vmName')), 15))]",
+        "nicName": "[concat(parameters('vmName'), '-nic')]",
+        "pipName": "[concat(parameters('vmName'), '-pip')]",
+        "osDiskName": "[concat(parameters('vmName'), '-osdisk')]",
+        
+        // Network variables
+        "addressPrefix": "10.10.0.0/16",
+        "publicSubnetName": "[parameters('subnetName')]",
+        "publicSubnetPrefix": "10.10.1.0/24",
+        "privateSubnetName": "private-subnet",
+        "privateSubnetPrefix": "10.10.2.0/24",
+        
+        // NSG variables
+        "publicNsgName": "[parameters('networkSecurityGroupName')]",
+        "privateNsgName": "private-nsg",
+        
+        // Static IP for Nginx VM
+        "nginxStaticIP": "10.10.2.10"
+    },
+
+    "resources": [
+        // ============================================
+        // NETWORK SECURITY GROUPS
+        // ============================================
+        
+        // Public Subnet NSG - Allows HTTP/HTTPS only
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2023-09-01",
+            "name": "[variables('publicNsgName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "Allow-HTTP-Inbound",
+                        "properties": {
+                            "priority": 1000,
+                            "protocol": "Tcp",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "80",
+                            "destinationAddressPrefix": "*",
+                            "description": "Allow HTTP traffic"
+                        }
+                    },
+                    {
+                        "name": "Allow-HTTPS-Inbound",
+                        "properties": {
+                            "priority": 1010,
+                            "protocol": "Tcp",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "443",
+                            "destinationAddressPrefix": "*",
+                            "description": "Allow HTTPS traffic"
+                        }
+                    }
+                ]
+            }
+        },
+
+        // Private Subnet NSG - Blocks all outbound internet
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2023-09-01",
+            "name": "[variables('privateNsgName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "Allow-VNet-Inbound",
+                        "properties": {
+                            "priority": 1000,
+                            "protocol": "*",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "VirtualNetwork",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "destinationAddressPrefix": "VirtualNetwork",
+                            "description": "Allow all internal VNet traffic"
+                        }
+                    },
+                    {
+                        "name": "Deny-Internet-Outbound",
+                        "properties": {
+                            "priority": 4000,
+                            "protocol": "*",
+                            "access": "Deny",
+                            "direction": "Outbound",
+                            "sourceAddressPrefix": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "destinationAddressPrefix": "Internet",
+                            "description": "Block all outbound internet access"
+                        }
+                    },
+                    {
+                        "name": "Allow-VNet-Outbound",
+                        "properties": {
+                            "priority": 1000,
+                            "protocol": "*",
+                            "access": "Allow",
+                            "direction": "Outbound",
+                            "sourceAddressPrefix": "VirtualNetwork",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "destinationAddressPrefix": "VirtualNetwork",
+                            "description": "Allow outbound to VNet"
+                        }
+                    }
+                ]
+            }
+        },
+
+        // ============================================
+        // VIRTUAL NETWORK WITH TWO SUBNETS
+        // ============================================
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2023-09-01",
+            "name": "[parameters('virtualNetworkName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', variables('publicNsgName'))]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', variables('privateNsgName'))]"
+            ],
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [ "[variables('addressPrefix')]" ]
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('publicSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[variables('publicSubnetPrefix')]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('publicNsgName'))]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[variables('privateSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[variables('privateSubnetPrefix')]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('privateNsgName'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+
+        // ============================================
+        // NGINX WEB SERVER VM (PRIVATE SUBNET)
+        // ============================================
+        
+        // Public IP
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2023-09-01",
+            "name": "[variables('pipName')]",
+            "location": "[parameters('location')]",
+            "sku": { "name": "Standard" },
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            }
+        },
+
+        // NIC with Static Private IP
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2023-09-01",
+            "name": "[variables('nicName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Static",
+                            "privateIPAddress": "[variables('nginxStaticIP')]",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+                            },
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), variables('privateSubnetName'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+
+        // Nginx VM
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2023-09-01",
+            "name": "[variables('vmNameSafe')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('vmSize')]"
+                },
+                "osProfile": {
+                    "computerName": "[variables('vmNameSafe')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]",
+                    "linuxConfiguration": {
+                        "disablePasswordAuthentication": false
+                    }
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "Canonical",
+                        "offer": "0001-com-ubuntu-server-jammy",
+                        "sku": "22_04-lts-gen2",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "name": "[variables('osDiskName')]",
+                        "createOption": "FromImage",
+                        "managedDisk": {
+                            "storageAccountType": "Standard_LRS"
+                        }
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+                        }
+                    ]
+                }
+            }
+        },
+
+        // ============================================
+        // NGINX INSTALLATION
+        // ============================================
+        {
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "apiVersion": "2023-09-01",
+            "name": "[concat(variables('vmNameSafe'), '/InstallNginx')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', variables('vmNameSafe'))]"
+            ],
+            "properties": {
+                "publisher": "Microsoft.Azure.Extensions",
+                "type": "CustomScript",
+                "typeHandlerVersion": "2.1",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "commandToExecute": "apt-get update && apt-get install -y nginx && echo '<html><body><h1>Secure Nginx Web Server</h1><p>Running in Private Subnet with Static IP: 10.10.2.10</p><p>No Internet Access - Maximum Security!</p></body></html>' > /var/www/html/index.html && systemctl restart nginx && systemctl enable nginx"
+                }
+            }
+        }
+    ],
+
+    "outputs": {
+        "publicIP": {
+            "type": "string",
+            "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))).ipAddress]"
+        },
+        "privateIP": {
+            "type": "string",
+            "value": "[variables('nginxStaticIP')]"
+        },
+        "websiteURL": {
+            "type": "string",
+            "value": "[concat('http://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))).ipAddress)]"
+        },
+        "accessInstructions": {
+            "type": "string",
+            "value": "[concat('Access your website at: http://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))).ipAddress, ' | Private Static IP: ', variables('nginxStaticIP'))]"
+        }
+    }
+}

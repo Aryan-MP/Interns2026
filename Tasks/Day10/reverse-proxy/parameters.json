@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "vmName": {
-      "value": "mydefaultflexiblevmtwo"
+      "value": "nginx-web-vm"
     },
     "adminUsername": {
       "value": "demo"
@@ -18,10 +18,10 @@
       "value": "vNet"
     },
     "subnetName": {
-      "value": "Subnet"
+      "value": "public-subnet"
     },
     "networkSecurityGroupName": {
-      "value": "SecGroupNet"
+      "value": "public-nsg"
     }
   }
 }

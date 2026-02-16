@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "vmName": {
-      "value": "mydefaultflexiblevmtwo"
+      "value": "windows-web-vm"
     },
     "adminUsername": {
       "value": "demo"
@@ -11,17 +11,23 @@
     "adminPassword": {
       "value": "Demo@12345678"
     },
+    "location": {
+      "value": "westus2"
+    },
     "vmSize": {
-      "value": "Standard_L2aos_v4"
+      "value": "Standard_E2s_v3"
     },
     "virtualNetworkName": {
       "value": "vNet"
     },
     "subnetName": {
-      "value": "Subnet"
+      "value": "public-subnet"
     },
     "networkSecurityGroupName": {
-      "value": "SecGroupNet"
+      "value": "public-nsg"
+    },
+    "scriptUri": {
+      "value": "https://scripts20260215192147.blob.core.windows.net/scripts/ConfigureVM.ps1"
     }
   }
 }
