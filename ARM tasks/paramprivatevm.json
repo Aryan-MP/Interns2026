@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+
+    "location": {
+      "value": "eastus"
+    },
+
+    "vmName": {
+      "value": "myLinuxVM"
+    },
+
+    "adminUsername": {
+      "value": "azureuser"
+    },
+
+    "sshKey": {
+      "value": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQD1vhvDG3AjXe5xCIcQDxV2apFC0vUAQo6A7K78T44t7kZp9s+XOX1+1EcnwCBbFLKWjpJRgeOlaoXhUStfPcau7YKigMVZG9rwI5C4xUm0IZmyVQMzUIYsZo3TA409CJRxZYl1lWExjpv9BRq8sJTiKz7RF2+/lSw9t9RQ42GYjcwkkn3NRUERIm/VTZk6xoLyuO7OtyW4MjbA+YJC8nHXeoP2aq3bAKwk3tJEF0DXUBkoj0Zl4JDJ/reBlJ/Xcv48Mvmv+3rygNm7t5w/FEERmXr1tLjU/h99x4jdJ0FR6P5Qm+Fwd0Lq/9GfIIUg49kXpWB8KnilpuwSEoKCNUAazd7IQsc+1mSwAui0N46eQs27LqxPn9GMgtiNNjpDI0K60E8kdOY2TKJrVkFfHmeWhNQ2V+JDyYa5I6dUTHNSQ3aaj40vwRI+Z3hxRdWiej8y/sunFzNHcHUhfpOGLKCmpARnGnj/zc7Q+sHmJbjuizilxqk4EoIRfb0KcyNU8N1DCg/q4Ro5WjSmHml5jMFwxbL0yq9/W6PygJ+gz9pBl6T/WcBP5s+JgVNMatgMLmOenDbR3iQqp5MquDIveIKGAmeg7zDpvM5kzMReTvxPppOMfLqfMwbuooAVDFZh9FaSYOrI8/S953gv4br0LCPmWEYrXKWCbuKyjoJfu2tsbQ== himanshu malik@HimanshuMalik"
+    },
+
+    "vmSize": {
+      "value": "Standard_DC2s_v3"
+    }
+
+  }
+}

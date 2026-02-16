@@ -1,0 +1,39 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+
+    "location": {
+      "value": "centralindia"
+    },
+
+    "vmName": {
+      "value": "hm-winvm"
+    },
+
+    "adminUsername": {
+      "value": "azureuser"
+    },
+
+    "adminPassword": {
+      "value": "malikhimanshu_01"
+    },
+
+    "storageAccountName": {
+      "value": "hmlearnst2292003"
+    },
+
+    "containerName": {
+      "value": "scripts"
+    },
+
+    "scriptFileContent": {
+      "value": "# ============================================\n# Azure Custom Script Extension – FINAL\n# ============================================\n$ErrorActionPreference = \"SilentlyContinue\"\n$ProgressPreference = \"SilentlyContinue\"\n$logPath = \"C:\\Temp\\extension.log\"\nNew-Item -ItemType Directory -Force -Path C:\\Temp | Out-Null\n\"$(Get-Date): Script started\" | Out-File $logPath -Append\n$customDataPath = \"C:\\AzureData\\CustomData.bin\"\nif (!(Test-Path $customDataPath)) { \"CustomData.bin not found. Exiting.\" | Out-File $logPath -Append; exit 0 }\ntry {\n  $bytes = [System.IO.File]::ReadAllBytes($customDataPath)\n  try {\n    $decodedText = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String([System.Text.Encoding]::UTF8.GetString($bytes).Trim()))\n  }\n  catch {\n    $decodedText = [System.Text.Encoding]::UTF8.GetString($bytes)\n  }\n}\ncatch {\n  \"Failed to read custom data. Exiting.\" | Out-File $logPath -Append\n  exit 0\n}\n$config = @{}\n$decodedText -split \"`n\" | ForEach-Object {\n  if ($_ -match \"=\") {\n    $k, $v = $_ -split \"=\", 2\n    $config[$k.Trim()] = $v.Trim().ToLower()\n  }\n}\nif ($config[\"install_iis\"] -eq \"true\") {\n  Install-WindowsFeature Web-Server -IncludeManagementTools | Out-Null\n  if ($config.ContainsKey(\"iis_data\")) {\n    $html = \"<html><body style='font-family:Arial'><h1>$($config[\"iis_data\"])</h1></body></html>\"\n    $html | Out-File \"C:\\inetpub\\wwwroot\\index.html\" -Encoding utf8 -Force\n  }\n}\nif ($config[\"install_chrome\"] -eq \"true\") {\n  [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n  $installer = \"C:\\Temp\\chrome.exe\"\n  Invoke-WebRequest \"https://dl.google.com/chrome/install/latest/chrome_installer.exe\" -OutFile $installer -UseBasicParsing\n  Start-Process $installer -ArgumentList \"/silent /install\" -Wait\n}\n\"$(Get-Date): Script completed successfully\" | Out-File $logPath -Append\nexit 0"
+    },
+
+    "vmCustomData": {
+      "value": "install_iis=true\ninstall_chrome=true\niis_data=Himanshu Malik"
+    }
+
+  }
+}

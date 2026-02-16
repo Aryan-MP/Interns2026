@@ -1,0 +1,55 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+
+  "variables": {
+    "roleDefinitionId": "[guid(subscription().id, 'EastUS-VM-Creator')]",
+    "rgScope": "[resourceId('Microsoft.Resources/resourceGroups', 'himanshumalik2292003-rg')]"
+  },
+
+  "resources": [
+    {
+      "type": "Microsoft.Authorization/roleDefinitions",
+      "apiVersion": "2022-04-01",
+      "name": "[variables('roleDefinitionId')]",
+      "properties": {
+        "roleName": "EastUS-VM-Creator",
+        "description": "Allows VM creation only in East US region",
+        "type": "CustomRole",
+        "permissions": [
+          {
+            "actions": [
+              "Microsoft.Compute/virtualMachines/read",
+              "Microsoft.Compute/virtualMachines/write",
+              "Microsoft.Network/*/read",
+              "Microsoft.Storage/*/read",
+              "Microsoft.Resources/subscriptions/resourceGroups/read"
+            ],
+            "notActions": [],
+            "dataActions": [],
+            "notDataActions": []
+          }
+        ],
+        "assignableScopes": [
+          "[variables('rgScope')]"
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(variables('rgScope'), 'e806e5b1-8ed1-49ce-8208-2840b0b8ce66', variables('roleDefinitionId'))]",
+      "scope": "[variables('rgScope')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefinitionId'))]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefinitionId'))]",
+        "principalId": "e806e5b1-8ed1-49ce-8208-2840b0b8ce66",
+        "principalType": "User",
+        "conditionVersion": "2.0",
+        "condition": "@Request[Microsoft.Compute/virtualMachines:location] StringEquals 'eastus'"
+      }
+    }
+  ]
+}

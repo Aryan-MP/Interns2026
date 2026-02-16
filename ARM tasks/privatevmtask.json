@@ -1,0 +1,386 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Azure region for all resources."
+      }
+    },
+    "vmName": {
+      "type": "string",
+      "defaultValue": "myLinuxVM",
+      "metadata": {
+        "description": "Name of the Linux Virtual Machine."
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "Administrator username for the VM."
+      }
+    },
+    "sshKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "SSH public key for VM authentication."
+      }
+    },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_B2s",
+      "metadata": {
+        "description": "Size / SKU for the Virtual Machine."
+      }
+    }
+  },
+
+  "variables": {
+    "vnetName": "myVnet",
+    "vnetAddressPrefix": "10.0.0.0/16",
+
+    "vmSubnetName": "vm-subnet",
+    "vmSubnetPrefix": "10.0.1.0/24",
+
+    "containerSubnetName": "container-subnet",
+    "containerSubnetPrefix": "10.0.2.0/24",
+
+    "vmNsgName": "vm-subnet-nsg",
+    "containerNsgName": "container-subnet-nsg",
+
+    "nicName": "[concat(parameters('vmName'), '-nic')]",
+
+    "containerGroupName": "public-nginx-container",
+
+    "customScriptCommand": "apt-get update -y && apt-get install -y nginx && echo '<!DOCTYPE html><html><head><title>Welcome</title></head><body><h1>Welcome to Himanshu Malik Website</h1></body></html>' > /var/www/html/index.html && systemctl enable nginx && systemctl start nginx"
+  },
+
+  "resources": [
+
+    /* ─────────────────────────────────────────
+       1.  NSG  –  vm-subnet
+       ───────────────────────────────────────── */
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('vmNsgName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "Allow-HTTP-From-ContainerSubnet",
+            "properties": {
+              "priority": 100,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "10.0.2.0/24",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "80"
+            }
+          },
+          {
+            "name": "Deny-All-Inbound",
+            "properties": {
+              "priority": 4000,
+              "protocol": "*",
+              "access": "Deny",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "*"
+            }
+          }
+        ]
+      }
+    },
+
+    /* ─────────────────────────────────────────
+       2.  NSG  –  container-subnet
+       ───────────────────────────────────────── */
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('containerNsgName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "Allow-HTTP-From-Internet",
+            "properties": {
+              "priority": 100,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "Internet",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "80"
+            }
+          },
+          {
+            "name": "Deny-All-Inbound",
+            "properties": {
+              "priority": 4000,
+              "protocol": "*",
+              "access": "Deny",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "*"
+            }
+          }
+        ]
+      }
+    },
+
+    /* ─────────────────────────────────────────
+       3.  Virtual Network  +  Subnets
+       ───────────────────────────────────────── */
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('vnetName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('vmNsgName'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('containerNsgName'))]"
+      ],
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('vnetAddressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('vmSubnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('vmSubnetPrefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('vmNsgName'))]"
+              }
+            }
+          },
+          {
+            "name": "[variables('containerSubnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('containerSubnetPrefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('containerNsgName'))]"
+              },
+              "delegations": [
+                {
+                  "name": "containerGroupDelegation",
+                  "properties": {
+                    "serviceName": "Microsoft.ContainerInstance/containerGroups"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+
+    /* ─────────────────────────────────────────
+       4.  NIC  –  VM  (no public IP)
+       ───────────────────────────────────────── */
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('nicName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('vmSubnetName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+
+    /* ─────────────────────────────────────────
+       5.  Linux Virtual Machine
+       ───────────────────────────────────────── */
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-03-01",
+      "name": "[parameters('vmName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[parameters('vmName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": true,
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "[concat('/home/', parameters('adminUsername'), '/.ssh/authorized_keys')]",
+                  "keyData": "[parameters('sshKey')]"
+                }
+              ]
+            }
+          }
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "Canonical",
+            "offer": "0001-com-ubuntu-server-jammy",
+            "sku": "22_04-lts-gen2",
+            "version": "latest"
+          },
+          "osDisk": {
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            },
+            "deleteOption": "Delete"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+            }
+          ]
+        }
+      }
+    },
+
+    /* ─────────────────────────────────────────
+       6.  Custom Script Extension  –  nginx
+       ───────────────────────────────────────── */
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2023-03-01",
+      "name": "[concat(parameters('vmName'), '/installNginx')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
+      ],
+      "properties": {
+        "publisher": "Microsoft.Azure.Extensions",
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.1",
+        "autoUpgradeMinorVersion": true,
+        "settings": {},
+        "protectedSettings": {
+          "commandToExecute": "[variables('customScriptCommand')]"
+        }
+      }
+    },
+
+    /* ─────────────────────────────────────────
+       7.  Azure Container Instance  –  public nginx
+       ───────────────────────────────────────── */
+    {
+      "type": "Microsoft.ContainerInstance/containerGroups",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('containerGroupName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]",
+        "[resourceId('Microsoft.Compute/virtualMachines/extensions', parameters('vmName'), 'installNginx')]"
+      ],
+      "properties": {
+        "sku": "Standard",
+        "containers": [
+          {
+            "name": "nginx",
+            "properties": {
+              "image": "nginx:latest",
+              "command": [
+                "/bin/sh",
+                "-c",
+                "echo \"server { listen 80; location / { proxy_pass http://$VM_IP; proxy_set_header Host $host; proxy_set_header X-Real-IP $remote_addr; } }\" > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
+              ],
+              "environmentVariables": [
+                {
+                  "name": "VM_IP",
+                  "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))).ipConfigurations[0].properties.privateIPAddress]"
+                }
+              ],
+              "ports": [
+                {
+                  "protocol": "TCP",
+                  "port": 80
+                }
+              ],
+              "resources": {
+                "requests": {
+                  "cpu": 1,
+                  "memoryInGB": 1.5
+                }
+              }
+            }
+          }
+        ],
+        "osType": "Linux",
+        "restartPolicy": "Always",
+        "ipAddress": {
+          "type": "Public",
+          "ports": [
+            {
+              "protocol": "TCP",
+              "port": 80
+            }
+          ]
+        },
+        "subnetIds": [
+          {
+            "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('containerSubnetName'))]"
+          }
+        ]
+      }
+    }
+
+  ],
+
+  "outputs": {
+    "containerPublicIP": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.ContainerInstance/containerGroups', variables('containerGroupName'))).ipAddress.ip]",
+      "metadata": {
+        "description": "Public IP address of the Azure Container Instance running nginx."
+      }
+    },
+    "vmPrivateIP": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))).ipConfigurations[0].properties.privateIPAddress]",
+      "metadata": {
+        "description": "Private IP address dynamically assigned to the Linux VM."
+      }
+    },
+    "vnetId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+      "metadata": {
+        "description": "Resource ID of the Virtual Network."
+      }
+    }
+  }
+}
