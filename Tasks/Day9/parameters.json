@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmName": {
+      "value": "mydefaultflexiblevmtwo"
+    },
+    "adminUsername": {
+      "value": "demo"
+    },
+    "adminPassword": {
+      "value": "Demo@12345678"
+    },
+    "vmSize": {
+      "value": "Standard_L2aos_v4"
+    },
+    "virtualNetworkName": {
+      "value": "vNet"
+    },
+    "subnetName": {
+      "value": "Subnet"
+    },
+    "networkSecurityGroupName": {
+      "value": "SecGroupNet"
+    }
+  }
+}
