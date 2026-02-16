@@ -1,0 +1,14 @@
+sudo apt install -y qemu-kvm libvirt-daemon-system libvirt-clients virtinst bridge-utils cloud-image-utils openssl && sudo systemctl enable libvirtd && sudo systemctl start libvirtd && sudo usermod -aG libvirt $(whoami) && ISO_URL="https://releases.ubuntu.com/jammy/ubuntu-22.04.5-live-server-amd64.iso" && ISO_NAME="ubuntu-22.04.iso" && VM_NAME="nested-ubuntu" && RAM_MB=2048 && VCPUS=2 && DISK_SIZE=20G && VM_USER="devopsuser" && VM_PASS="Devops@123" && wget -O $ISO_NAME $ISO_URL && sudo qemu-img create -f qcow2 /var/lib/libvirt/images/$VM_NAME.qcow2 $DISK_SIZE && mkdir -p cloud-init && echo -e "#cloud-config\nusers:\n  - name: $VM_USER\n    sudo: ALL=(ALL) NOPASSWD:ALL\n    groups: sudo\n    shell: /bin/bash\n    lock_passwd: false\n    passwd: $(openssl passwd -1 $VM_PASS)\nssh_pwauth: True\ndisable_root: false" > cloud-init/user-data && echo -e "instance-id: $VM_NAME\nlocal-hostname: $VM_NAME" > cloud-init/meta-data && cloud-localds cloud-init.iso cloud-init/user-data cloud-init/meta-data && sudo virt-install --name $VM_NAME --ram $RAM_MB --vcpus $VCPUS --disk path=/var/lib/libvirt/images/$VM_NAME.qcow2,format=qcow2 --disk path=cloud-init.iso,device=cdrom --cdrom $ISO_NAME --os-type linux --os-variant ubuntu22.04 --network network=default --graphics none --console pty,target_type=serial --noautoconsole && echo "==== VM Created Successfully ====" && echo "Connect using: sudo virsh console $VM_NAME"
+
+
+virsh list --all
+
+sudo virsh console nested-ubuntu
+
+sudo virsh domifaddr nested-ubuntu
+
+VM_USER=devopsuser
+VM_PASS=Devops@123
+
+
+

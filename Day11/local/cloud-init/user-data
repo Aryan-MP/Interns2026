@@ -1,0 +1,13 @@
+#cloud-config
+users:
+  - name: devopsuser
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: sudo
+    shell: /bin/bash
+    lock_passwd: false
+    passwd: $1$FduDZRk4$ckAy1H/EPjKTsfSsqxiPc/
+
+ssh_pwauth: True
+disable_root: false
+chpasswd:
+  expire: false

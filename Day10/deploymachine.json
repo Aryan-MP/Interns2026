@@ -27,7 +27,6 @@
     "privateVMName": "dkskprivateVM"
   },
   "resources": [
-
     {
       "type": "Microsoft.Network/networkSecurityGroups",
       "apiVersion": "2023-02-01",
@@ -176,7 +175,7 @@
         "[resourceId('Microsoft.Network/networkInterfaces', variables('publicNIC'))]"
       ],
       "properties": {
-        "hardwareProfile": { "vmSize": "Standard_D2s_v3" },
+        "hardwareProfile": { "vmSize": "Standard_DC1ds_v3" },
         "osProfile": {
           "computerName": "skpublicvm",
           "adminUsername": "[parameters('adminUsername')]",
@@ -192,7 +191,9 @@
         },
         "networkProfile": {
           "networkInterfaces": [
-            { "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('publicNIC'))]" }
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('publicNIC'))]"
+            }
           ]
         }
       }
@@ -207,7 +208,7 @@
         "[resourceId('Microsoft.Network/networkInterfaces', variables('privateNIC'))]"
       ],
       "properties": {
-        "hardwareProfile": { "vmSize": "Standard_D2s_v3" },
+        "hardwareProfile": { "vmSize": "Standard_DC1ds_v3" },
         "osProfile": {
           "computerName": "myprivatevm",
           "adminUsername": "[parameters('adminUsername')]",
@@ -223,7 +224,9 @@
         },
         "networkProfile": {
           "networkInterfaces": [
-            { "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('privateNIC'))]" }
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('privateNIC'))]"
+            }
           ]
         }
       }
@@ -246,6 +249,5 @@
         }
       }
     }
-
   ]
 }
