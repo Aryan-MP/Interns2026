@@ -1,0 +1,55 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+
+    "vmName": {
+      "value": "simpleLinuxVM"
+    },
+
+    "adminUsername": {
+      "value": "azureuser"
+    },
+
+    "authenticationType": {
+      "value": "password"
+    },
+
+    "adminPasswordOrKey": {
+      "value": "P@ssword12345!"
+    },
+
+    "dnsLabelPrefix": {
+      "value": "linuxvm-demo"
+    },
+
+    "ubuntuOSVersion": {
+      "value": "Ubuntu-2204"
+    },
+
+    "location": {
+      "value": "eastus"
+    },
+
+    "vmSize": {
+      "value": "Standard_D2s_v3"
+    },
+
+    "virtualNetworkName": {
+      "value": "vNet"
+    },
+
+    "subnetName": {
+      "value": "Subnet"
+    },
+
+    "networkSecurityGroupName": {
+      "value": "SecGroupNet"
+    },
+
+    "securityType": {
+      "value": "TrustedLaunch"
+    }
+
+  }
+}
