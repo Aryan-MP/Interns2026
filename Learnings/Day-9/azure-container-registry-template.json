@@ -1,0 +1,132 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "registryName": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 50,
+      "metadata": {
+        "description": "Name of the container registry (must be globally unique, alphanumeric only)"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for the container registry"
+      }
+    },
+    "skuName": {
+      "type": "string",
+      "defaultValue": "Basic",
+      "allowedValues": [
+        "Basic",
+        "Standard",
+        "Premium"
+      ],
+      "metadata": {
+        "description": "SKU of the container registry"
+      }
+    },
+    "adminUserEnabled": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable admin user"
+      }
+    },
+    "publicNetworkAccess": {
+      "type": "string",
+      "defaultValue": "Enabled",
+      "allowedValues": [
+        "Enabled",
+        "Disabled"
+      ],
+      "metadata": {
+        "description": "Public network access"
+      }
+    },
+    "zoneRedundancy": {
+      "type": "string",
+      "defaultValue": "Disabled",
+      "allowedValues": [
+        "Enabled",
+        "Disabled"
+      ],
+      "metadata": {
+        "description": "Zone redundancy (Premium SKU only)"
+      }
+    },
+    "dataEndpointEnabled": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable dedicated data endpoint (Premium SKU only)"
+      }
+    },
+    "anonymousPullEnabled": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable anonymous pull access"
+      }
+    },
+    "encryption": {
+      "type": "object",
+      "defaultValue": {
+        "status": "disabled"
+      },
+      "metadata": {
+        "description": "Encryption configuration (Premium SKU only)"
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2023-07-01",
+      "name": "[parameters('registryName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('skuName')]"
+      },
+      "properties": {
+        "adminUserEnabled": "[parameters('adminUserEnabled')]",
+        "publicNetworkAccess": "[parameters('publicNetworkAccess')]",
+        "zoneRedundancy": "[parameters('zoneRedundancy')]",
+        "dataEndpointEnabled": "[parameters('dataEndpointEnabled')]",
+        "anonymousPullEnabled": "[parameters('anonymousPullEnabled')]",
+        "encryption": "[parameters('encryption')]",
+        "networkRuleBypassOptions": "AzureServices",
+        "policies": {
+          "quarantinePolicy": {
+            "status": "disabled"
+          },
+          "trustPolicy": {
+            "type": "Notary",
+            "status": "disabled"
+          },
+          "retentionPolicy": {
+            "days": 7,
+            "status": "disabled"
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "registryId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.ContainerRegistry/registries', parameters('registryName'))]"
+    },
+    "loginServer": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.ContainerRegistry/registries', parameters('registryName'))).loginServer]"
+    },
+    "registryName": {
+      "type": "string",
+      "value": "[parameters('registryName')]"
+    }
+  }
+}

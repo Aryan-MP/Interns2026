@@ -1,0 +1,183 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "containerGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the container group"
+      }
+    },
+    "containerName": {
+      "type": "string",
+      "defaultValue": "my-container",
+      "metadata": {
+        "description": "Name of the container"
+      }
+    },
+    "image": {
+      "type": "string",
+      "defaultValue": "mcr.microsoft.com/azuredocs/aci-helloworld:latest",
+      "metadata": {
+        "description": "Container image to deploy"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources"
+      }
+    },
+    "cpuCores": {
+      "type": "string",
+      "defaultValue": "1",
+      "metadata": {
+        "description": "Number of CPU cores"
+      }
+    },
+    "memoryInGb": {
+      "type": "string",
+      "defaultValue": "1.5",
+      "metadata": {
+        "description": "Memory in GB"
+      }
+    },
+    "osType": {
+      "type": "string",
+      "defaultValue": "Linux",
+      "allowedValues": [
+        "Linux",
+        "Windows"
+      ],
+      "metadata": {
+        "description": "Operating system type"
+      }
+    },
+    "restartPolicy": {
+      "type": "string",
+      "defaultValue": "Always",
+      "allowedValues": [
+        "Always",
+        "OnFailure",
+        "Never"
+      ],
+      "metadata": {
+        "description": "Restart policy for the container"
+      }
+    },
+    "port": {
+      "type": "int",
+      "defaultValue": 80,
+      "metadata": {
+        "description": "Port to expose"
+      }
+    },
+    "protocol": {
+      "type": "string",
+      "defaultValue": "TCP",
+      "allowedValues": [
+        "TCP",
+        "UDP"
+      ],
+      "metadata": {
+        "description": "Network protocol"
+      }
+    },
+    "dnsNameLabel": {
+      "type": "string",
+      "metadata": {
+        "description": "DNS name label (must be unique within Azure region)"
+      }
+    },
+    "environmentVariables": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "Environment variables for the container"
+      }
+    },
+    "imageRegistryServer": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Container registry server (leave empty for public images)"
+      }
+    },
+    "imageRegistryUsername": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Container registry username"
+      }
+    },
+    "imageRegistryPassword": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Container registry password"
+      }
+    }
+  },
+  "variables": {
+    "hasRegistryCredentials": "[not(empty(parameters('imageRegistryServer')))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ContainerInstance/containerGroups",
+      "apiVersion": "2023-05-01",
+      "name": "[parameters('containerGroupName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "containers": [
+          {
+            "name": "[parameters('containerName')]",
+            "properties": {
+              "image": "[parameters('image')]",
+              "resources": {
+                "requests": {
+                  "cpu": "[parameters('cpuCores')]",
+                  "memoryInGB": "[parameters('memoryInGb')]"
+                }
+              },
+              "ports": [
+                {
+                  "port": "[parameters('port')]",
+                  "protocol": "[parameters('protocol')]"
+                }
+              ],
+              "environmentVariables": "[parameters('environmentVariables')]"
+            }
+          }
+        ],
+        "osType": "[parameters('osType')]",
+        "restartPolicy": "[parameters('restartPolicy')]",
+        "ipAddress": {
+          "type": "Public",
+          "ports": [
+            {
+              "port": "[parameters('port')]",
+              "protocol": "[parameters('protocol')]"
+            }
+          ],
+          "dnsNameLabel": "[parameters('dnsNameLabel')]"
+        },
+        "imageRegistryCredentials": "[if(variables('hasRegistryCredentials'), createArray(createObject('server', parameters('imageRegistryServer'), 'username', parameters('imageRegistryUsername'), 'password', parameters('imageRegistryPassword'))), createArray())]"
+      }
+    }
+  ],
+  "outputs": {
+    "containerGroupId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.ContainerInstance/containerGroups', parameters('containerGroupName'))]"
+    },
+    "containerIPv4Address": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.ContainerInstance/containerGroups', parameters('containerGroupName'))).ipAddress.ip]"
+    },
+    "containerFQDN": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.ContainerInstance/containerGroups', parameters('containerGroupName'))).ipAddress.fqdn]"
+    }
+  }
+}

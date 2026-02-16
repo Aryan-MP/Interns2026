@@ -1,0 +1,51 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "osType": {
+      "value": "Windows"
+    },
+    "vmName": {
+      "value": "myWindowsVM"
+    },
+    "adminUsername": {
+      "value": "azureuser"
+    },
+    "authenticationType": {
+      "value": "password"
+    },
+    "adminPasswordOrKey": {
+      "value": "P@ssw0rd123456!"
+    },
+    "dnsLabelPrefix": {
+      "value": "mywindowsvm-dns"
+    },
+    "windowsOSVersion": {
+      "value": "2022-datacenter-azure-edition"
+    },
+    "location": {
+      "value": "eastus"
+    },
+    "vmSize": {
+      "value": "Standard_L2aos_v4"
+    },
+    "virtualNetworkName": {
+      "value": "vNet"
+    },
+    "subnetName": {
+      "value": "Subnet"
+    },
+    "networkSecurityGroupName": {
+      "value": "SecGroupNet"
+    },
+    "securityType": {
+      "value": "Basic"
+    },
+    "publicIpSku": {
+      "value": "Standard"
+    },
+    "enableBootDiagnostics": {
+      "value": false
+    }
+  }
+}

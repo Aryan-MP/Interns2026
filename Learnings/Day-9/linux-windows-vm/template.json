@@ -1,0 +1,494 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.34.1.11899",
+      "templateHash": "unified-windows-linux-vm-template"
+    }
+  },
+  "parameters": {
+    "osType": {
+      "type": "string",
+      "allowedValues": [
+        "Windows",
+        "Linux"
+      ],
+      "metadata": {
+        "description": "Select the Operating System type (Windows or Linux)"
+      }
+    },
+    "vmName": {
+      "type": "string",
+      "defaultValue": "myVM",
+      "metadata": {
+        "description": "The name of your Virtual Machine"
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "Username for the Virtual Machine"
+      }
+    },
+    "authenticationType": {
+      "type": "string",
+      "defaultValue": "password",
+      "allowedValues": [
+        "sshPublicKey",
+        "password"
+      ],
+      "metadata": {
+        "description": "Type of authentication to use on the Virtual Machine. SSH key is recommended for Linux."
+      }
+    },
+    "adminPasswordOrKey": {
+      "type": "securestring",
+      "minLength": 12,
+      "metadata": {
+        "description": "SSH Key or password for the Virtual Machine. SSH key is recommended for Linux. Minimum 12 characters."
+      }
+    },
+    "dnsLabelPrefix": {
+      "type": "string",
+      "defaultValue": "[toLower(format('{0}-{1}', parameters('vmName'), uniqueString(resourceGroup().id)))]",
+      "metadata": {
+        "description": "Unique DNS Name for the Public IP used to access the Virtual Machine"
+      }
+    },
+    "windowsOSVersion": {
+      "type": "string",
+      "defaultValue": "2022-datacenter-azure-edition",
+      "allowedValues": [
+        "2016-datacenter-gensecond",
+        "2016-datacenter-server-core-g2",
+        "2019-datacenter-gensecond",
+        "2019-datacenter-core-g2",
+        "2022-datacenter-azure-edition",
+        "2022-datacenter-azure-edition-core",
+        "2022-datacenter-g2",
+        "2022-datacenter-core-g2"
+      ],
+      "metadata": {
+        "description": "The Windows Server version for the VM"
+      }
+    },
+    "ubuntuOSVersion": {
+      "type": "string",
+      "defaultValue": "Ubuntu-2204",
+      "allowedValues": [
+        "Ubuntu-2004",
+        "Ubuntu-2204"
+      ],
+      "metadata": {
+        "description": "The Ubuntu version for the VM"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources"
+      }
+    },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_D2s_v5",
+      "metadata": {
+        "description": "The size of the VM"
+      }
+    },
+    "virtualNetworkName": {
+      "type": "string",
+      "defaultValue": "vNet",
+      "metadata": {
+        "description": "Name of the Virtual Network"
+      }
+    },
+    "subnetName": {
+      "type": "string",
+      "defaultValue": "Subnet",
+      "metadata": {
+        "description": "Name of the subnet in the virtual network"
+      }
+    },
+    "networkSecurityGroupName": {
+      "type": "string",
+      "defaultValue": "SecGroupNet",
+      "metadata": {
+        "description": "Name of the Network Security Group"
+      }
+    },
+    "securityType": {
+      "type": "string",
+      "defaultValue": "TrustedLaunch",
+      "allowedValues": [
+        "Standard",
+        "TrustedLaunch"
+      ],
+      "metadata": {
+        "description": "Security Type of the Virtual Machine"
+      }
+    },
+    "publicIpSku": {
+      "type": "string",
+      "defaultValue": "Standard",
+      "allowedValues": [
+        "Basic",
+        "Standard"
+      ],
+      "metadata": {
+        "description": "SKU for the Public IP"
+      }
+    },
+    "enableBootDiagnostics": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable boot diagnostics (creates storage account for Windows VMs)"
+      }
+    }
+  },
+  "variables": {
+    "windowsImageReference": {
+      "2016-datacenter-gensecond": {
+        "publisher": "MicrosoftWindowsServer",
+        "offer": "WindowsServer",
+        "sku": "2016-datacenter-gensecond",
+        "version": "latest"
+      },
+      "2016-datacenter-server-core-g2": {
+        "publisher": "MicrosoftWindowsServer",
+        "offer": "WindowsServer",
+        "sku": "2016-datacenter-server-core-g2",
+        "version": "latest"
+      },
+      "2019-datacenter-gensecond": {
+        "publisher": "MicrosoftWindowsServer",
+        "offer": "WindowsServer",
+        "sku": "2019-datacenter-gensecond",
+        "version": "latest"
+      },
+      "2019-datacenter-core-g2": {
+        "publisher": "MicrosoftWindowsServer",
+        "offer": "WindowsServer",
+        "sku": "2019-datacenter-core-g2",
+        "version": "latest"
+      },
+      "2022-datacenter-azure-edition": {
+        "publisher": "MicrosoftWindowsServer",
+        "offer": "WindowsServer",
+        "sku": "2022-datacenter-azure-edition",
+        "version": "latest"
+      },
+      "2022-datacenter-azure-edition-core": {
+        "publisher": "MicrosoftWindowsServer",
+        "offer": "WindowsServer",
+        "sku": "2022-datacenter-azure-edition-core",
+        "version": "latest"
+      },
+      "2022-datacenter-g2": {
+        "publisher": "MicrosoftWindowsServer",
+        "offer": "WindowsServer",
+        "sku": "2022-datacenter-g2",
+        "version": "latest"
+      },
+      "2022-datacenter-core-g2": {
+        "publisher": "MicrosoftWindowsServer",
+        "offer": "WindowsServer",
+        "sku": "2022-datacenter-core-g2",
+        "version": "latest"
+      }
+    },
+    "linuxImageReference": {
+      "Ubuntu-2004": {
+        "publisher": "Canonical",
+        "offer": "0001-com-ubuntu-server-focal",
+        "sku": "20_04-lts-gen2",
+        "version": "latest"
+      },
+      "Ubuntu-2204": {
+        "publisher": "Canonical",
+        "offer": "0001-com-ubuntu-server-jammy",
+        "sku": "22_04-lts-gen2",
+        "version": "latest"
+      }
+    },
+    "publicIPAddressName": "[format('{0}-pip', parameters('vmName'))]",
+    "networkInterfaceName": "[format('{0}-nic', parameters('vmName'))]",
+    "osDiskName": "[format('{0}-osdisk', parameters('vmName'))]",
+    "osDiskType": "StandardSSD_LRS",
+    "subnetAddressPrefix": "10.1.0.0/24",
+    "addressPrefix": "10.1.0.0/16",
+    "managementPort": "[if(equals(parameters('osType'), 'Windows'), '3389', '22')]",
+    "managementRuleName": "[if(equals(parameters('osType'), 'Windows'), 'Allow-RDP', 'Allow-SSH')]",
+    "storageAccountName": "[format('bootdiags{0}', uniqueString(resourceGroup().id))]",
+    "linuxConfiguration": {
+      "disablePasswordAuthentication": true,
+      "ssh": {
+        "publicKeys": [
+          {
+            "path": "[format('/home/{0}/.ssh/authorized_keys', parameters('adminUsername'))]",
+            "keyData": "[parameters('adminPasswordOrKey')]"
+          }
+        ]
+      }
+    },
+    "securityProfileJson": {
+      "uefiSettings": {
+        "secureBootEnabled": true,
+        "vTpmEnabled": true
+      },
+      "securityType": "[parameters('securityType')]"
+    },
+    "linuxExtensionName": "GuestAttestation",
+    "linuxExtensionPublisher": "Microsoft.Azure.Security.LinuxAttestation",
+    "windowsExtensionName": "GuestAttestation",
+    "windowsExtensionPublisher": "Microsoft.Azure.Security.WindowsAttestation",
+    "extensionVersion": "1.0",
+    "maaTenantName": "GuestAttestation",
+    "maaEndpoint": "[substring('emptystring', 0, 0)]"
+  },
+  "resources": [
+    {
+      "condition": "[and(equals(parameters('osType'), 'Windows'), parameters('enableBootDiagnostics'))]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2023-01-01",
+      "name": "[variables('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "Storage",
+      "properties": {
+        "defaultToOAuthAuthentication": true
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2023-09-01",
+      "name": "[parameters('networkSecurityGroupName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "[variables('managementRuleName')]",
+            "properties": {
+              "priority": 1000,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "[variables('managementPort')]"
+            }
+          },
+          {
+            "name": "Allow-HTTP",
+            "properties": {
+              "priority": 1010,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "80"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-09-01",
+      "name": "[parameters('virtualNetworkName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]"
+      ],
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('addressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[parameters('subnetName')]",
+            "properties": {
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]"
+              },
+              "addressPrefix": "[variables('subnetAddressPrefix')]",
+              "privateEndpointNetworkPolicies": "Enabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2023-09-01",
+      "name": "[variables('publicIPAddressName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('publicIpSku')]"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "publicIPAddressVersion": "IPv4",
+        "dnsSettings": {
+          "domainNameLabel": "[parameters('dnsLabelPrefix')]"
+        },
+        "idleTimeoutInMinutes": 4
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2023-09-01",
+      "name": "[variables('networkInterfaceName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]",
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), parameters('subnetName'))]"
+              },
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-09-01",
+      "name": "[parameters('vmName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "storageProfile": {
+          "osDisk": {
+            "name": "[variables('osDiskName')]",
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "[variables('osDiskType')]"
+            }
+          },
+          "imageReference": "[if(equals(parameters('osType'), 'Windows'), variables('windowsImageReference')[parameters('windowsOSVersion')], variables('linuxImageReference')[parameters('ubuntuOSVersion')])]"
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]"
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "[parameters('vmName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPasswordOrKey')]",
+          "linuxConfiguration": "[if(and(equals(parameters('osType'), 'Linux'), equals(parameters('authenticationType'), 'sshPublicKey')), variables('linuxConfiguration'), null())]"
+        },
+        "securityProfile": "[if(equals(parameters('securityType'), 'TrustedLaunch'), variables('securityProfileJson'), null())]",
+        "diagnosticsProfile": "[if(and(equals(parameters('osType'), 'Windows'), parameters('enableBootDiagnostics')), json(concat('{\"bootDiagnostics\":{\"enabled\":true,\"storageUri\":\"', reference(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2023-01-01').primaryEndpoints.blob, '\"}}')), json('{\"bootDiagnostics\":{\"enabled\":false}}'))]"
+      }
+    },
+    {
+      "condition": "[and(and(and(equals(parameters('osType'), 'Linux'), equals(parameters('securityType'), 'TrustedLaunch')), variables('securityProfileJson').uefiSettings.secureBootEnabled), variables('securityProfileJson').uefiSettings.vTpmEnabled)]",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2023-09-01",
+      "name": "[format('{0}/{1}', parameters('vmName'), variables('linuxExtensionName'))]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
+      ],
+      "properties": {
+        "publisher": "[variables('linuxExtensionPublisher')]",
+        "type": "[variables('linuxExtensionName')]",
+        "typeHandlerVersion": "[variables('extensionVersion')]",
+        "autoUpgradeMinorVersion": true,
+        "enableAutomaticUpgrade": true,
+        "settings": {
+          "AttestationConfig": {
+            "MaaSettings": {
+              "maaEndpoint": "[variables('maaEndpoint')]",
+              "maaTenantName": "[variables('maaTenantName')]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "condition": "[and(and(and(equals(parameters('osType'), 'Windows'), equals(parameters('securityType'), 'TrustedLaunch')), variables('securityProfileJson').uefiSettings.secureBootEnabled), variables('securityProfileJson').uefiSettings.vTpmEnabled)]",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2023-09-01",
+      "name": "[format('{0}/{1}', parameters('vmName'), variables('windowsExtensionName'))]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
+      ],
+      "properties": {
+        "publisher": "[variables('windowsExtensionPublisher')]",
+        "type": "[variables('windowsExtensionName')]",
+        "typeHandlerVersion": "[variables('extensionVersion')]",
+        "autoUpgradeMinorVersion": true,
+        "enableAutomaticUpgrade": true,
+        "settings": {
+          "AttestationConfig": {
+            "MaaSettings": {
+              "maaEndpoint": "[variables('maaEndpoint')]",
+              "maaTenantName": "[variables('maaTenantName')]"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "vmName": {
+      "type": "string",
+      "value": "[parameters('vmName')]"
+    },
+    "osType": {
+      "type": "string",
+      "value": "[parameters('osType')]"
+    },
+    "adminUsername": {
+      "type": "string",
+      "value": "[parameters('adminUsername')]"
+    },
+    "hostname": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName')), '2023-09-01').dnsSettings.fqdn]"
+    },
+    "publicIP": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName')), '2023-09-01').ipAddress]"
+    },
+    "connectionCommand": {
+      "type": "string",
+      "value": "[if(equals(parameters('osType'), 'Windows'), concat('mstsc /v:', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName')), '2023-09-01').dnsSettings.fqdn), concat('ssh ', parameters('adminUsername'), '@', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName')), '2023-09-01').dnsSettings.fqdn))]"
+    }
+  }
+}
