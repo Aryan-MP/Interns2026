@@ -4,7 +4,7 @@
   "parameters": {
 
     "vmName": {
-      "value": "simpleLinuxVM"
+      "value": "LinuxVM"
     },
 
     "adminUsername": {
@@ -16,13 +16,8 @@
     },
 
     "adminPasswordOrKey": {
-      "value": "P@ssword12345!"
+      "value": "Azureuser@234"
     },
-
-    "dnsLabelPrefix": {
-      "value": "linuxvm-demo"
-    },
-
     "ubuntuOSVersion": {
       "value": "Ubuntu-2204"
     },
