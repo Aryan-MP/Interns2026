@@ -1,0 +1,275 @@
+{
+  // ARM template schema reference
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+
+  // Template version
+  "contentVersion": "1.0.0.0",
+
+  // ==========================
+  // PARAMETERS (User Inputs)
+  // ==========================
+  "parameters": {
+
+    // Admin username for both VMs
+    "adminUsername": {
+      "type": "string",
+      "defaultValue": "azureuser"
+    },
+
+    // Secure password for both VMs
+    "adminPassword": {
+      "type": "secureString"
+    },
+
+    // Deployment region
+    "location": {
+      "type": "string",
+      "defaultValue": "centralindia"
+    }
+  },
+
+  // ==========================
+  // VARIABLES (Reusable names)
+  // ==========================
+  "variables": {
+    "vnetName": "private-vm-vnet",            // Virtual Network name
+    "proxyVMName": "jumpbox-vm",              // Public-facing VM
+    "privateVMName": "ubuntu-private-vm",     // Backend VM
+    "proxyPublicIPName": "jumpbox-public-ip", // Public IP for proxy
+    "natPublicIPName": "nat-public-ip"        // Public IP for NAT Gateway
+  },
+
+  "resources": [
+
+    // ==========================================
+    // NAT PUBLIC IP (Used for outbound internet)
+    // ==========================================
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "[variables('natPublicIPName')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Standard" },  // Required for NAT Gateway
+      "properties": {
+        "publicIPAllocationMethod": "Static"  // Fixed outbound IP
+      }
+    },
+
+    // ==========================================
+    // NAT GATEWAY (Outbound internet for private subnet)
+    // ==========================================
+    {
+      "type": "Microsoft.Network/natGateways",
+      "name": "nat-gateway",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Standard" },
+      "properties": {
+        "publicIpAddresses": [
+          {
+            // Attach NAT public IP
+            "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('natPublicIPName'))]"
+          }
+        ]
+      }
+    },
+
+    // ==========================================
+    // NETWORK SECURITY GROUP (For Proxy VM)
+    // ==========================================
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "proxy-nsg",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "Allow-HTTP",
+            "properties": {
+              "priority": 1000,
+              "access": "Allow",         // Allow traffic
+              "direction": "Inbound",    // Incoming traffic
+              "protocol": "Tcp",
+              "destinationPortRange": "80", // Allow HTTP
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*"
+            }
+          }
+        ]
+      }
+    },
+
+    // ==========================================
+    // VIRTUAL NETWORK
+    // ==========================================
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "name": "[variables('vnetName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": ["10.0.0.0/16"]  // Entire network range
+        },
+        "subnets": [
+
+          // Public subnet for Proxy VM
+          {
+            "name": "public-subnet",
+            "properties": {
+              "addressPrefix": "10.0.0.0/24"
+            }
+          },
+
+          // Private subnet for backend VM
+          {
+            "name": "private-subnet",
+            "properties": {
+              "addressPrefix": "10.0.1.0/24",
+
+              // Attach NAT Gateway here
+              "natGateway": {
+                "id": "[resourceId('Microsoft.Network/natGateways', 'nat-gateway')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+
+    // ==========================================
+    // PUBLIC IP FOR PROXY VM
+    // ==========================================
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "[variables('proxyPublicIPName')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Standard" },
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+
+    // ==========================================
+    // PROXY NIC (Public VM Network Interface)
+    // ==========================================
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "proxy-nic",
+      "location": "[parameters('location')]",
+      "properties": {
+        // Attach NSG to NIC
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'proxy-nsg')]"
+        },
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              // Attach Public IP
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('proxyPublicIPName'))]"
+              },
+              // Connect to public subnet
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), 'public-subnet')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+
+    // ==========================================
+    // PRIVATE NIC (No public IP)
+    // ==========================================
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "private-nic",
+      "location": "[parameters('location')]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAddress": "10.0.1.4",  // Static private IP
+              "privateIPAllocationMethod": "Static",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), 'private-subnet')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+
+    // ==========================================
+    // PROXY VM (Public-facing VM)
+    // ==========================================
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "name": "[variables('proxyVMName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_D2ls_v5"
+        },
+        "osProfile": {
+          "computerName": "proxyvm",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "Canonical",
+            "offer": "0001-com-ubuntu-server-jammy",
+            "sku": "22_04-lts-gen2",
+            "version": "latest"
+          },
+          "osDisk": { "createOption": "FromImage" }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', 'proxy-nic')]"
+            }
+          ]
+        }
+      }
+    },
+
+    // ==========================================
+    // PRIVATE VM (Backend server)
+    // ==========================================
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "name": "[variables('privateVMName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_D2ls_v5"
+        },
+        "osProfile": {
+          "computerName": "privatevm",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "Canonical",
+            "offer": "0001-com-ubuntu-server-jammy",
+            "sku": "22_04-lts-gen2",
+            "version": "latest"
+          },
+          "osDisk": { "createOption": "FromImage" }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', 'private-nic')]"
+            }
+          ]
+        }
+      }
+    }
+
+    // Extensions install NGINX and configure reverse proxy
+  ]
+}

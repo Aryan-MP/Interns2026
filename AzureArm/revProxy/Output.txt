@@ -1,0 +1,390 @@
+{
+  "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Resources/deployments/reverseP", 
+  "location": null,
+  "name": "reverseP",
+  "properties": {
+    "correlationId": "c0f81c4a-79d0-4fe5-a223-257f0ff2bb26",
+    "debugSetting": null,
+    "dependencies": [
+      {
+        "dependsOn": [
+          {
+            "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Network/publicIPAddresses/nat-public-ip",
+            "resourceGroup": "rishabhdevsharmaa-rg",
+            "resourceName": "nat-public-ip",
+            "resourceType": "Microsoft.Network/publicIPAddresses"
+          }
+        ],
+        "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Network/natGateways/nat-gateway",
+        "resourceGroup": "rishabhdevsharmaa-rg",
+        "resourceName": "nat-gateway",
+        "resourceType": "Microsoft.Network/natGateways"
+      },
+      {
+        "dependsOn": [
+          {
+            "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Network/natGateways/nat-gateway",
+            "resourceGroup": "rishabhdevsharmaa-rg",
+            "resourceName": "nat-gateway",
+            "resourceType": "Microsoft.Network/natGateways"
+          }
+        ],
+        "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Network/virtualNetworks/private-vm-vnet",
+        "resourceGroup": "rishabhdevsharmaa-rg",
+        "resourceName": "private-vm-vnet",
+        "resourceType": "Microsoft.Network/virtualNetworks"
+      },
+      {
+        "dependsOn": [
+          {
+            "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Network/publicIPAddresses/jumpbox-public-ip",
+            "resourceGroup": "rishabhdevsharmaa-rg",
+            "resourceName": "jumpbox-public-ip",
+            "resourceType": "Microsoft.Network/publicIPAddresses"
+          },
+          {
+            "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Network/virtualNetworks/private-vm-vnet",
+            "resourceGroup": "rishabhdevsharmaa-rg",
+            "resourceName": "private-vm-vnet",
+            "resourceType": "Microsoft.Network/virtualNetworks"
+          },
+          {
+            "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Network/networkSecurityGroups/proxy-nsg",
+            "resourceGroup": "rishabhdevsharmaa-rg",
+            "resourceName": "proxy-nsg",
+            "resourceType": "Microsoft.Network/networkSecurityGroups"
+          }
+        ],
+        "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Network/networkInterfaces/proxy-nic",
+        "resourceGroup": "rishabhdevsharmaa-rg",
+        "resourceName": "proxy-nic",
+        "resourceType": "Microsoft.Network/networkInterfaces"
+      },
+      {
+        "dependsOn": [
+          {
+            "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Network/virtualNetworks/private-vm-vnet",
+            "resourceGroup": "rishabhdevsharmaa-rg",
+            "resourceName": "private-vm-vnet",
+            "resourceType": "Microsoft.Network/virtualNetworks"
+          }
+        ],
+        "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Network/networkInterfaces/private-nic",
+        "resourceGroup": "rishabhdevsharmaa-rg",
+        "resourceName": "private-nic",
+        "resourceType": "Microsoft.Network/networkInterfaces"
+      },
+      {
+        "dependsOn": [
+          {
+            "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Network/networkInterfaces/proxy-nic",
+            "resourceGroup": "rishabhdevsharmaa-rg",
+            "resourceName": "proxy-nic",
+            "resourceType": "Microsoft.Network/networkInterfaces"
+          }
+        ],
+        "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Compute/virtualMachines/jumpbox-vm",
+        "resourceGroup": "rishabhdevsharmaa-rg",
+        "resourceName": "jumpbox-vm",
+        "resourceType": "Microsoft.Compute/virtualMachines"
+      },
+      {
+        "dependsOn": [
+          {
+            "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Network/networkInterfaces/private-nic",
+            "resourceGroup": "rishabhdevsharmaa-rg",
+            "resourceName": "private-nic",
+            "resourceType": "Microsoft.Network/networkInterfaces"
+          }
+        ],
+        "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Compute/virtualMachines/ubuntu-private-vm",
+        "resourceGroup": "rishabhdevsharmaa-rg",
+        "resourceName": "ubuntu-private-vm",
+        "resourceType": "Microsoft.Compute/virtualMachines"
+      },
+      {
+        "dependsOn": [
+          {
+            "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Compute/virtualMachines/ubuntu-private-vm",
+            "resourceGroup": "rishabhdevsharmaa-rg",
+            "resourceName": "ubuntu-private-vm",
+            "resourceType": "Microsoft.Compute/virtualMachines"
+          }
+        ],
+        "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Compute/virtualMachines/ubuntu-private-vm/extensions/installNginx",
+        "resourceGroup": "rishabhdevsharmaa-rg",
+        "resourceName": "ubuntu-private-vm/installNginx",
+        "resourceType": "Microsoft.Compute/virtualMachines/extensions"
+      },
+      {
+        "dependsOn": [
+          {
+            "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Compute/virtualMachines/jumpbox-vm",
+            "resourceGroup": "rishabhdevsharmaa-rg",
+            "resourceName": "jumpbox-vm",
+            "resourceType": "Microsoft.Compute/virtualMachines"
+          }
+        ],
+        "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Compute/virtualMachines/jumpbox-vm/extensions/setupReverseProxy",
+        "resourceGroup": "rishabhdevsharmaa-rg",
+        "resourceName": "jumpbox-vm/setupReverseProxy",
+        "resourceType": "Microsoft.Compute/virtualMachines/extensions"
+      }
+    ],
+    "diagnostics": null,
+    "duration": "PT2M22.7275875S",
+    "error": null,
+    "extensions": [],
+    "mode": "Incremental",
+    "onErrorDeployment": null,
+    "outputResources": [
+      {
+        "apiVersion": null,
+        "extension": null,
+        "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Compute/virtualMachines/jumpbox-vm",
+        "identifiers": null,
+        "resourceGroup": "rishabhdevsharmaa-rg",
+        "resourceType": "Microsoft.Compute/virtualMachines"
+      },
+      {
+        "apiVersion": null,
+        "extension": null,
+        "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Compute/virtualMachines/jumpbox-vm/extensions/setupReverseProxy",
+        "identifiers": null,
+        "resourceGroup": "rishabhdevsharmaa-rg",
+        "resourceType": "Microsoft.Compute/virtualMachines/extensions"
+      },
+      {
+        "apiVersion": null,
+        "extension": null,
+        "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Compute/virtualMachines/ubuntu-private-vm",
+        "identifiers": null,
+        "resourceGroup": "rishabhdevsharmaa-rg",
+        "resourceType": "Microsoft.Compute/virtualMachines"
+      },
+      {
+        "apiVersion": null,
+        "extension": null,
+        "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Compute/virtualMachines/ubuntu-private-vm/extensions/installNginx",
+        "identifiers": null,
+        "resourceGroup": "rishabhdevsharmaa-rg",
+        "resourceType": "Microsoft.Compute/virtualMachines/extensions"
+      },
+      {
+        "apiVersion": null,
+        "extension": null,
+        "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Network/natGateways/nat-gateway",
+        "identifiers": null,
+        "resourceGroup": "rishabhdevsharmaa-rg",
+        "resourceType": "Microsoft.Network/natGateways"
+      },
+      {
+        "apiVersion": null,
+        "extension": null,
+        "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Network/networkInterfaces/private-nic",
+        "identifiers": null,
+        "resourceGroup": "rishabhdevsharmaa-rg",
+        "resourceType": "Microsoft.Network/networkInterfaces"
+      },
+      {
+        "apiVersion": null,
+        "extension": null,
+        "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Network/networkInterfaces/proxy-nic",
+        "identifiers": null,
+        "resourceGroup": "rishabhdevsharmaa-rg",
+        "resourceType": "Microsoft.Network/networkInterfaces"
+      },
+      {
+        "apiVersion": null,
+        "extension": null,
+        "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Network/networkSecurityGroups/proxy-nsg",
+        "identifiers": null,
+        "resourceGroup": "rishabhdevsharmaa-rg",
+        "resourceType": "Microsoft.Network/networkSecurityGroups"
+      },
+      {
+        "apiVersion": null,
+        "extension": null,
+        "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Network/publicIPAddresses/jumpbox-public-ip",
+        "identifiers": null,
+        "resourceGroup": "rishabhdevsharmaa-rg",
+        "resourceType": "Microsoft.Network/publicIPAddresses"
+      },
+      {
+        "apiVersion": null,
+        "extension": null,
+        "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Network/publicIPAddresses/nat-public-ip",
+        "identifiers": null,
+        "resourceGroup": "rishabhdevsharmaa-rg",
+        "resourceType": "Microsoft.Network/publicIPAddresses"
+      },
+      {
+        "apiVersion": null,
+        "extension": null,
+        "id": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/rishabhdevsharmaa-rg/providers/Microsoft.Network/virtualNetworks/private-vm-vnet",
+        "identifiers": null,
+        "resourceGroup": "rishabhdevsharmaa-rg",
+        "resourceType": "Microsoft.Network/virtualNetworks"
+      }
+    ],
+    "outputs": {
+      "privateVMName": {
+        "type": "String",
+        "value": "ubuntu-private-vm"
+      },
+      "privateVMPrivateIP": {
+        "type": "String",
+        "value": "10.0.1.4"
+      },
+      "proxyPublicIP": {
+        "type": "String",
+        "value": "40.80.88.169"
+      },
+      "proxyVMName": {
+        "type": "String",
+        "value": "jumpbox-vm"
+      }
+    },
+    "parameters": {
+      "adminPassword": {
+        "type": "SecureString"
+      },
+      "adminUsername": {
+        "type": "String",
+        "value": "azureuser"
+      },
+      "location": {
+        "type": "String",
+        "value": "centralindia"
+      }
+    },
+    "parametersLink": null,
+    "providers": [
+      {
+        "id": null,
+        "namespace": "Microsoft.Network",
+        "providerAuthorizationConsentState": null,
+        "registrationPolicy": null,
+        "registrationState": null,
+        "resourceTypes": [
+          {
+            "aliases": null,
+            "apiProfiles": null,
+            "apiVersions": null,
+            "capabilities": null,
+            "defaultApiVersion": null,
+            "locationMappings": null,
+            "locations": [
+              "centralindia"
+            ],
+            "properties": null,
+            "resourceType": "publicIPAddresses",
+            "zoneMappings": null
+          },
+          {
+            "aliases": null,
+            "apiProfiles": null,
+            "apiVersions": null,
+            "capabilities": null,
+            "defaultApiVersion": null,
+            "locationMappings": null,
+            "locations": [
+              "centralindia"
+            ],
+            "properties": null,
+            "resourceType": "natGateways",
+            "zoneMappings": null
+          },
+          {
+            "aliases": null,
+            "apiProfiles": null,
+            "apiVersions": null,
+            "capabilities": null,
+            "defaultApiVersion": null,
+            "locationMappings": null,
+            "locations": [
+              "centralindia"
+            ],
+            "properties": null,
+            "resourceType": "networkSecurityGroups",
+            "zoneMappings": null
+          },
+          {
+            "aliases": null,
+            "apiProfiles": null,
+            "apiVersions": null,
+            "capabilities": null,
+            "defaultApiVersion": null,
+            "locationMappings": null,
+            "locations": [
+              "centralindia"
+            ],
+            "properties": null,
+            "resourceType": "virtualNetworks",
+            "zoneMappings": null
+          },
+          {
+            "aliases": null,
+            "apiProfiles": null,
+            "apiVersions": null,
+            "capabilities": null,
+            "defaultApiVersion": null,
+            "locationMappings": null,
+            "locations": [
+              "centralindia"
+            ],
+            "properties": null,
+            "resourceType": "networkInterfaces",
+            "zoneMappings": null
+          }
+        ]
+      },
+      {
+        "id": null,
+        "namespace": "Microsoft.Compute",
+        "providerAuthorizationConsentState": null,
+        "registrationPolicy": null,
+        "registrationState": null,
+        "resourceTypes": [
+          {
+            "aliases": null,
+            "apiProfiles": null,
+            "apiVersions": null,
+            "capabilities": null,
+            "defaultApiVersion": null,
+            "locationMappings": null,
+            "locations": [
+              "centralindia"
+            ],
+            "properties": null,
+            "resourceType": "virtualMachines",
+            "zoneMappings": null
+          },
+          {
+            "aliases": null,
+            "apiProfiles": null,
+            "apiVersions": null,
+            "capabilities": null,
+            "defaultApiVersion": null,
+            "locationMappings": null,
+            "locations": [
+              "centralindia"
+            ],
+            "properties": null,
+            "resourceType": "virtualMachines/extensions",
+            "zoneMappings": null
+          }
+        ]
+      }
+    ],
+    "provisioningState": "Succeeded",
+    "templateHash": "18110366791632327999",
+    "templateLink": null,
+    "timestamp": "2026-02-16T18:12:46.822075+00:00",
+    "validatedResources": null,
+    "validationLevel": null
+  },
+  "resourceGroup": "rishabhdevsharmaa-rg",
+  "tags": null,
+  "type": "Microsoft.Resources/deployments"
+}
