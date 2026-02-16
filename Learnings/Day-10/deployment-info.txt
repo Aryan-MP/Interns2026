@@ -1,0 +1,29 @@
+﻿Azure VNet Deployment Information
+==================================
+Deployment Name:    vnet-deployment-20260213-154054
+Resource Group:     sivakumarderangula-rg
+Location:           eastus
+Deployment Date:    02/13/2026 15:42:52
+
+Network Configuration:
+---------------------
+VNet:               MyVNet (10.0.0.0/16)
+Public Subnet:      PublicSubnet (10.0.1.0/24)
+Private Subnet:     PrivateSubnet (10.0.2.0/24)
+
+Virtual Machines:
+-----------------
+Public VM IP:       20.42.47.85
+Public VM FQDN:     publicvm-vrg5mn72q4sps.eastus.cloudapp.azure.com
+Private VM IP:      10.0.2.4
+
+Access Information:
+-------------------
+Website URL:        http://20.42.47.85
+SSH to Public VM:   ssh azureuser@20.42.47.85
+SSH to Private VM:  ssh azureuser@10.0.2.4 (from Public VM)
+
+Security:
+---------
+Authentication:     password
+Allowed SSH IP:     *

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "eastus"
+    },
+    "vnetName": {
+      "value": "MyVNet"
+    },
+    "vnetAddressPrefix": {
+      "value": "10.0.0.0/16"
+    },
+    "publicSubnetName": {
+      "value": "PublicSubnet"
+    },
+    "publicSubnetPrefix": {
+      "value": "10.0.1.0/24"
+    },
+    "privateSubnetName": {
+      "value": "PrivateSubnet"
+    },
+    "privateSubnetPrefix": {
+      "value": "10.0.2.0/24"
+    },
+    "publicVmName": {
+      "value": "PublicVM1"
+    },
+    "privateVmName": {
+      "value": "PrivateVM1"
+    },
+    "vmSize": {
+      "value": "Standard_DC1s_v3"
+    },
+    "adminUsername": {
+      "value": "azureuser"
+    },
+    "authenticationType": {
+      "value": "sshPublicKey"
+    },
+    "adminPasswordOrKey": {
+      "value": "Sivakumar@2003"
+    },
+    "allowedSourceIP": {
+      "value": "*"
+    },
+    "ubuntuOSVersion": {
+      "value": "Ubuntu-2204"
+    }
+  }
+}
