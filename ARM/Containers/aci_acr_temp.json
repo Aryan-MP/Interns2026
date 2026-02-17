@@ -13,7 +13,7 @@
           ],
           "output": {
             "type": "string",
-            "value": "[toLower(concat('danishdemo-', parameters('suffix')))]"
+            "value": "[toLower(concat('danishDemo-', parameters('suffix')))]"
           }
         }
       }
@@ -34,7 +34,7 @@
 
   "variables": {
     "acrName": "[replace(util.name('acr'), '-', '')]",
-    "aciName": "[util.name('aci')]",
+    "aciName": "[util.name('Aci')]",
     "imageName": "danishdemoacr.azurecr.io/sampleapp:v1"
   },
 
