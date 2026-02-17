@@ -25,9 +25,3 @@ if ($InstallChrome) {
     Invoke-WebRequest $chromeUrl -OutFile $chromeInstaller
     Start-Process $chromeInstaller -ArgumentList "/silent /install" -Wait
 }
-
-
-    Invoke-WebRequest $terraformUrl -OutFile $zipPath
-    Expand-Archive $zipPath -DestinationPath $installPath -Force
-    setx PATH "$env:PATH;$installPath" /M
-}
