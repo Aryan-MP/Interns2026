@@ -1,8 +1,6 @@
 # -------------------------------
 # Configuration (what to install)
 # -------------------------------
-$InstallTerraform = $true
-$TerraformVersion = "1.6.6"
 $InstallIIS = $true
 $IISMessage = "Hello World!"
 $InstallChrome = $true
@@ -28,13 +26,6 @@ if ($InstallChrome) {
     Start-Process $chromeInstaller -ArgumentList "/silent /install" -Wait
 }
 
-# -------------------------------
-# Install Terraform
-# -------------------------------
-if ($InstallTerraform) {
-    $terraformUrl = "https://releases.hashicorp.com/terraform/$TerraformVersion/terraform_${TerraformVersion}_windows_amd64.zip"
-    $zipPath = "$env:TEMP\terraform.zip"
-    $installPath = "C:\Terraform"
 
     Invoke-WebRequest $terraformUrl -OutFile $zipPath
     Expand-Archive $zipPath -DestinationPath $installPath -Force
