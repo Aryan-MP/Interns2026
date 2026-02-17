@@ -1,0 +1,70 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the existing VM"
+      }
+    },
+    "diskName": {
+      "type": "string",
+      "defaultValue": "myDataDisk01",
+      "metadata": {
+        "description": "Name of the data disk"
+      }
+    },
+    "diskSizeGB": {
+      "type": "int",
+      "defaultValue": 32,
+      "minValue": 4,
+      "metadata": {
+        "description": "Size of the data disk in GB"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Compute/disks",
+      "apiVersion": "2023-04-02",
+      "name": "[parameters('diskName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "properties": {
+        "creationData": {
+          "createOption": "Empty"
+        },
+        "diskSizeGB": "[parameters('diskSizeGB')]"
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-03-01",
+      "name": "[parameters('vmName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/disks', parameters('diskName'))]"
+      ],
+      "properties": {
+        "storageProfile": {
+          "dataDisks": [
+            {
+              "lun": 0,
+              "createOption": "Attach",
+              "managedDisk": {
+                "id": "[resourceId('Microsoft.Compute/disks', parameters('diskName'))]"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
