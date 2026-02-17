@@ -199,9 +199,6 @@
       "apiVersion": "2023-09-01",
       "name": "[parameters('virtualNetworkName')]",
       "location": "[parameters('location')]",
-      "dependsOn": [
-        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]"
-      ],
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
@@ -312,10 +309,12 @@
         "typeHandlerVersion": "[variables('linuxExtensionVersion')]",
         "autoUpgradeMinorVersion": true,
         "settings": {
-          "commandToExecute": "[variables('installScript')[parameters('osType')]]"
+          "fileUris": [],
+          "commandToExecute": "[concat('bash -c \"', variables('installScript')[parameters('osType')], '\"')]"
         }
       }
     },
+
     {
       "condition": "[variables('isWindowsOS')]",
       "type": "Microsoft.Compute/virtualMachines/extensions",
@@ -331,7 +330,7 @@
         "typeHandlerVersion": "[variables('windowsExtensionVersion')]",
         "autoUpgradeMinorVersion": true,
         "settings": {
-          "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -Command \"', variables('installScript')[parameters('osType')], '\"')]"
+          "commandToExecute": "[concat('powershell -ExecutionPolicy Bypass -EncodedCommand ', base64(variables('installScript')[parameters('osType')]))]"
         }
       }
     }
