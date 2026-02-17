@@ -11,6 +11,9 @@
     "adminPassword": {
       "value": "Demo@12345678"
     },
+    "osType": {
+      "value": "Linux"
+    },
     "vmSize": {
       "value": "Standard_L2aos_v4"
     },
