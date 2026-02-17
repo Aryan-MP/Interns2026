@@ -1,0 +1,4 @@
+arm 
+bicep 
+powershell
+cli

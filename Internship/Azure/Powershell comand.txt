@@ -1,0 +1,41 @@
+# ===== VARIABLES =====
+$blobUrl = "https://storagelabspractice2509.blob.core.windows.net/training-content-2509/SOP.pdf"
+
+# SAS regenerated WITHOUT start time (st)
+$sasToken = "?sp=r&st=2026-02-05T08:20:47Z&se=2026-02-05T16:35:47Z&spr=https&sv=2024-11-04&sr=b&sig=Y4ChmtEbuR2vzA5SQVZT0upCbuNi1ro1hj3ciLqcWns%3D"
+
+$destinationPath = "D:\SOP.pdf"
+
+# ===== DOWNLOAD =====
+$fullUrl = "$blobUrl$sasToken"
+
+Invoke-WebRequest -Uri $fullUrl -OutFile $destinationPath
+
+Write-Host "Download completed successfully: $destinationPath"
+
+
+
+
+
+  
+ -- -----------
+   1 cd ..
+   2 azcopy -h
+   3 azcopy login
+   4 azcopy login --d8b8503d-7cc0-4859-8cc7-a644c9fb26bf
+   5 azcopy login --tenant-id=d8b8503d-7cc0-4859-8cc7-a644c9fb26bf
+   6 azcopy
+   7   - azcopy make "https://[account-name].[blob,file,dfs].core.windows.net/[top-level-resource-name]"
+   8   - azcopy make "https://azcopypractice123.blob.core.windows.net/mycontainer0987"
+   9 azcopy login --tenant-id=d8b8503d-7cc0-4859-8cc7-a644c9fb26bf
+  10   - azcopy make "https://azcopypractice123.blob.core.windows.net/mycontainer0987"
+  11 azcopy make "https://azcopypractice123.blob.core.windows.net/mycontainer0987"
+  12 azcopy copy "D:\SOP.pdf" "https://azcopypractice123.blob.core.windows.net/mycontainer0987"
+  13 azcopy copy "D:\SOP.pdf" "https://azcopypractice123.blob.core.windows.net/?sv=2024-11-04&ss=bfqt&srt=c&sp=rwdla...
+  14 azcopy copy "D:\SOP.pdf" "https://azcopypractice123.blob.core.windows.net/?sv=2024-11-04&ss=bfqt&srt=sco&sp=rwd...
+  15 azcopy copy "D:\SOP.pdf" "https://azcopypractice123.blob.core.windows.net/mycontainer0987?sv=2024-11-04&ss=bfqt...
+
+
+
+
+

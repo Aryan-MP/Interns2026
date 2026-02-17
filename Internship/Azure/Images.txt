@@ -1,0 +1,21 @@
+Images 
+
+
+generalized - only image and config 
+specialized - image, config and credentials(OS profile)
+
+
+general images
+custom images
+
+
+
+
+Compute Gallery 
+Contains the gen and spec images - gallery for images
+
+
+
+VM Scale Set 
+Helps in load balancing in case of usage spike (set according to conditions)
+

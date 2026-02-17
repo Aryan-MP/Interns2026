@@ -1,0 +1,39 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "eastus2"
+    },
+    "vnetName": {
+      "value": "sharedVNet"
+    },
+    "subnetName": {
+      "value": "sharedSubnet"
+    },
+    "vnetPrefix": {
+      "value": "10.0.0.0/16"
+    },
+    "subnetPrefix": {
+      "value": "10.0.1.0/24"
+    },
+    "linuxVMName": {
+      "value": "linuxVM01"
+    },
+    "linuxAdminUsername": {
+      "value": "azureuser"
+    },
+    "linuxAdminPassword": {
+      "value": "YourStrongPassword123!"
+    },
+    "winVMName": {
+      "value": "winVM01"
+    },
+    "winAdminUsername": {
+      "value": "azureadmin"
+    },
+    "winAdminPassword": {
+      "value": "YourStrongPassword123!"
+    }
+  }
+}

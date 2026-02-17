@@ -1,0 +1,35 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+
+  "parameters": {
+    "location": { "type": "string" },
+    "vmName": { "type": "string" },
+    "scriptUri": { "type": "string" },
+    "sasToken": { "type": "secureString" }
+  },
+
+  "resources": [
+          {
+        "type": "Microsoft.Compute/virtualMachines/extensions",
+        "apiVersion": "2023-09-01",
+        "name": "[concat(parameters('vmName'), '/nestedConfig')]",
+        "location": "[resourceGroup().location]",
+        "dependsOn": [
+          "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
+        ],
+        "properties": {
+          "publisher": "Microsoft.Compute",
+          "type": "CustomScriptExtension",
+          "typeHandlerVersion": "1.10",
+          "autoUpgradeMinorVersion": true,
+          "settings": {
+            "fileUris": [
+              "https://raw.githubusercontent.com/Bhavesh2509/Script/main/GuestVM.ps1"
+            ],
+            "commandToExecute": "powershell -ExecutionPolicy Bypass -File install-nested.ps1"
+          }
+        }
+      }
+  ]
+}

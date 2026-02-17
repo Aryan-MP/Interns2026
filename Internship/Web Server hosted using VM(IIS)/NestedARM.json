@@ -1,0 +1,304 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmName": { "type": "string" },
+    "location": { "type": "string" },
+    "vmAdminUsername": { "type": "string" },
+    "vmAdminPassword": { "type": "securestring" },
+    "osType": { "type": "string", "allowedValues": ["Windows", "Linux"] }
+  },
+  "resources": [
+    {
+      "condition": "[equals(parameters('osType'),'Windows')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "windowsStack",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": [
+            {
+              "type": "Microsoft.Network/networkSecurityGroups",
+              "apiVersion": "2022-07-01",
+              "name": "[concat(parameters('vmName'),'-win-nsg')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "securityRules": [
+                  {
+                    "name": "Allow-RDP",
+                    "properties": {
+                      "priority": 1000,
+                      "direction": "Inbound",
+                      "access": "Allow",
+                      "protocol": "Tcp",
+                      "sourcePortRange": "*",
+                      "destinationPortRange": "3389",
+                      "sourceAddressPrefix": "*",
+                      "destinationAddressPrefix": "*"
+                    }
+                  },
+                  {
+                    "name": "Allow-HTTP",
+                    "properties": {
+                      "priority": 1010,
+                      "direction": "Inbound",
+                      "access": "Allow",
+                      "protocol": "Tcp",
+                      "sourcePortRange": "*",
+                      "destinationPortRange": "80",
+                      "sourceAddressPrefix": "*",
+                      "destinationAddressPrefix": "*"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2022-07-01",
+              "name": "[concat(parameters('vmName'),'-win-vnet')]",
+              "location": "[parameters('location')]",
+              "dependsOn": ["[resourceId('Microsoft.Network/networkSecurityGroups', concat(parameters('vmName'),'-win-nsg'))]"],
+              "properties": {
+                "addressSpace": { "addressPrefixes": ["10.10.0.0/16"] },
+                "subnets": [
+                  {
+                    "name": "winSubnet",
+                    "properties": {
+                      "addressPrefix": "10.10.1.0/24",
+                      "networkSecurityGroup": { "id": "[resourceId('Microsoft.Network/networkSecurityGroups', concat(parameters('vmName'),'-win-nsg'))]" }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/publicIPAddresses",
+              "apiVersion": "2022-07-01",
+              "name": "[concat(parameters('vmName'),'-win-pip')]",
+              "location": "[parameters('location')]",
+              "sku": { "name": "Standard" },
+              "properties": { "publicIPAllocationMethod": "Static" }
+            },
+            {
+              "type": "Microsoft.Network/networkInterfaces",
+              "apiVersion": "2022-07-01",
+              "name": "[concat(parameters('vmName'),'-win-nic')]",
+              "location": "[parameters('location')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', concat(parameters('vmName'),'-win-vnet'))]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', concat(parameters('vmName'),'-win-pip'))]"
+              ],
+              "properties": {
+                "ipConfigurations": [
+                  {
+                    "name": "ipconfig1",
+                    "properties": {
+                      "subnet": { "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', concat(parameters('vmName'),'-win-vnet'),'winSubnet')]" },
+                      "privateIPAllocationMethod": "Dynamic",
+                      "publicIPAddress": { "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(parameters('vmName'),'-win-pip'))]" }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Compute/virtualMachines",
+              "apiVersion": "2023-07-01",
+              "name": "[parameters('vmName')]",
+              "location": "[parameters('location')]",
+              "dependsOn": ["[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('vmName'),'-win-nic'))]"],
+              "properties": {
+                "hardwareProfile": { "vmSize": "Standard_D2s_v3" },
+                "osProfile": {
+                  "computerName": "[parameters('vmName')]",
+                  "adminUsername": "[parameters('vmAdminUsername')]",
+                  "adminPassword": "[parameters('vmAdminPassword')]"
+                },
+                "storageProfile": {
+                  "imageReference": {
+                    "publisher": "MicrosoftWindowsServer",
+                    "offer": "WindowsServer",
+                    "sku": "2019-Datacenter",
+                    "version": "latest"
+                  },
+                  "osDisk": { "createOption": "FromImage" }
+                },
+                "networkProfile": {
+                  "networkInterfaces": [
+                    { "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('vmName'),'-win-nic'))]" }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Compute/virtualMachines/extensions",
+              "apiVersion": "2023-07-01",
+              "name": "[concat(parameters('vmName'),'/IISInstall')]",
+              "location": "[parameters('location')]",
+              "dependsOn": ["[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"],
+              "properties": {
+                "publisher": "Microsoft.Compute",
+                "type": "CustomScriptExtension",
+                "typeHandlerVersion": "1.10",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                  "script": "powershell.exe -Command \"Install-WindowsFeature -Name Web-Server; Set-Content -Path 'C:\\inetpub\\wwwroot\\index.html' -Value '<h1>Hello from ARM VM IIS!</h1>'\""
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "condition": "[equals(parameters('osType'),'Linux')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "linuxStack",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": [
+            {
+              "type": "Microsoft.Network/networkSecurityGroups",
+              "apiVersion": "2022-07-01",
+              "name": "[concat(parameters('vmName'),'-linux-nsg')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "securityRules": [
+                  {
+                    "name": "Allow-SSH",
+                    "properties": {
+                      "priority": 1000,
+                      "direction": "Inbound",
+                      "access": "Allow",
+                      "protocol": "Tcp",
+                      "sourcePortRange": "*",
+                      "destinationPortRange": "22",
+                      "sourceAddressPrefix": "*",
+                      "destinationAddressPrefix": "*"
+                    }
+                  },
+                  {
+                    "name": "Allow-HTTP",
+                    "properties": {
+                      "priority": 1010,
+                      "direction": "Inbound",
+                      "access": "Allow",
+                      "protocol": "Tcp",
+                      "sourcePortRange": "*",
+                      "destinationPortRange": "80",
+                      "sourceAddressPrefix": "*",
+                      "destinationAddressPrefix": "*"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2022-07-01",
+              "name": "[concat(parameters('vmName'),'-linux-vnet')]",
+              "location": "[parameters('location')]",
+              "dependsOn": ["[resourceId('Microsoft.Network/networkSecurityGroups', concat(parameters('vmName'),'-linux-nsg'))]"],
+              "properties": {
+                "addressSpace": { "addressPrefixes": ["10.20.0.0/16"] },
+                "subnets": [
+                  {
+                    "name": "linuxSubnet",
+                    "properties": {
+                      "addressPrefix": "10.20.1.0/24",
+                      "networkSecurityGroup": { "id": "[resourceId('Microsoft.Network/networkSecurityGroups', concat(parameters('vmName'),'-linux-nsg'))]" }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/publicIPAddresses",
+              "apiVersion": "2022-07-01",
+              "name": "[concat(parameters('vmName'),'-linux-pip')]",
+              "location": "[parameters('location')]",
+              "sku": { "name": "Standard" },
+              "properties": { "publicIPAllocationMethod": "Static" }
+            },
+            {
+              "type": "Microsoft.Network/networkInterfaces",
+              "apiVersion": "2022-07-01",
+              "name": "[concat(parameters('vmName'),'-linux-nic')]",
+              "location": "[parameters('location')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', concat(parameters('vmName'),'-linux-vnet'))]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', concat(parameters('vmName'),'-linux-pip'))]"
+              ],
+              "properties": {
+                "ipConfigurations": [
+                  {
+                    "name": "ipconfig1",
+                    "properties": {
+                      "subnet": { "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', concat(parameters('vmName'),'-linux-vnet'),'linuxSubnet')]" },
+                      "privateIPAllocationMethod": "Dynamic",
+                      "publicIPAddress": { "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(parameters('vmName'),'-linux-pip'))]" }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Compute/virtualMachines",
+              "apiVersion": "2023-07-01",
+              "name": "[parameters('vmName')]",
+              "location": "[parameters('location')]",
+              "dependsOn": ["[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('vmName'),'-linux-nic'))]"],
+              "properties": {
+                "hardwareProfile": { "vmSize": "Standard_D2s_v3" },
+                "osProfile": {
+                  "computerName": "[parameters('vmName')]",
+                  "adminUsername": "[parameters('vmAdminUsername')]",
+                  "adminPassword": "[parameters('vmAdminPassword')]",
+                  "linuxConfiguration": { "disablePasswordAuthentication": false }
+                },
+                "storageProfile": {
+                  "imageReference": {
+                    "publisher": "Canonical",
+                    "offer": "0001-com-ubuntu-server-jammy",
+                    "sku": "22_04-lts-gen2",
+                    "version": "latest"
+                  },
+                  "osDisk": { "createOption": "FromImage" }
+                },
+                "networkProfile": {
+                  "networkInterfaces": [
+                    { "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('vmName'),'-linux-nic'))]" }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Compute/virtualMachines/extensions",
+              "apiVersion": "2023-07-01",
+              "name": "[concat(parameters('vmName'),'/NginxInstall')]",
+              "location": "[parameters('location')]",
+              "dependsOn": ["[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"],
+              "properties": {
+                "publisher": "Microsoft.Azure.Extensions",
+                "type": "CustomScript",
+                "typeHandlerVersion": "2.1",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                  "commandToExecute": "bash -c 'sudo apt-get update && sudo apt-get install -y nginx && echo \"<h1>Hello from ARM VM Nginx!</h1>\" | sudo tee /var/www/html/index.html && sudo systemctl restart nginx'"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

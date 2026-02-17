@@ -1,0 +1,80 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "vmName": { "type": "string" },
+    "adminUsername": { "type": "string" },
+    "adminPassword": { "type": "secureString" },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_D4s_v5"
+    },
+    "scriptUri": { "type": "string" },
+    "sasToken": { "type": "secureString" },
+    "templateBaseUri": { "type": "string" }
+  },
+
+  "resources": [
+
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "networkDeployment",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(parameters('templateBaseUri'), '/networking.json')]"
+        },
+        "parameters": {
+          "location": { "value": "[parameters('location')]" },
+          "vmName": { "value": "[parameters('vmName')]" }
+        }
+      }
+    },
+
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "vmDeployment",
+      "dependsOn": [ "networkDeployment" ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(parameters('templateBaseUri'), '/vm.json')]"
+        },
+        "parameters": {
+          "location": { "value": "[parameters('location')]" },
+          "vmName": { "value": "[parameters('vmName')]" },
+          "adminUsername": { "value": "[parameters('adminUsername')]" },
+          "adminPassword": { "value": "[parameters('adminPassword')]" },
+          "vmSize": { "value": "[parameters('vmSize')]" }
+        }
+      }
+    },
+
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "extensionDeployment",
+      "dependsOn": [ "vmDeployment" ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(parameters('templateBaseUri'), '/extension.json')]"
+        },
+        "parameters": {
+          "location": { "value": "[parameters('location')]" },
+          "vmName": { "value": "[parameters('vmName')]" },
+          "scriptUri": { "value": "[parameters('scriptUri')]" },
+          "sasToken": { "value": "[parameters('sasToken')]" }
+        }
+      }
+    }
+
+  ]
+}

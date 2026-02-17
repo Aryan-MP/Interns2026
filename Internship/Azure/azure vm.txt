@@ -1,0 +1,54 @@
+entra id - paas
+ 
+tenant -> subscription -> resource groups(for managing & grouping resources)
+
+arm - azure resource manager
+for validation 
+
+management level -> subscription -> resources groups -> resources
+
+
+
+
+azure vm
+
+app service - paas, vm - iaas
+
+az - as - region 
+
+availability set - logical set of vms set in a single avail zone with fault domain and update domain setup 
+
+availability zone - a zone with multiple datacentres setup for high availability and reliability 
+
+region - a geographical region containing many az at least 3 
+
+
+vm config - subs -> res grp -> vm name -> region -> az -> image -> size -> authen type -> passw/ssh -> in/outbound ports -> disk -> networking -> management -> advanced(custom scripts) -> tags -> review + create 
+--> ssh 
+
+
+
+
+
+Networking
+
+ip range (v net)
+subnet 
+ip address
+
+
+
+os image - marketplace / registry
+specialized image - captures authentication/authorization - protected
+generalized image - open not protected
+
+
+
+
+
+
+
+
+
+
+

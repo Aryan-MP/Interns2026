@@ -1,0 +1,22 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmName": { "value": "MyVMver1" },
+    "location": { "value": "eastus2" },
+    "vmAdminUsername": { "value": "azureuser" },
+    "vmAdminPassword": { "value": "YourP@ssword123!" },
+    "osType": { "value": "Windows" }, 
+    "customHtml": { "value": "<h1>Hello from ARM</h1>" },
+    "customAuthData": { "value": "Auth123" },
+
+    "vnetName": { "value": "MyVnet2" },
+    "subnetName": { "value": "MySubnet2" },
+    "nsgName": { "value": "MyNSG2" },
+
+    "publicIPName": { "value": "MyVM-PublicIP2" }, 
+    "nicName": { "value": "MyVM-NIC2" },
+
+    "vmSize": { "value": "Standard_D2s_v3" }
+  }
+}

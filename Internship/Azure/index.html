@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Azure Static Website</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #f4f6f8;
+            color: #333;
+        }
+
+        header {
+            background-color: #0078d4;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .card p {
+            padding: 15px;
+            margin: 0;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 14px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Welcome to My Azure Static Website</h1>
+    <p>Hosted using Azure Blob Storage</p>
+</header>
+
+<div class="container">
+    <h2>Image Gallery</h2>
+
+    <div class="gallery">
+        <div class="card">
+            <img src="https://picsum.photos/600/400?random=1" alt="Image 1">
+            <p>Sample Image 1</p>
+        </div>
+
+        <div class="card">
+            <img src="https://picsum.photos/600/400?random=2" alt="Image 2">
+            <p>Sample Image 2</p>
+        </div>
+
+        <div class="card">
+            <img src="https://picsum.photos/600/400?random=3" alt="Image 3">
+            <p>Sample Image 3</p>
+        </div>
+
+        <div class="card">
+            <img src="https://picsum.photos/600/400?random=4" alt="Image 4">
+            <p>Sample Image 4</p>
+        </div>
+    </div>
+</div>
+
+<footer>
+    © 2026 My Azure Static Site
+</footer>
+
+</body>
+</html>

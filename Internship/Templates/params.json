@@ -1,0 +1,11 @@
+
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmName": { "value": "win11" },
+    "adminUsername": { "value": "demo" },
+    "adminPassword": { "value": "Demo@123456789" },
+    "location": { "value": "eastus2" }
+  }
+}

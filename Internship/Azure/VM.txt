@@ -1,0 +1,111 @@
+tenant -> mangenment grp -> subs -> rg -> resources
+
+
+Basics 
+
+name 
+region 
+availability options - az - zone options , as , vmss
+secuirty type - 3 tiers - standard, trusted, confidential
+image - select the os image of need
+vm architechture - arm/x64
+spot discount - use unutilized resources which can be withdrawn if usage gets high
+size - various families which consist of diff configs of ram, cpu, gpu, storage etc
+hibernation - saves ram to root volume and helps reboot with it - helps save time and money by hibernating
+authentication - ssh key / password
+inbound ports - select ports to be enabled - SSH, HTTP/S, RDP
+
+
+
+Disks
+
+encryption - provides encryption to the disk - platform or customer managed
+OS disk size - size of disk must be greater than os size 
+disk type - HDD,SSD,Prem SSD
+delete with vm - configure to delete disk with os deletion
+key management - management of keys for encryption 
+ultra disk - for data intensive workloads 
+data disks - attach a disk for storage - can be new or existing
+managed/unmanaged - managed disks by azure so no coonfig needed
+ephemeral os disk - disk which is local and non persistent to be used when needed
+
+
+Networking
+
+vnet - virtual network by azure  
+subnet - divisions of vnet for various purposes
+public ip - allocate pub ip if vm needs to be accessed publicly 
+NIC nsg - has network setting for inbound and outbound traffic (firewall is on higher lvl in the hierarchy)
+ports - to be selected according to needs
+delete nic with vm 
+enable accl networking - low latency and high throughput 
+load balancing - azure load balancer / application gateway 
+
+
+Management 
+
+login with ms entra id - allow login thru entra id for rbac
+auto shutdown - set daily setup of rules(time) to shutdown vm - give mail for notification 
+enable backup - backup in case of data corruption and accidental deletion 
+guest os updates - check for daily updates of vm 
+
+
+Monitoring 
+
+alerts - cpu, mem, iops, network - using mail, arm role, app
+boot diagnostics - for troubleshooting failed boot processes - enabled with managed storage account(faster boot time), custom storage account, disable 
+guest os diagnostics - for every min metrics of vm
+health monitoring - for os updates and infra management 
+
+
+Advanced 
+
+extensions - any kind of extensions to be installed on the vm
+vm applications - install any app on vm
+custom data - script or config file made available during setup/startup 
+user data - some script or service running for various purposes
+performance nvme - faster iops
+capacity reservations - guarantees compute capacity for specific vm sizes
+proximity placements - allows resources to be physically placed together(same region) for low latency 
+
+
+Tags 
+metadata provided for resource for easy querying
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

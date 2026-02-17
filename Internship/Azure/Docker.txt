@@ -1,0 +1,165 @@
+dockervm@DockerVM:~/nginx-image$ history
+    1  docker ps
+    2  curl http://localhost:8080
+    3  sudo ufw status
+    4  curl ifconfig.me
+    5  nano index.html
+    6  cat index.html
+    7  sudo mkdir -p data/nginx/html
+    8  sudo chown -R $user:$user /data/nginx
+    9  sudo chown -R $USER:$USER /data/nginx
+   10  sudo mkdir -p data/nginx/html
+   11  cat data/nginx/html
+   12  sudo mkdir -p data/nginx/html
+   13  sudo chown -R $USER:$USER /data/nginx
+   14  cd ...
+   15  cd ..
+   16  sudo mkdir -p data/nginx/html
+   17  sudo chown -R $USER:$USER /data/nginx
+   18  sudo mkdir -p /data/nginx/html
+   19  sudo chown -R $USER:$USER /data
+   20  ls -ld /data /data/nginx /data/nginx/html
+   21  nano /data/nginx/html/index.html
+   22  cat index.html
+   23  cat /data/nginx/html/index.html
+   24  docker run -d   --name nginx-persistent   -p 8080:80   -v /data/nginx/html:/usr/share/nginx/html   nginx
+   25  docker stop nginx-web
+   26  docker rm nginx-web
+   27  docker run -d   --name nginx-persistent   -p 8080:80   -v /data/nginx/html:/usr/share/nginx/html   nginx
+   28  docker ps
+   29  docker ps -a
+   30  docker rm f9ad
+   31  docker ps -a
+   32  docker run -d   --name nginx-persistent   -p 8080:80   -v /data/nginx/html:/usr/share/nginx/html   nginx
+   33  docker stop nginx-persistent
+   34  docker start nginx-persistent
+   35  history
+   36  docker exec nginx-persistent ls /usr/share/nginx/html
+   37  docker stop nginx-persistent
+   38  docker rm nginx-persistent
+   39  docker run -d   --name nginx-persistent   -p 8080:80   -v /data/nginx/html:/usr/share/nginx/html   nginx
+   40  docker create volume
+   41  docker exec nginx-persistent   cp -r /usr/share/nginx/html /tmp/html
+   42  docker commit nginx-persistent my-nginx:persistent
+   43  docker images
+   44  docker ps
+   45  docker commit nginx-persistent my-nginx:1.0
+   46  docker images
+   47  docker login
+   48  docker push f94f70377a70
+   49  docker push bhaveshhebbar/nginx-persistent:1.0
+   50  docker push bhaveshhebbar/nginx-persistent
+   51  docker push bhaveshhebbar/persistent
+   52  docker push bhaveshhebbar/1.0
+   53  docker images
+   54  mkdir ~/nginx-image
+   55  cd ~/nginx-image
+   56  ln -s /data/nginx/html html
+   57  ls -l
+   58  nano Dockerfile
+   59  cat Dockerfile
+   60  docker build -t nginx-persistent:1.0 .
+   61  cd ~/nginx-image
+   62  mkdir html
+   63  mkdir htmls
+   64  cp -r /data/nginx/html/* htmls/
+   65  ls -R .
+   66  docker build -t nginx-persistent:1.0 .
+   67  cp -r /data/nginx/html/* html/
+   68  ls -R .
+   69  docker build -t nginx-persistent:1.0 .
+   70  pwd
+   71  cd ~/nginx-image
+   72  ls -la
+   73  mkdir -p html
+   74  cp -r /data/nginx/html/* html/
+   75  ls -la html
+   76  ls Dockerfile html/index.html
+   77  docker build -t nginx-persistent:1.0 .
+   78  cd /home/dockervm/nginx-image
+   79  ls -la
+   80  rm html
+   81  mkdir html
+   82  cp -r /data/nginx/html/* html/
+   83  ls -la html
+   84  docker build -t nginx-persistent:1.0 .
+   85  docker run -d -p 8080:80 --name nginx-test nginx-persistent:1.0
+   86  docker run -d -p 8081:80 --name nginx-test nginx-persistent:1.0
+   87  docker images
+   88  docker images rm f94f
+   89  docker rm f94f
+   90  docker ps
+   91  docker ps -a
+   92  docker run -d -p 8081:80 --name nginx-test nginx-persistent:1.0
+   93  docker rm f98d
+   94  docker ps -a
+   95  docker run -d -p 8081:80 --name nginx-test nginx-persistent:1.0
+   96  docker ps
+   97  docker rm 9e38
+   98  docker ps
+   99  docker rm nginx-persistent:1.0
+  100  docker rm 9e38eacfb681
+  101  docker rm rf 9e38eacfb681
+  102  docker rm -f 9e38eacfb681
+  103  docker ps
+  104  curl http://localhost:8081
+  105  curl http://localhost:8080
+  106  docker run -d --name nginx-test -p 8080:80 nginx-persistent:1.0
+  107  docker ps
+  108  docker rm -f 9a79
+  109  docker rm -f 9a73
+  110  docker ps
+  111  docker run -d --name nginx-test -p 8080:80 nginx-persistent:1.0
+  112  docker ps -a
+  113  docker rm -f 823ee
+  114  docker ps -a
+  115  docker run -d --name nginx-test -p 8080:80 nginx-persistent:1.0
+  116  docker images -a
+  117  docker login
+  118  docker push bhaveshhebbar/nginx-persistent:1.0
+  119  docker tag nginx-persistent:1.0 bhaveshhebbar/nginx-persistent:1.0
+  120  docker images
+  121  docker push bhaveshhebbar/nginx-persistent:1.0
+  122  sudo apt update
+  123  sudo apt install -y ca-certificates curl apt-transport-https lsb-release gnupg
+  124  curl -sLS https://packages.microsoft.com/keys/microsoft.asc   | gpg --dearmor   | sudo tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null
+  125  AZ_REPO=$(lsb_release -cs)
+  126  echo "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/microsoft.gpg] \
+https://packages.microsoft.com/repos/azure-cli/ $AZ_REPO main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
+  127  sudo apt update
+  128  sudo apt install -y azure-cli
+  129  az version
+  130  az login
+  131  az acr login --name Dockerpullfromhub
+  132  docker images
+  133  az acr show --name Dockerpullfromhub --query loginServer --output tsv
+  134  docker info | grep Registry
+  135  docker pull myacr123.azurecr.io/nginx-persistent:1.0
+  136  docker pull Dockerpullfromhub.azurecr.io/nginx-persistent:1.0
+  137  [200~az acr login --name Dockerpullfromhub~
+  138  az acr login --name Dockerpullfromhub~
+  139  az acr login --name Dockerpullfromhub
+  140  az acr show --name Dockerpullfromhub --query loginServer --output tsv
+  141  docker pull Dockerpullfromhub.azurecr.io/nginx-persistent:1.0
+  142  docker images
+  143  docker push Dockerpullfromhub.azurecr.io/nginx-persistent:1.0
+  144  docker tag nginx-persistent:1.0 Dockerpullfromhub.azurecr.io/nginx-persistent:1.0
+  145  docker images | grep nginx
+  146  docker push Dockerpullfromhub.azurecr.io/nginx-persistent:1.0
+  147  az login
+  148  az acr list --output table
+  149  az acr show   --name <acr-name>   --query loginServer   --output tsv
+  150  az acr show   --name <acr-name>   --query id   --output tsv
+  151  az account show --query user.name --output tsv
+  152  az acr login --name <acr-name>
+  153  az acr login --name demvmpush
+  154  docker tag nginx-persistent:1.0 <acr-login-server>/nginx-persistent:1.0
+  155  docker tag nginx-persistent:1.0 demvmpush/nginx-persistent:1.0
+  156  docker push mynewacr.azurecr.io/nginx-persistent:1.0
+  157  docker images
+  158  docker tag nginx-persistent:1.0 demvmpush.azurecr.io/nginx-persistent:1.0
+  159  docker images | grep demvmpush
+  160* docker push mynewacr..io/nginx-persistent:1.0
+  161  docker push demvmpush.azurecr.io/nginx-persistent:1.0
+  162  history
+dockervm@DockerVM:~/nginx-image$

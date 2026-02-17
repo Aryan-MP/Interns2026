@@ -1,0 +1,39 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmName": {
+      "type": "string"
+    },
+    "diskName": {
+      "type": "string"
+    },
+    "diskSizeGB": {
+      "type": "int",
+      "defaultValue": 128
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2022-11-01",
+      "name": "[parameters('vmName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "storageProfile": {
+          "dataDisks": [
+            {
+              "lun": 0,
+              "name": "[parameters('diskName')]",
+              "createOption": "Empty",
+              "diskSizeGB": "[parameters('diskSizeGB')]",
+              "managedDisk": {
+                "storageAccountType": "Standard_LRS"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,200 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": { "type": "string", "defaultValue": "eastus2" },
+    "vnetName": { "type": "string", "defaultValue": "sharedVNet" },
+    "subnetName": { "type": "string", "defaultValue": "sharedSubnet" },
+    "vnetPrefix": { "type": "string", "defaultValue": "10.0.0.0/16" },
+    "subnetPrefix": { "type": "string", "defaultValue": "10.0.1.0/24" },
+    "linuxVMName": { "type": "string", "defaultValue": "linuxVM01" },
+    "linuxAdminUsername": { "type": "string", "defaultValue": "azureuser" },
+    "linuxAdminPassword": { "type": "securestring" },
+    "winVMName": { "type": "string", "defaultValue": "winVM01" },
+    "winAdminUsername": { "type": "string", "defaultValue": "azureadmin" },
+    "winAdminPassword": { "type": "securestring" }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-09-01",
+      "name": "[parameters('vnetName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "addressSpace": { "addressPrefixes": ["[parameters('vnetPrefix')]"] },
+        "subnets": [
+          {
+            "name": "[parameters('subnetName')]",
+            "properties": { "addressPrefix": "[parameters('subnetPrefix')]" }
+          }
+        ]
+      }
+    },
+
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2023-09-01",
+      "name": "[concat(parameters('linuxVMName'),'-pip')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Standard" },
+      "properties": { "publicIPAllocationMethod": "Static" }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2023-09-01",
+      "name": "[concat(parameters('linuxVMName'),'-nic')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]",
+        "[resourceId('Microsoft.Network/publicIPAddresses', concat(parameters('linuxVMName'),'-pip'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "subnet": { "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnetName'))]" },
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": { "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(parameters('linuxVMName'),'-pip'))]" }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-07-01",
+      "name": "[parameters('linuxVMName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('linuxVMName'),'-nic'))]"
+      ],
+      "properties": {
+        "hardwareProfile": { "vmSize": "Standard_D3s_v2" },
+        "osProfile": {
+          "computerName": "[parameters('linuxVMName')]",
+          "adminUsername": "[parameters('linuxAdminUsername')]",
+          "adminPassword": "[parameters('linuxAdminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "Canonical",
+            "offer": "0001-com-ubuntu-server-jammy",
+            "sku": "22_04-lts-gen2",
+            "version": "latest"
+          },
+          "osDisk": { "createOption": "FromImage" }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            { "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('linuxVMName'),'-nic'))]" }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2023-07-01",
+      "name": "[concat(parameters('linuxVMName'),'/InstallNginx')]",
+      "location": "[parameters('location')]",
+      "dependsOn": ["[resourceId('Microsoft.Compute/virtualMachines', parameters('linuxVMName'))]"],
+      "properties": {
+        "publisher": "Microsoft.Azure.Extensions",
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.1",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "fileUris": [
+            "https://raw.githubusercontent.com/azure-samples/quickstart-templates/master/nginx/nginx.sh"
+          ],
+          "commandToExecute": "bash nginx.sh"
+        }
+      }
+    },
+
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2023-09-01",
+      "name": "[concat(parameters('winVMName'),'-pip')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Standard" },
+      "properties": { "publicIPAllocationMethod": "Static" }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2023-09-01",
+      "name": "[concat(parameters('winVMName'),'-nic')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]",
+        "[resourceId('Microsoft.Network/publicIPAddresses', concat(parameters('winVMName'),'-pip'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "subnet": { "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnetName'))]" },
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": { "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(parameters('winVMName'),'-pip'))]" }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-07-01",
+      "name": "[parameters('winVMName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('winVMName'),'-nic'))]"
+      ],
+      "properties": {
+        "hardwareProfile": { "vmSize": "Standard_D3s_v2" },
+        "osProfile": {
+          "computerName": "[parameters('winVMName')]",
+          "adminUsername": "[parameters('winAdminUsername')]",
+          "adminPassword": "[parameters('winAdminPassword')]",
+          "windowsConfiguration": {
+            "provisionVMAgent": true,
+            "enableAutomaticUpdates": true
+          }
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "2019-Datacenter",
+            "version": "latest"
+          },
+          "osDisk": { "createOption": "FromImage" }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            { "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('winVMName'),'-nic'))]" }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2023-07-01",
+      "name": "[concat(parameters('winVMName'),'/InstallIIS')]",
+      "location": "[parameters('location')]",
+      "dependsOn": ["[resourceId('Microsoft.Compute/virtualMachines', parameters('winVMName'))]"],
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.10",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "fileUris": [
+            "https://raw.githubusercontent.com/azure-samples/quickstart-templates/master/iis/iis.ps1"
+          ],
+          "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File iis.ps1"
+        }
+      }
+    }
+  ]
+}

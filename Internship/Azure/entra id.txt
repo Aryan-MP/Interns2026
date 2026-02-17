@@ -1,0 +1,68 @@
+service principal 										
+
+
+
+entra id
+
+
+directory (tenants) when switched
+management grp, subs, resource grp etc change 
+
+id for everything 
+licences - various types based on requirements
+
+
+contributer - admin - developer
+
+
+
+
+
+
+storage 
+
+
+
+blob - files - table/queue 
+performance 
+redundancy - LRS - 1 zone  3 copies 
+ GRS 2 region 3 copies in both region - in 1 storage account 
+ ZRS 3 zones 1 copy 11 storage
+ GZRS 
+
+
+blob - hot cool cold 
+
+basics -> advanced -> network -> data protection -> encryption -> tags -> create
+
+
+shared access signature - associated with temp or limited access
+services - resource type - permissions - versioning - network port - ip addr
+
+azure explorer - for access using shared access signature 
+
+
+defender for cloud (entra id level enabled for subscriptions) - tracking - fixes 
+
+
+resource sharing (CORS) - add domain and access resource in another domains 
+
+resource id - for automation and scripting 
+
+locks - do not delete - lock type - for safety and unintentional deletion 
+
+diagnostic settings for ai 
+
+
+
+
+
+
+
+
+
+
+
+
+
+

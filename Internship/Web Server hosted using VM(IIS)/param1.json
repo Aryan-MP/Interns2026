@@ -1,0 +1,13 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmName": { "value": "myVM" },
+    "vmAdminUsername": { "value": "azureuser" },
+    "vmAdminPassword": { "value": "Password123!" },
+    "osType": { "value": "" },      
+    "customHtml": { "value": "<h1>Welcome to my server!</h1>" },
+    "customAuthData": { "value": "user:pass" },
+    "location": { "value": "eastus2" }
+  }
+}

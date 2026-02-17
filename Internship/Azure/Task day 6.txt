@@ -1,0 +1,17 @@
+
+
+
+Custom data - install IIS = true 
+install chrome = true                            -----> VM Windows - run custom script extensions
+IIS data = "hello Dogesh" 
+
+
+Custom script extension - CSE
+check if true or false on the above conditions 
+
+Run cse on windows 
+
+
+
+
+what how why where 
