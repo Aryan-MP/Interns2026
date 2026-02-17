@@ -1,0 +1,169 @@
+{
+"$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+"contentVersion": "1.0.0.0",
+
+"parameters": {
+"vmName": { "type": "string" },
+"adminUsername": { "type": "string" },
+"adminPassword": { "type": "secureString" },
+"storageAccount": { "type": "string" },
+"fileShareName": { "type": "string" },
+"storageKey": { "type": "secureString" },
+"scriptUrl": { "type": "string" },
+"hypervScriptUrl": { "type": "string" }
+},
+
+"variables": {
+"location": "eastus2"
+},
+
+"resources": [
+{
+"type": "Microsoft.Network/virtualNetworks",
+"apiVersion": "2023-04-01",
+"name": "vm-vnet",
+"location": "[variables('location')]",
+"properties": {
+"addressSpace": {
+"addressPrefixes": ["10.0.0.0/16"]
+},
+"subnets": [
+{
+"name": "default",
+"properties": {
+"addressPrefix": "10.0.0.0/24"
+}
+}
+]
+}
+},
+
+
+{
+  "type": "Microsoft.Network/networkSecurityGroups",
+  "apiVersion": "2023-04-01",
+  "name": "vm-nsg",
+  "location": "[variables('location')]",
+  "properties": {
+    "securityRules": [
+      {
+        "name": "AllowRDP",
+        "properties": {
+          "priority": 1000,
+          "access": "Allow",
+          "direction": "Inbound",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRange": "3389",
+          "sourceAddressPrefix": "*",
+          "destinationAddressPrefix": "*"
+        }
+      }
+    ]
+  }
+},
+
+{
+  "type": "Microsoft.Network/publicIPAddresses",
+  "apiVersion": "2023-04-01",
+  "name": "vm-ip",
+  "location": "[variables('location')]",
+  "sku": { "name": "Basic" },
+  "properties": {
+    "publicIPAllocationMethod": "Static"
+  }
+},
+
+{
+  "type": "Microsoft.Network/networkInterfaces",
+  "apiVersion": "2023-04-01",
+  "name": "vm-nic",
+  "location": "[variables('location')]",
+  "dependsOn": [
+    "vm-vnet",
+    "vm-nsg",
+    "vm-ip"
+  ],
+  "properties": {
+    "ipConfigurations": [
+      {
+        "name": "ipconfig1",
+        "properties": {
+          "subnet": {
+            "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets','vm-vnet','default')]"
+          },
+          "publicIPAddress": {
+            "id": "[resourceId('Microsoft.Network/publicIPAddresses','vm-ip')]"
+          }
+        }
+      }
+    ],
+    "networkSecurityGroup": {
+      "id": "[resourceId('Microsoft.Network/networkSecurityGroups','vm-nsg')]"
+    }
+  }
+},
+
+{
+  "type": "Microsoft.Compute/virtualMachines",
+  "apiVersion": "2023-09-01",
+  "name": "[parameters('vmName')]",
+  "location": "[variables('location')]",
+  "dependsOn": ["vm-nic"],
+  "properties": {
+    "hardwareProfile": {
+      "vmSize": "Standard_D4s_v3"
+    },
+    "osProfile": {
+      "computerName": "[parameters('vmName')]",
+      "adminUsername": "[parameters('adminUsername')]",
+      "adminPassword": "[parameters('adminPassword')]"
+    },
+    "storageProfile": {
+      "imageReference": {
+        "publisher": "MicrosoftWindowsServer",
+        "offer": "WindowsServer",
+        "sku": "2022-datacenter",
+        "version": "latest"
+      },
+      "osDisk": {
+        "createOption": "FromImage"
+      }
+    },
+    "networkProfile": {
+      "networkInterfaces": [
+        {
+          "id": "[resourceId('Microsoft.Network/networkInterfaces','vm-nic')]"
+        }
+      ]
+    }
+  }
+},
+
+{
+  "type": "Microsoft.Compute/virtualMachines/extensions",
+  "apiVersion": "2023-09-01",
+  "name": "[concat(parameters('vmName'), '/CustomScript')]",
+  "location": "[variables('location')]",
+  "dependsOn": [
+    "[parameters('vmName')]"
+  ],
+  "properties": {
+    "publisher": "Microsoft.Compute",
+    "type": "CustomScriptExtension",
+    "typeHandlerVersion": "1.10",
+    "settings": {
+      "fileUris": [
+        "[parameters('scriptUrl')]",
+        "[parameters('hypervScriptUrl')]"
+      ]
+    },
+    "protectedSettings": {
+      "commandToExecute": "[concat('powershell -ExecutionPolicy Bypass -File setup.ps1 -storageAccount ', parameters('storageAccount'), ' -fileShare ', parameters('fileShareName'), ' -storageKey ', parameters('storageKey'))]"
+    }
+  }
+}
+
+
+]
+}

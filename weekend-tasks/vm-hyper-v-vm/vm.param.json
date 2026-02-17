@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmName": {
+      "value": "webvm01"
+    },
+    "adminUsername": {
+      "value": "demo"
+    },
+    "adminPassword": {
+      "value": "Demo@123456789"
+    },
+    "storageAccount": {
+      "value": "mystorageacct"
+    },
+    "fileShareName": {
+      "value": "scripts"
+    },
+    "storageKey": {
+      "value": "REPLACE_WITH_STORAGE_KEY"
+    },
+    "scriptUrl": {
+      "value": "https://<your-storage>.blob.core.windows.net/scripts/setup.ps1"
+    },
+    "hypervScriptUrl": {
+      "value": "https://<your-storage>.blob.core.windows.net/scripts/hyperv.ps1"
+    }
+  }
+}
