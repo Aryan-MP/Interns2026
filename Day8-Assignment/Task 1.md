@@ -7,9 +7,15 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "vmName": { "type": "string" },
-    "adminUsername": { "type": "string" },
-    "adminPassword": { "type": "secureString" },
+    "vmName": {
+       "type": "string" 
+       },
+    "adminUsername": {
+       "type": "string" 
+       },
+    "adminPassword": {
+       "type": "secureString" 
+       },
     "location": {
       "type": "string",
       "defaultValue": "eastus"
@@ -20,8 +26,8 @@
     "subnetName": "iisSubnet",
     "publicIPName": "iisPublicIP",
     "nsgName": "iisNSG",
-    "nicName": "iisNIC"
-    "storageAccountName": "[toLower(concat('nikhilstorage', uniqueString(resourceGroup().id)))]",
+    "nicName": "iisNIC",
+    "storageAccountName": "[toLower(concat('nikhilstorage', uniqueString(resourceGroup().id)))]"
   },
   "resources": [
 
@@ -149,13 +155,6 @@
             "sku": "2022-Datacenter-g2",
             "version": "latest"
           },
-          "storageProfile": {
-  "imageReference": {
-    "publisher": "MicrosoftWindowsServer",
-    "offer": "WindowsServer",
-    "sku": "2022-Datacenter-g2",
-    "version": "latest"
-  },
   "osDisk": {
     "createOption": "FromImage"
   },
