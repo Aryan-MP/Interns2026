@@ -33,7 +33,7 @@
   },
 
   "variables": {
-    "acrName": "[replace(util.name('acr'), '-', '')]",
+    "acrName": "[util.name('acr')]",
     "aciName": "[util.name('Aci')]",
     "imageName": "danishdemoacr.azurecr.io/sampleapp:v1"
   },
