@@ -68,7 +68,7 @@
 
 Below is the PowerShell script used for IIS and Chrome installation:
 
-powershell
+```powershell
 param (
     [bool]$InstallIIS = $true,
     [bool]$InstallChrome = $true,
@@ -109,6 +109,7 @@ if ($InstallChrome) {
 }
 
 exit 0
+```
 
 
 - After execution, the script can be found at:
