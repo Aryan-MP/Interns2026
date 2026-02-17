@@ -4,36 +4,18 @@
   "parameters": {
     "vmName": {
       "type": "string",
-      "defaultValue": "outerVM",
-      "minLength": 1,
-      "maxLength": 15,
-      "metadata": {
-        "description": "Name of the outer Ubuntu VM that hosts the KVM nested VM."
-      }
+      "defaultValue": "outerVM"
     },
     "adminUsername": {
       "type": "string",
-      "defaultValue": "azureuser",
-      "minLength": 1,
-      "maxLength": 64,
-      "metadata": {
-        "description": "Administrator username for the VM."
-      }
+      "defaultValue": "azureuser"
     },
     "adminPassword": {
-      "type": "securestring",
-      "minLength": 12,
-      "maxLength": 72,
-      "metadata": {
-        "description": "Administrator password. Must satisfy Azure complexity (upper, lower, digit, special)."
-      }
+      "type": "securestring"
     },
     "location": {
       "type": "string",
-      "defaultValue": "[resourceGroup().location]",
-      "metadata": {
-        "description": "Azure region for all resources. Defaults to resource group location."
-      }
+      "defaultValue": "[resourceGroup().location]"
     }
   },
   "variables": {
@@ -50,10 +32,7 @@
     "ubuntuPublisher": "Canonical",
     "ubuntuOffer": "0001-com-ubuntu-server-jammy",
     "ubuntuSku": "22_04-lts-gen2",
-    "ubuntuVersion": "latest",
-    "tag_environment": "Dev",
-    "tag_project": "NestedKVM-NginxProxy",
-    "tag_owner": "HimanshuMalik"
+    "ubuntuVersion": "latest"
   },
   "resources": [
     {
@@ -61,11 +40,6 @@
       "apiVersion": "2022-09-01",
       "name": "[variables('nsgName')]",
       "location": "[parameters('location')]",
-      "tags": {
-        "Environment": "[variables('tag_environment')]",
-        "Project": "[variables('tag_project')]",
-        "Owner": "[variables('tag_owner')]"
-      },
       "properties": {
         "securityRules": [
           {
@@ -104,11 +78,6 @@
       "apiVersion": "2022-09-01",
       "name": "[variables('vnetName')]",
       "location": "[parameters('location')]",
-      "tags": {
-        "Environment": "[variables('tag_environment')]",
-        "Project": "[variables('tag_project')]",
-        "Owner": "[variables('tag_owner')]"
-      },
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
       ],
@@ -125,9 +94,7 @@
               "addressPrefix": "[variables('subnetAddressPrefix')]",
               "networkSecurityGroup": {
                 "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
-              },
-              "privateEndpointNetworkPolicies": "Enabled",
-              "privateLinkServiceNetworkPolicies": "Enabled"
+              }
             }
           }
         ]
@@ -138,22 +105,13 @@
       "apiVersion": "2022-09-01",
       "name": "[variables('publicIPName')]",
       "location": "[parameters('location')]",
-      "tags": {
-        "Environment": "[variables('tag_environment')]",
-        "Project": "[variables('tag_project')]",
-        "Owner": "[variables('tag_owner')]"
-      },
       "sku": {
         "name": "Standard",
         "tier": "Regional"
       },
       "properties": {
         "publicIPAllocationMethod": "Static",
-        "publicIPAddressVersion": "IPv4",
-        "idleTimeoutInMinutes": 4,
-        "dnsSettings": {
-          "domainNameLabel": "[toLower(concat(parameters('vmName'), '-', uniqueString(resourceGroup().id)))]"
-        }
+        "publicIPAddressVersion": "IPv4"
       }
     },
     {
@@ -161,11 +119,6 @@
       "apiVersion": "2022-09-01",
       "name": "[variables('nicName')]",
       "location": "[parameters('location')]",
-      "tags": {
-        "Environment": "[variables('tag_environment')]",
-        "Project": "[variables('tag_project')]",
-        "Owner": "[variables('tag_owner')]"
-      },
       "dependsOn": [
         "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
         "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))]"
@@ -186,9 +139,7 @@
               "privateIPAddressVersion": "IPv4"
             }
           }
-        ],
-        "enableAcceleratedNetworking": true,
-        "enableIPForwarding": false
+        ]
       }
     },
     {
@@ -196,11 +147,6 @@
       "apiVersion": "2023-03-01",
       "name": "[parameters('vmName')]",
       "location": "[parameters('location')]",
-      "tags": {
-        "Environment": "[variables('tag_environment')]",
-        "Project": "[variables('tag_project')]",
-        "Owner": "[variables('tag_owner')]"
-      },
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
       ],
@@ -249,11 +195,6 @@
               }
             }
           ]
-        },
-        "diagnosticsProfile": {
-          "bootDiagnostics": {
-            "enabled": true
-          }
         }
       }
     },
@@ -262,11 +203,6 @@
       "apiVersion": "2023-03-01",
       "name": "[variables('extensionName')]",
       "location": "[parameters('location')]",
-      "tags": {
-        "Environment": "[variables('tag_environment')]",
-        "Project": "[variables('tag_project')]",
-        "Owner": "[variables('tag_owner')]"
-      },
       "dependsOn": [
         "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
       ],
@@ -275,36 +211,9 @@
         "type": "CustomScript",
         "typeHandlerVersion": "2.1",
         "autoUpgradeMinorVersion": true,
-        "settings": {},
         "protectedSettings": {
-  "commandToExecute": "bash -c 'exec > /var/log/nested-vm-setup.log 2>&1; set +e; log(){ echo \"[$(date +%T)] $*\"; }; log \"=== nested-vm-setup START ===\"; cloud-init status --wait 2>/dev/null || true; systemctl stop unattended-upgrades apt-daily.service apt-daily-upgrade.service 2>/dev/null || true; systemctl mask apt-daily.service apt-daily-upgrade.service 2>/dev/null || true; killall apt apt-get dpkg 2>/dev/null || true; sleep 3; export DEBIAN_FRONTEND=noninteractive; apt-get update -y || true; apt-get install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virtinst nginx netcat-openbsd curl genisoimage cloud-image-utils || true; systemctl enable libvirtd || true; systemctl start libvirtd || true; sleep 5; CLOUD_IMG=/var/lib/libvirt/images/ubuntu-base.img; [ ! -f \"$CLOUD_IMG\" ] && curl -fSL -o \"$CLOUD_IMG\" https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img || true; INNER_DISK=/var/lib/libvirt/images/inner-vm.qcow2; [ ! -f \"$INNER_DISK\" ] && qemu-img create -f qcow2 -F qcow2 -b \"$CLOUD_IMG\" \"$INNER_DISK\" 10G || true; CIDIR=/var/lib/libvirt/images/cloud-init; mkdir -p $CIDIR; SEED_ISO=/var/lib/libvirt/images/seed.iso; cat <<EOF > $CIDIR/user-data
-#cloud-config
-hostname: inner-vm
-manage_etc_hosts: true
-users:
-  - name: ubuntu
-    sudo: ALL=(ALL) NOPASSWD:ALL
-    shell: /bin/bash
-    lock_passwd: false
-    plain_text_passwd: ChangeMe123!
-packages:
-  - nginx
-package_update: true
-write_files:
-  - path: /var/www/html/index.html
-    owner: www-data:www-data
-    permissions: \"0644\"
-    content: |
-      <h1>Hello from Nested VM</h1>
-      <h2>Himanshu Malik</h2>
-runcmd:
-  - systemctl enable nginx
-  - systemctl start nginx
-EOF
-; echo \"instance-id: inner-vm-001
-local-hostname: inner-vm\" > $CIDIR/meta-data; cloud-localds \"$SEED_ISO\" \"$CIDIR/user-data\" \"$CIDIR/meta-data\" || true; virt-install --name inner-vm --ram 2048 --vcpus 2 --cpu host --disk path=\"$INNER_DISK\",format=qcow2 --disk path=\"$SEED_ISO\",device=cdrom --os-variant ubuntu22.04 --network network=default --graphics none --noautoconsole --import --wait 0 || true; sleep 25; rm -f /etc/nginx/sites-enabled/default || true; echo \"server { listen 80 default_server; location / { proxy_pass http://192.168.122.10; } }\" > /etc/nginx/sites-available/reverse-proxy.conf; ln -sf /etc/nginx/sites-available/reverse-proxy.conf /etc/nginx/sites-enabled/reverse-proxy.conf; nginx -t || true; systemctl restart nginx || true; log \"=== nested-vm-setup COMPLETE ===\"'"
-}
-
+          "commandToExecute": ""
+          }
       }
     }
   ],
@@ -314,13 +223,6 @@ local-hostname: inner-vm\" > $CIDIR/meta-data; cloud-localds \"$SEED_ISO\" \"$CI
       "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))).ipAddress]",
       "metadata": {
         "description": "Static public IP of the outer VM."
-      }
-    },
-    "publicIPFQDN": {
-      "type": "string",
-      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))).dnsSettings.fqdn]",
-      "metadata": {
-        "description": "Fully qualified domain name of the public IP."
       }
     },
     "sshCommand": {
@@ -335,13 +237,6 @@ local-hostname: inner-vm\" > $CIDIR/meta-data; cloud-localds \"$SEED_ISO\" \"$CI
       "value": "[concat('curl http://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))).ipAddress, '/')]",
       "metadata": {
         "description": "curl command to test the reverse proxy."
-      }
-    },
-    "setupLogPath": {
-      "type": "string",
-      "value": "/var/log/nested-vm-setup.log",
-      "metadata": {
-        "description": "Path to setup log on the VM for troubleshooting."
       }
     }
   }
