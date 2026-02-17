@@ -86,7 +86,7 @@
         "name": "Standard"
       },
       "properties": {
-        "publicIPAllocationMethod": "Static"
+        "publicIPAllocationMethod": "Dynamic"
       }
     },
     {
