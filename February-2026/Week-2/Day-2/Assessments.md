@@ -23,7 +23,7 @@ Creating a Linux Virtual Machine to act as the Docker host.
 - Used the VM to install and run Docker
 
 ### Screenshot
-![VM Overview](./Screenshots/day7-vm-overview.png)
+![VM Overview](./Screenshot/day7-vm-overview.png)
 
 ---
 
@@ -57,6 +57,9 @@ Packaging a web application into a Docker image.
 - Created a Dockerfile using nginx as base image
 - Built Docker image using Docker CLI
 
+### Screenshot
+![Custom HTML File](./Screenshot/day7-CustomHTMLfile.png)
+
 ---
 
 ## Task 4: Push Docker Image to Docker Hub (CLI)
@@ -75,7 +78,8 @@ Uploading the Docker image to Docker Hub using command line.
 - Verified successful upload from CLI output
 
 ### Screenshot
-![Docker Hub CLI Push](./Screenshots/day7-dockerhub-cli.png)
+![Docker Hub CLI Push](./Screenshot/day7-dockerhub-cli.png)
+![Docker Hub Image](./Screenshot/day7-dockerhub-image.png)
 
 ---
 
@@ -110,7 +114,19 @@ Uploading Docker image to Azure Container Registry using command line.
 - Verified successful upload from CLI output
 
 ### Screenshot
-![ACR CLI Push](./Screenshots/day7-acr-cli.png)
+![ACR CLI Push](./Screenshot/day7-acr-cli.png)
+![ACR Image](./Screenshot/day7-acr-image.png)
+
+---
+
+## Task 7: Run Container Using Azure Container Instance (ACI)
+
+### How it is done
+- Used Docker image stored in ACR
+- Created an ACI and accessed the public IP
+
+### Screenshot
+![Container Instance Overview](./Screenshot/day7-ContainerInstance-overview.png)
 
 ---
 
