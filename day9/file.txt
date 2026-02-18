@@ -1,0 +1,9 @@
+Deploy Linux + Nginx
+az deployment group create --resource-group tkirangowda15-rg --template-file deploymachine.json --parameters adminUsername=imskadmin adminPassword='Imsk@123456789' osType=linux
+
+Deploy Windows + IIS
+
+az deployment group create --resource-group tkirangowda15-rg --template-file deploymachine.json --parameters adminUsername=imskadmin adminPassword='Imsk@123456789' osType=windows
+
+
+

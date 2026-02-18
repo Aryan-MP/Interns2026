@@ -1,0 +1,76 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "adminUsername": { "type": "string", "defaultValue": "azureuser" },
+    "adminPassword": { "type": "securestring", "defaultValue": "Student@123456" },
+    "location": { "type": "string", "defaultValue": "westus" }
+  },
+  "variables": {
+    "vmName": "Opus-Host-VM",
+    "vnetName": "OpusVNet",
+    "nicName": "Opus-NIC",
+    "publicIPName": "Opus-PIP",
+    "nsgName": "Opus-NSG"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('nsgName')]",
+      "location": "[parameters('location')]",
+      "properties": { "securityRules": [ { "name": "AllowRDP", "properties": { "priority": 1000, "protocol": "Tcp", "access": "Allow", "direction": "Inbound", "sourceAddressPrefix": "*", "sourcePortRange": "*", "destinationAddressPrefix": "*", "destinationPortRange": "3389" } } ] }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('publicIPName')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Standard" },
+      "properties": { "publicIPAllocationMethod": "Static" }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('vnetName')]",
+      "location": "[parameters('location')]",
+      "properties": { "addressSpace": { "addressPrefixes": [ "10.0.0.0/16" ] }, "subnets": [ { "name": "default", "properties": { "addressPrefix": "10.0.1.0/24", "networkSecurityGroup": { "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]" } } } ] }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('nicName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [ "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]", "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))]" ],
+      "properties": { "ipConfigurations": [ { "name": "ipconfig1", "properties": { "privateIPAllocationMethod": "Dynamic", "publicIPAddress": { "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))]" }, "subnet": { "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), 'default')]" } } } ] }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('vmName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [ "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]" ],
+      "properties": {
+        "hardwareProfile": { "vmSize": "Standard_D4s_v3" },
+        "osProfile": { "computerName": "OpusHost", "adminUsername": "[parameters('adminUsername')]", "adminPassword": "[parameters('adminPassword')]" },
+        "storageProfile": { "imageReference": { "publisher": "MicrosoftWindowsServer", "offer": "WindowsServer", "sku": "2019-Datacenter", "version": "latest" }, "osDisk": { "createOption": "FromImage" } },
+        "networkProfile": { "networkInterfaces": [ { "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]" } ] }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2019-07-01",
+      "name": "[concat(variables('vmName'), '/OpusAutomation')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [ "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]" ],
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.10",
+        "settings": {
+          "commandToExecute": "powershell -Command \"Set-Content -Path C:\\setup.ps1 -Value ([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('JABwAD0AJwBDADoAXABPAHUAdABwAHUAdAAnADsAJABmAD0AIgAkAHAAXABGAGkAbgBhAGwAUgBlAHAAbwByAHQALgB0AHgAdAAiADsAaQBmACgAIQAoAFQAZQBzAHQALQBQAGEAdABoACAAJABwACkAKQB7AG0AZAAgACQAcAAgAC0AZgB9AAoAJABoAHYAIAA9ACAAKABHAGUAdAAtAFcAaQBuAGQAbwB3AHMARgBlAGEAdAB1AHIAZQAgAEgAeQBwAGUAcgAtAFYAKQAuAEkAbgBzAHQAYQBsAGwAUwB0AGEAdABlAAoACgBpAGYAKAAkAGgAdgAgAC0AbgBlACAAJwBJAG4AcwB0AGEAbABsAGUAZAAnACkAewAKACAAIAAgACAAIwAgAFAASABBAFMARQAgAEEAOgAgAFAAUgBFAFAAQQBSAEUAIABGAE8AUgAgAFIARQBCAE8ATwBUAAoAIAAgACAAIAAkAGEAIAA9ACAATgBlAHcALQBTAGMAaABlAGQAdQBsAGUAZABUAGEAcwBrAEEAYwB0AGkAbwBuACAALQBFAHgAZQBjAHUAdABlACAAJwBQAG8AdwBlAHIAcwBoAGUAbABsAC4AZQB4AGUAJwAgAC0AQQByAGcAdQBtAGUAbgB0ACAAIgAtAEYAaQBsAGUAIABDADoAXABzAGUAdAB1AHAALgBwAHMAMQAiAAoAIAAgACAAIAAkAHQAIAA9ACAATgBlAHcALQBTAGMAaABlAGQAdQBsAGUAZABUAGEAcwBrAFQAcgBpAGcAZwBlAHIAIAAtAEEAdABTAHQAYQByAHQAdQBwAAoAIAAgACAAIABSAGUAZwBpAHMAdABlAHIALQBTAGMAaABlAGQAdQBsAGUAZABUAGEAcwBrACAALQBBAGMAdABpAG8AbgAgACQAYQAgAC0AVAByAGkAZwBnAGUAcgAgACQAdAAgAC0AVABhAHMAawBOAGEAbQBlACAAJwBPAHAAdQBzAFQAYQBzAGsAJwAgAC0AVQBzAGUAcgAgACcAUwBZAFMAVABFAE0AJwAgAC0AUgB1AG4ATABlAHYAZQBsACAASABpAGcAaABlAHMAdAAKACAAIAAgACAAUwB0AGEAcgB0AC0AUwBsAGUAZQBwACAAMgAKACAAIAAgACAASQBuAHMAdABhAGwAbAAtAFcAaQBuAGQAbwB3AHMARgBlAGEAdAB1AHIAZQAgAEgAeQBwAGUAcgAtAFYAIAAtAEkAbgBjAGwAdQBkAGUATQBhAG4AYQBnAGUAbQBlAG4AdABUAG8AbwBsAHMAIAAtAFIAZQBzAHQAYQByAHQACgB9AAoAZQBsAHMAZQAgAHsACgAgACAAIAAgACMAIABQAEgAQQBTAEUAIABCADoAIABSAEUAUwBVAE0ARQAgACYAIABEAEUAUABMAE8AWQAgAE4ARQBTAFQARQBEACAAVgBNAAoAIAAgACAAIABpAGYAKAAhACgARwBlAHQALQBWAE0AIAAnAEcAdQBlAHMAdABWAE0AJwApACkAewAKACAAIAAgACAAIAAgACAAIABOAGUAdwAtAFYATQAgACcARwB1AGUAcwB0AFYATQAnACAALQBNAGUAbQBvAHIAeQBTAHQAYQByAHQAdQBwAEIAeQB0AGUAcwAgADEARwBCACAALQBOAGUAdwBWAEgARABQAGEAdABoACAAJwBDADoAXABnAHUAZQBzAHQALgB2AGgAZAB4ACcAIAAtAE4AZQB3AFYASABEAFMAaQB6AGUAQgB5AHQAZQBzACAANQBHAEIAIAAtAEcAZQBuAGUAcgBhAHQAaQBvAG4AIAAxAAoAIAAgACAAIAAgACAAIAAgAFMAdABhAHIAdAAtAFYATQAgACcARwB1AGUAcwB0AFYATQAnAAoAIAAgACAAIAAgACAAIAAgAFMAdABhAHIAdAAtAFMAbABlAGUAcAAgADYAMAAKACAAIAAgACAAfQAKACAAIAAgACAACgAgACAAIAAgACMAIABQAEgAQQBTAEUAIABDADoAIABWAEUAUgBJAEYAWQAgACYAIABSAEUAUABPAFIAVAAgACgAVABoAGUAIAAiAE4AbwAtAEYAYQBpAGwAIgAgAEMAaABlAGMAawApAAoAIAAgACAAIAAkAHYAbQAgAD0AIABHAGUAdAAtAFYATQAgACcARwB1AGUAcwB0AFYATQAnAAoAIAAgACAAIAAkAHAAcgBvAGMAIAA9ACAARwBlAHQALQBQAHIAbwBjAGUAcwBzACAALQBOAGEAbQBlACAAJwB2AG0AdwBwACcAIAAtAEUAcgByAG8AcgBBAGMAdABpAG8AbgAgAFMAaQBsAGUAbgB0AGwAeQBDAG8AbgB0AGkAbgB1AGUAIAB8ACAAVwBoAGUAcgBlACAAewAkAF8ALgBJAGQAIAAtAGcAdAAgADAAfQAgAHwAIABTAGUAbABlAGMAdAAgAC0ARgBpAHIAcwB0ACAAMQAKAAoAIAAgACAAIAAkAHIAIAA9ACAAIgAtAC0ALQAgAEEAVQBUAE8ATQBBAFQASQBPAE4AIABTAFUAQwBDAEUAUwBTACAAUgBFAFAATwBSAFQAIAAtAC0ALQBgAHIAYABuACIACgAgACAAIAAgACQAcgAgACsAPQAgACIASABPAFMAVAAgAEgAWQBQAEUAUgBWAEkAUwBPAFIAIAAgADoAIABBAEMAVABJAFYARQAgACgASAB5AHAAZQByAC0AVgAgAEkAbgBzAHQAYQBsAGwAZQBkACkAYAByAGAAbgAiAAoAIAAgACAAIAAkAHIAIAArAD0AIAAiAE4ARQBTAFQARQBEACAAVgBNACAAUwBUAEEAVABVAFMAIAA6ACAAJAAoACQAdgBtAC4AUwB0AGEAdABlACkAYAByAGAAbgAiAAoAIAAgACAAIAAkAHIAIAArAD0AIAAiAE4ARQBTAFQARQBEACAAVgBNACAAVQBQAFQASQBNAEUAIAA6ACAAJAAoACQAdgBtAC4AVQBwAHQAaQBtAGUAKQBgAHIAYABuACIACgAgACAAIAAgACQAcgAgACsAPQAgACIAVwBPAFIASwBFAFIAIABQAFIATwBDAEUAUwBTACAAIAAgADoAIAAkACgAJABwAHIAbwBjAC4ATgBhAG0AZQApAC4AZQB4AGUAIAAoAFAASQBEADoAIAAkACgAJABwAHIAbwBjAC4ASQBkACkAKQBgAHIAYABuACIACgAgACAAIAAgACQAcgAgACsAPQAgACIALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAGAAcgBgAG4AIgAKACAAIAAgACAAJAByACAAKwA9ACAAIgBWAEUAUgBEAEkAQwBUADoAIABOAGUAcwB0AGUAZAAgAFYAaQByAHQAdQBhAGwAaQB6AGEAdABpAG8AbgAgAGkAcwAgAGYAdQBsAGwAeQAgAG8AcABlAHIAYQB0AGkAbwBuAGEAbAAuACIACgAgACAAIAAgAAoAIAAgACAAIABTAGUAdAAtAEMAbwBuAHQAZQBuAHQAIAAkAGYAIAAkAHIACgAgACAAIAAgAFUAbgByAGUAZwBpAHMAdABlAHIALQBTAGMAaABlAGQAdQBsAGUAZABUAGEAcwBrACAAJwBPAHAAdQBzAFQAYQBzAGsAJwAgAC0AQwBvAG4AZgBpAHIAbQA6ACQAZgBhAGwAcwBlAAoAfQA='))); Start-Process powershell -ArgumentList '-File C:\\setup.ps1' -WindowStyle Hidden\""
+        }
+      }
+    }
+  ]
+}
