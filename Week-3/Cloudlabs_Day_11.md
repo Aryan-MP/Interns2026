@@ -1,4 +1,4 @@
-☁️ CloudLabs by Spektra Systems — Hands-On Lab Practice
+☁️ CloudLabs by Spektra Systems 
 📌 Overview
 
 CloudLabs by Spektra Systems is a cloud-based virtual lab platform that provides preconfigured environments for hands-on practice of real IT and cloud technologies.
@@ -10,14 +10,11 @@ This repository documents the labs completed using CloudLabs, including deployme
 🖼️ Platform Preview
 🌐 CloudLabs Dashboard
 
-🖥️ Virtual Lab Environment
+<img width="1920" height="1032" alt="Screenshot 2026-02-18 145441" src="https://github.com/user-attachments/assets/9764657c-d401-46a2-8162-18c8a83321f9" />
 
-☁️ Azure Lab Deployment Example
-
-👉 Replace these placeholder images with your own screenshots from CloudLabs.
+<img width="1920" height="1080" alt="Screenshot (153)" src="https://github.com/user-attachments/assets/61f7d9a0-f2bf-43a6-a004-81b70329fc9d" />
 
 🎯 Objectives
-
 Gain hands-on experience with real cloud environments
 
 Deploy and manage cloud resources
