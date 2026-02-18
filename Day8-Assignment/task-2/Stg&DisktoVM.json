@@ -1,21 +1,10 @@
-# Day 8 - Assignment
-
-## Task - 1  Using the ARM templates to create a Windows Virtual Machine and installing an IIS server in it and attaching a custom HTML image using the Custom Script Extention and finally accessing it using the Public IP. ( Everything using the terminal )
-
-
 {
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "vmName": {
-       "type": "string" 
-       },
-    "adminUsername": {
-       "type": "string" 
-       },
-    "adminPassword": {
-       "type": "secureString" 
-       },
+    "vmName": { "type": "string" },
+    "adminUsername": { "type": "string" },
+    "adminPassword": { "type": "secureString" },
     "location": {
       "type": "string",
       "defaultValue": "eastus"
@@ -27,7 +16,8 @@
     "publicIPName": "iisPublicIP",
     "nsgName": "iisNSG",
     "nicName": "iisNIC",
-    "storageAccountName": "[toLower(concat('nikhilstorage', uniqueString(resourceGroup().id)))]"
+    "dataDiskName": "nikhilDataDisk",
+    "storageAccountName": "[toLower(concat('nikhil', uniqueString(resourceGroup().id)))]"
   },
   "resources": [
 
@@ -132,12 +122,41 @@
     },
 
     {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2023-01-01",
+      "name": "[variables('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2",
+      "properties": {}
+    },
+
+    {
+      "type": "Microsoft.Compute/disks",
+      "apiVersion": "2023-01-02",
+      "name": "[variables('dataDiskName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "properties": {
+        "creationData": {
+          "createOption": "Empty"
+        },
+        "diskSizeGB": 10
+      }
+    },
+
+    {
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2023-03-01",
       "name": "[parameters('vmName')]",
       "location": "[parameters('location')]",
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]",
+        "[resourceId('Microsoft.Compute/disks', variables('dataDiskName'))]"
       ],
       "properties": {
         "hardwareProfile": {
@@ -155,21 +174,18 @@
             "sku": "2022-Datacenter-g2",
             "version": "latest"
           },
-  "osDisk": {
-    "createOption": "FromImage"
-  },
-  "dataDisks": [
-    {
-      "lun": 0,
-      "createOption": "Attach",
-      "managedDisk": {
-        "id": "[resourceId('Microsoft.Compute/disks', 'nikhilDataDisk')]"
-      }
-    }
-  ]
-}
-
-          }
+          "osDisk": {
+            "createOption": "FromImage"
+          },
+          "dataDisks": [
+            {
+              "lun": 0,
+              "createOption": "Attach",
+              "managedDisk": {
+                "id": "[resourceId('Microsoft.Compute/disks', variables('dataDiskName'))]"
+              }
+            }
+          ]
         },
         "networkProfile": {
           "networkInterfaces": [
@@ -198,35 +214,7 @@
           "commandToExecute": "powershell -Command \"Install-WindowsFeature -Name Web-Server -IncludeManagementTools; Set-Content -Path 'C:\\\\inetpub\\\\wwwroot\\\\index.html' -Value '<html><body style=\\\"background-color:black;color:white;text-align:center;margin-top:20%;font-size:30px;\\\"><h1>Welcome Nikhil - IIS from ARM Deployment</h1></body></html>'\""
         }
       }
-    },
-    
-    {
-  "type": "Microsoft.Storage/storageAccounts",
-  "apiVersion": "2023-01-01",
-  "name": "[variables('storageAccountName')]",
-  "location": "[parameters('location')]",
-  "sku": {
-    "name": "Standard_LRS"
-  },
-  "kind": "StorageV2",
-  "properties": {}
-}
-,
-{
-  "type": "Microsoft.Compute/disks",
-  "apiVersion": "2023-03-01",
-  "name": "nikhilDataDisk",
-  "location": "[parameters('location')]",
-  "sku": {
-    "name": "Standard_LRS"
-  },
-  "properties": {
-    "creationData": {
-      "createOption": "Empty"
-    },
-    "diskSizeGB": 10
-  }
-}
+    }
 
   ],
 
@@ -237,7 +225,3 @@
     }
   }
 }
-
-
-<img width="1920" height="960" alt="Screenshot 2026-02-11 184340" src="https://github.com/user-attachments/assets/35d65cf3-e6ae-498c-9101-2ac78fcdebcd" />
-

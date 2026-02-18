@@ -1,8 +1,3 @@
-# Day 8 - Assignment
-
-## Task - 2 Using ARM templates and creating a Storage Account then creating a Managed Disk and attaching it to the Virtual Machine (VM)
-
-
 {
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
@@ -21,7 +16,6 @@
     "publicIPName": "iisPublicIP",
     "nsgName": "iisNSG",
     "nicName": "iisNIC",
-    "dataDiskName": "nikhilDataDisk",
     "storageAccountName": "[toLower(concat('nikhil', uniqueString(resourceGroup().id)))]"
   },
   "resources": [
@@ -127,29 +121,13 @@
     },
 
     {
-      "type": "Microsoft.Storage/storageAccounts",
-      "apiVersion": "2023-01-01",
-      "name": "[variables('storageAccountName')]",
-      "location": "[parameters('location')]",
-      "sku": {
-        "name": "Standard_LRS"
-      },
-      "kind": "StorageV2",
-      "properties": {}
-    },
-
-    {
       "type": "Microsoft.Compute/disks",
-      "apiVersion": "2023-01-02",
-      "name": "[variables('dataDiskName')]",
+      "apiVersion": "2023-04-02",
+      "name": "nikhilDataDisk",
       "location": "[parameters('location')]",
-      "sku": {
-        "name": "Standard_LRS"
-      },
+      "sku": { "name": "Standard_LRS" },
       "properties": {
-        "creationData": {
-          "createOption": "Empty"
-        },
+        "creationData": { "createOption": "Empty" },
         "diskSizeGB": 10
       }
     },
@@ -161,7 +139,7 @@
       "location": "[parameters('location')]",
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]",
-        "[resourceId('Microsoft.Compute/disks', variables('dataDiskName'))]"
+        "[resourceId('Microsoft.Compute/disks', 'nikhilDataDisk')]"
       ],
       "properties": {
         "hardwareProfile": {
@@ -187,7 +165,7 @@
               "lun": 0,
               "createOption": "Attach",
               "managedDisk": {
-                "id": "[resourceId('Microsoft.Compute/disks', variables('dataDiskName'))]"
+                "id": "[resourceId('Microsoft.Compute/disks', 'nikhilDataDisk')]"
               }
             }
           ]
@@ -219,6 +197,16 @@
           "commandToExecute": "powershell -Command \"Install-WindowsFeature -Name Web-Server -IncludeManagementTools; Set-Content -Path 'C:\\\\inetpub\\\\wwwroot\\\\index.html' -Value '<html><body style=\\\"background-color:black;color:white;text-align:center;margin-top:20%;font-size:30px;\\\"><h1>Welcome Nikhil - IIS from ARM Deployment</h1></body></html>'\""
         }
       }
+    },
+
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2023-01-01",
+      "name": "[variables('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Standard_LRS" },
+      "kind": "StorageV2",
+      "properties": {}
     }
 
   ],
@@ -230,7 +218,3 @@
     }
   }
 }
-
-
-<img width="1919" height="574" alt="Screenshot 2026-02-11 184436" src="https://github.com/user-attachments/assets/0ea4593b-83db-477f-b515-e6c3753ff11d" />
-
