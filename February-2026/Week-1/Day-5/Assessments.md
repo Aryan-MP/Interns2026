@@ -5,6 +5,7 @@ To manually create and connect all required Azure infrastructure components to d
 The goal is to understand how each resource works together instead of using the Quick Create option.
 
 ---
+<img width="1024" height="1024" alt="Gemini_Generated_Image_33f9h633f9h633f9" src="https://github.com/user-attachments/assets/6c428700-9f49-43ca-88fb-336d2f347517" />
 
 ## Scenario
 A standalone server needed to be deployed in Azure.  
