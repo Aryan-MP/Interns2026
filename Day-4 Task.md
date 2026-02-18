@@ -1,6 +1,7 @@
-# Day 4 – Advanced Azure Storage Concepts (Assessment)
+# Day-4 
 
-## Task
+## Task:  Advanced Azure Storage Concepts (Assessment)
+ 
 Design, secure, and optimize an **Azure Storage Account** using advanced storage features including **network security, identity-based access, lifecycle management, monitoring, and disaster recovery concepts**.
 
 ---

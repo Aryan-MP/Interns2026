@@ -1,5 +1,6 @@
+# Day-7
 
-# Docker and NGINX Hands-on Tasks Documentation
+## Task: Docker and NGINX Hands-on Tasks Documentation
 
 ---
 

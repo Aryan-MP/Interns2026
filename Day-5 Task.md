@@ -1,4 +1,6 @@
-# Azure VM Networking Assessment – Step-by-Step Guide
+# Day-5
+
+## Task: Azure VM Networking Assessment – Step-by-Step Guide
 
 This document explains **end-to-end steps** to create an Azure Virtual Machine **from scratch**, using **separately created networking resources**. It also explains **why Azure creates default resources** and how to **replace them with your own**.
 

@@ -1,5 +1,5 @@
 
-# Day Tasks Documentation
+# Day-6
 
 ## Task 1: Creating the Virtual Machine Scale Set (VMSS)
 
