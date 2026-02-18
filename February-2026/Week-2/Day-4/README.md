@@ -5,13 +5,13 @@ Manoj Gowda
 
 ---
 
-# Ì∑† Project Name
+# Project Name
 
 OS Switcher VM Deployment using ARM (with Nested Templates)
 
 ---
 
-# ÌæØ Project Goal
+#     Project Goal
 
 The objective was to build an automated ARM-based deployment system where:
 
@@ -23,7 +23,7 @@ The objective was to build an automated ARM-based deployment system where:
 
 ---
 
-# Ìøó Architecture Built
+#     Architecture Built
 
 The system:
 
@@ -35,7 +35,7 @@ The system:
 
 ---
 
-# Ì¥π Step 1 ‚Äì Infrastructure as Code (IaC)
+#     Step 1 ‚Äì Infrastructure as Code (IaC)
 
 Instead of using Azure Portal, infrastructure was defined in JSON files.
 
@@ -58,7 +58,7 @@ It acts as a blueprint for Azure.
 
 ---
 
-# Ì¥π Step 2 ‚Äì Conditional OS Deployment Logic
+#     Step 2 ‚Äì Conditional OS Deployment Logic
 
 
 Using ARM template logic:
@@ -73,7 +73,7 @@ Only one VM resource block executes.
 
 ---
 
-# Ì¥π Step 3 ‚Äì Automatic Web Server Installation
+#     Step 3 ‚Äì Automatic Web Server Installation
 
 Creating VM alone was not enough.
 
@@ -109,7 +109,7 @@ Nginx installed automatically without SSH login.
 
 ---
 
-# Ì¥π Step 4 ‚Äì Enforcing Single VM (Complete Mode)
+#     Step 4 ‚Äì Enforcing Single VM (Complete Mode)
 
 Deployment mode used:
 
@@ -130,7 +130,7 @@ Only one VM exists at any time.
 
 ---
 
-# Ì¥π Step 5 ‚Äì Nested Template Structure
+#     Step 5 ‚Äì Nested Template Structure
 
 Initially everything was in one large template.
 
@@ -153,7 +153,7 @@ Benefits:
 
 ---
 
-# Ì¥π Errors Encountered & Lessons Learned
+#     Errors Encountered & Lessons Learned
 
 ## 1Ô∏è‚É£ Storage Account Name Conflict
 Storage account names must be globally unique.
@@ -192,7 +192,7 @@ Required Contributor or Owner role.
 
 ---
 
-# Ì≥ö Topics Covered
+#     Topics Covered
 
 - Azure Resource Manager (ARM)
 - Infrastructure as Code (IaC)
@@ -209,7 +209,7 @@ Required Contributor or Owner role.
 
 ---
 
-# Ì∑† Final Deployment Logic
+#     Final Deployment Logic
 
 When deployed with:
 
@@ -235,7 +235,7 @@ Fully automated.
 
 ---
 
-# ÌøÅ Final Outcome
+#     Final Outcome
 
 Successfully implemented:
 
@@ -247,7 +247,7 @@ Successfully implemented:
 
 ---
 
-# Ì∑† What This Project Really Taught
+#     What This Project Really Taught
 
 This project was not just about creating a VM.
 
@@ -279,7 +279,7 @@ Only one VM resource block executes.
 
 ---
 
-# Ì¥π Step 3 ‚Äì Automatic Web Server Installation
+#     Step 3 ‚Äì Automatic Web Server Installation
 
 Creating VM alone was not enough.
 
@@ -315,7 +315,7 @@ Nginx installed automatically without SSH login.
 
 ---
 
-# Ì¥π Step 4 ‚Äì Enforcing Single VM (Complete Mode)
+#     Step 4 ‚Äì Enforcing Single VM (Complete Mode)
 
 Deployment mode used:
 
@@ -336,7 +336,7 @@ Only one VM exists at any time.
 
 ---
 
-# Ì¥π Step 5 ‚Äì Nested Template Structure
+#     Step 5 ‚Äì Nested Template Structure
 
 Initially everything was in one large template.
 
@@ -359,7 +359,7 @@ Benefits:
 
 ---
 
-# Ì¥π Errors Encountered & Lessons Learned
+#     Errors Encountered & Lessons Learned
 
 ## 1Ô∏è‚É£ Storage Account Name Conflict
 Storage account names must be globally unique.
@@ -398,7 +398,7 @@ Required Contributor or Owner role.
 
 ---
 
-# Ì≥ö Topics Covered
+#     Topics Covered
 
 - Azure Resource Manager (ARM)
 - Infrastructure as Code (IaC)
@@ -415,7 +415,7 @@ Required Contributor or Owner role.
 
 ---
 
-# Ì∑† Final Deployment Logic
+#     Final Deployment Logic
 
 When deployed with:
 
@@ -441,7 +441,7 @@ Fully automated.
 
 ---
 
-# ÌøÅ Final Outcome
+#     Final Outcome
 
 Successfully implemented:
 
@@ -453,7 +453,7 @@ Successfully implemented:
 
 ---
 
-# Ì∑† What This Project Really Taught
+#     What This Project Really Taught
 
 This project was not just about creating a VM.
 
