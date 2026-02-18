@@ -80,10 +80,8 @@ Creating VM alone was not enough.
 Requirement:
 - Windows → IIS must install automatically
 - <img width="1920" height="1080" alt="Screenshot (145)" src="https://github.com/user-attachments/assets/620341b7-bf4d-4ce6-92e1-5b7c10cf2531" />
-<img width="1920" height="1080" alt="Screenshot (145)" src="https://github.com/user-attachments/assets/620341b7-bf4d-4ce6-92e1-5b7c10cf2531" />
 
 - Linux → Nginx must install automatically
-<img width="1920" height="1080" alt="Screenshot (144)" src="https://github.com/user-attachments/assets/1063ad3e-a516-46b5-8924-1b7d463da51f" />
 <img width="1920" height="1080" alt="Screenshot (144)" src="https://github.com/user-attachments/assets/1063ad3e-a516-46b5-8924-1b7d463da51f" />
 
 ---
@@ -157,7 +155,6 @@ Benefits:
 - Enterprise-ready architecture
 
 ---
-<img width="1920" height="1080" alt="Screenshot (148)" src="https://github.com/user-attachments/assets/84fa03c5-0215-40ca-9cf2-fc905612d13e" />
 <img width="1920" height="1080" alt="Screenshot (148)" src="https://github.com/user-attachments/assets/84fa03c5-0215-40ca-9cf2-fc905612d13e" />
 
 #     Errors Encountered & Lessons Learned
