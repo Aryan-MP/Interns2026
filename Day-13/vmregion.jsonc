@@ -1,0 +1,29 @@
+// Question: "Write an Azure Policy that ensures all Virtual Machines must be deployed only in the eastus region."//
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/policyDefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters" : {
+        "location": {"type" : "string"},
+    "metadata":{
+        "description": "This policy ensures that all Virtual Machines are deployed only in the specified region.",
+        "displayName": "Allowed Location"
+        }
+    },
+    "policyRule":{
+        "if" : {
+            "allOf":[
+                {
+                    "field": "type",
+                    "equals": "Microsoft.Compute/virtualMachines"
+                },
+                {
+                    "field": "location",
+                    "notEquals": "[parameters('location')]"
+                }
+            ]
+        },
+        "then" : {
+            "effect": "deny"
+        }
+    }
+}

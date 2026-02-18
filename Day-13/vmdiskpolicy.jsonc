@@ -1,0 +1,29 @@
+//Question : "Write an Azure Policy that ensures all Virtual Machines must use Premium SSDs for their OS disks."//
+
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/policyDefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {},
+    "policyRule": {
+        "if":  {
+            "allOf":[
+                {
+                "field":"type",
+                "equals":"Microsoft.Compute/virtualMachines"
+            },
+            {
+                "anyOf":[
+                   {
+                      "field": "Microsoft.Compute/virtualMachines/storageProfile/osDisk/managedDisk/storageAccountType",
+                      "notEquals": "Premium_LRS"
+                    }
+               ]
+            }
+        ]
+  },
+
+        "then" : {
+            "effect": "deny"
+        }
+}
+}

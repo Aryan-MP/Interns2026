@@ -1,0 +1,38 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-09-01/policyDefinition.json#",
+  "properties": {
+    "displayName": "Allow only Standard SKU and Static IP for Public IPs",
+    "policyType": "Custom",
+    "mode": "All",
+    "description": "This policy ensures only Standard SKU and Static IP public IP addresses can be created.",
+    "metadata": {
+      "category": "Network"
+    },
+    "parameters": {},
+    "policyRule": {
+      "if": {
+        "allOf": [
+          {
+            "field": "type",
+            "equals": "Microsoft.Network/publicIPAddresses"
+          },
+          {
+            "anyOf": [
+              {
+                "field": "Microsoft.Network/publicIPAddresses/sku.name",
+                "notEquals": "Standard"
+              },
+              {
+                "field": "Microsoft.Network/publicIPAddresses/publicIPAllocationMethod",
+                "notEquals": "Static"
+              }
+            ]
+          }
+        ]
+      },
+      "then": {
+        "effect": "deny"
+      }
+    }
+  }
+}

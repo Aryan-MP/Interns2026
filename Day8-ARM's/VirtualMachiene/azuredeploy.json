@@ -131,10 +131,10 @@
           "vmSize": "Standard_D2s_v3"
         },
         "osProfile": {
-          "computerName": "[parameters('vmName')]",
+          "computerName":  "[parameters('vmName')]",
           "adminUsername": "[parameters('adminUsername')]",
           "adminPassword": "[parameters('adminPassword')]",
-          "customData": "[base64('$InstallIIS = \"True\"`n$InstallChrome = \"True\"`n$IISData = \"Done\"')]"
+          "customData":    "[base64('$InstallIIS = \"True\"`n$InstallChrome = \"True\"`n$IISData = \"Done\"')]"
         },
         "storageProfile": {
           "imageReference": {
