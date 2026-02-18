@@ -1,0 +1,31 @@
+{
+    "Schema": "https://raw.githubusercontent.com/Azure/PSRule/master/schemas/rbactemplate.schema.json",
+    "Metadata": {
+        "Version": "1.0.0",
+        "Author": "QA Teams",
+        "Description": "This template policy is used to create a custom role with specific permissions for managing resources in Azure. It defines the actions that are allowed or denied for the role, as well as the scope of the role assignment.",
+        "Parameters": {
+            "PolicyAssignmentName": {
+                "type": "string",
+                "defaultValue": "Deny public ip creation",
+                "metadata": {
+                    "description": "prevent creation of public ip in the assigned scope.",
+                    "Category": "General",
+                    "parameters": {
+
+
+                    },
+                    "policyRule": {
+                        "if": {
+                            "field": "type",
+                            "equals": "Microsoft.Network/publicIPAddresses"
+                        },
+                        "then": {
+                            "effect": "deny"
+                        }
+                    }
+                }
+            }
+        }
+    }
+} 

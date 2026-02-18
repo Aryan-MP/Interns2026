@@ -1,0 +1,20 @@
+{
+    "schema": "https://schema.management.azure.com/schemas/2015-01-01/policyDefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "Properties":{
+        "DisplayName": "Require Tags on Resources",
+        "Description": "This policy ensures that all resources have the specified tags.",
+        "policyType": "Custom",
+        "mode": "Indexed",
+        "Parameters":{},
+        "PolicyRule":{
+            "if": {
+                "field": "tags['Environment']",
+                "exists": "false"
+            },
+            "then": {
+                "effect": "deny"
+            }
+        }
+    }
+}
