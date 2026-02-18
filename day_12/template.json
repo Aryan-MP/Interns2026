@@ -1,0 +1,74 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {    
+    },
+    "variables": {
+        "vnetName": "MultiSubnet",
+        "subnetName1": "Security",
+        "subnetName2": "Cloud",
+        "subnetName3": "Dev"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2023-05-01",
+            "name": "[variables('vnetName')]",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "env": "dev",
+                "Owner": "Suyog",
+                "Project": "MultiSubnet_Network"
+            },
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                    "10.0.0.0/24"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('subnetName1')]",
+                        "properties": {
+                            "addressPrefix": "10.0.0.0/27"
+                        }
+                    },
+                    {
+                        "name": "[variables('subnetName2')]",
+                        "properties": {
+                            "addressPrefix": "10.0.0.64/26"
+                        }
+                    },
+                    {
+                        "name": "[variables('subnetName3')]",
+                        "properties": {
+                            "addressPrefix": "10.0.0.128/26"
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "outputs": {
+        "vnetName": {
+            "type": "string",
+            "value": "[variables('vnetName')]"
+        },
+        "vnetID": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Network/virtualNetworks',variables('vnetName'))]"
+        },
+        "securitySubnetID": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets',variables('vnetName'),variables('subnetName1'))]"
+        },
+        "cloudSubnetID": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets',variables('vnetName'),variables('subnetName2'))]"
+        },
+        "devSubnetID": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets',variables('vnetName'),variables('subnetName3'))]"
+        }
+    }
+}

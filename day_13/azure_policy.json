@@ -1,0 +1,47 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "allowedSKUs": {
+            "type": "Array",
+            "value": [
+                "Standard_B2s",
+                "Standard_DS2_v2"
+            ]
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Authorization/plicyDefination",
+            "apiVersion": "2021-06-01",
+            "name": "policy for vm sku",
+            "prperties": {
+                "displayName": "The Allow VM SKU ",
+                "policyType": "custom",
+                "mode": "All",
+                "policyRule": {
+                    "if": {
+                        "allof": [
+                            {
+                                "field": "type",
+                                "equals": "Microsoft.Compute/VirtualMachines"
+                            },
+                            {
+                                "not": {
+                                    "field": "Microsoft.Compute/VirtualMachines/sku.name",
+                                    "in": "[parameters('allowedSKUs')]"
+                                }
+                            }
+                        ]
+                    },
+                    "then": {
+                        "effect": "deny"
+                    }
+                }                 
+            }
+        }
+    ],
+    "outputs": {}
+}
+

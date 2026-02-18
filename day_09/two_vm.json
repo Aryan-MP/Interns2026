@@ -16,8 +16,7 @@
     "location": {
       "type": "string",
       "defaultValue": "eastus"
-    }
-  },
+    },
   "variables": {
     "vnetName": "myVnet",
     "subnetName": "mySubnet",

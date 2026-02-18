@@ -1,0 +1,28 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Authorization/policyDefination",
+            "apiVersion": "2021-06-01",
+            "name": "deny--outside-central-India",
+            "prperties": {
+                "displayName": "Allow only central India",
+                "policyType": "custom",
+                "mode": "All",
+                "description": "This policy denies the resources not deployed in central India",
+                "policyRule": {
+                    "if": {
+                        "field": "location",
+                        "notEquals": "centralindia"
+                    },
+                    "then": {
+                        "effect": "deny"
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {}
+}
