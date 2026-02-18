@@ -13,6 +13,7 @@ Instead of using automatic VM creation, all networking, security, storage, and c
 This approach helps in understanding real-world infrastructure design and troubleshooting.
 
 ---
+![Uploading Gemini_Generated_Image_33f9h633f9h633f9.png…]()
 
 # Exercise 1
 
