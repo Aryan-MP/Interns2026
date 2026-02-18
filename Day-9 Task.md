@@ -1,11 +1,11 @@
 
-# 📅 DAY-9 TASKS
+# DAY-9
 
 Now we move from **single-resource deployment** to **multi-resource orchestration and conditional deployments**.
 
 ---
 
-# 🚀 DAY-9 TASK-1
+## TASK-1
 
 Create:
 
@@ -302,7 +302,7 @@ This demonstrates **ARM dependency chaining using `dependsOn`**.
 
 ---
 
-# 🔄 DAY-9 TASK-2
+#  TASK-2
 
 Create **ONE reusable ARM Template** that can deploy:
 

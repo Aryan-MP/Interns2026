@@ -1,4 +1,6 @@
-# Azure ARM Deployment Guide
+# Day-8
+
+##Task: Azure ARM Deployment Guide
 
 This document explains how to perform the following tasks using **Azure ARM Templates**.
 
