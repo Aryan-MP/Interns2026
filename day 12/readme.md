@@ -2,7 +2,6 @@
 
 **Date:** February 17, 2026
 **Intern Name:** Kiran Gowda
-**Department:** Cloud & Networking
 **Topic Covered:** Networking Fundamentals, CIDR Calculation, Subnetting, and VNet Design
 
 ## 🎯 Objective
