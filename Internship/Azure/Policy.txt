@@ -1,0 +1,83 @@
+anyOf - means OR - will work when any one of the options work - policy applied if any one conditions true 
+allOf - means AND - will work only when all options are viable - policy applied if all conditions true 
+
+notEquals - supports single value 
+notIn - for multiple value 
+
+
+
+🔎 Azure Policy Property Paths — Core Services
+🖥️ Compute (VMs & Disks)
+Microsoft.Compute/virtualMachines/sku.name → VM size/SKU
+
+Microsoft.Compute/virtualMachines/osProfile.adminUsername → Admin username
+
+Microsoft.Compute/virtualMachines/osProfile.linuxConfiguration.disablePasswordAuthentication → Require SSH key authentication
+
+Microsoft.Compute/virtualMachines/storageProfile.osDisk.encryptionSettings.enabled → OS disk encryption enabled
+
+Microsoft.Compute/disks/sku.name → Disk redundancy (Standard_LRS, Premium_LRS, Standard_ZRS)
+
+Microsoft.Compute/disks/encryptionSettingsCollection[*].enabled → Require disk encryption
+
+📦 Storage
+Microsoft.Storage/storageAccounts/sku.name → Storage redundancy (Standard_LRS, Standard_GRS, Standard_ZRS)
+
+Microsoft.Storage/storageAccounts/supportsHttpsTrafficOnly → Require HTTPS traffic only
+
+Microsoft.Storage/storageAccounts/allowBlobPublicAccess → Block public blob access
+
+Microsoft.Storage/storageAccounts/networkAcls.ipRules[*].value → Restrict allowed IP ranges
+
+Microsoft.Storage/storageAccounts/encryption.services.blob.enabled → Require blob encryption enabled
+
+🌐 Networking
+Microsoft.Network/networkInterfaces/ipConfigurations[*].subnet.id → Enforce subnet membership
+
+Microsoft.Network/publicIPAddresses/publicIPAllocationMethod → Static vs Dynamic allocation
+
+Microsoft.Network/publicIPAddresses/sku.name → Public IP SKU (Standard)
+
+Microsoft.Network/networkSecurityGroups/securityRules[*].direction → NSG rule direction (Inbound/Outbound)
+
+Microsoft.Network/networkSecurityGroups/securityRules[*].access → NSG rule access (Allow/Deny)
+
+Microsoft.Network/networkSecurityGroups/securityRules[*].destinationPortRange → Allowed destination ports
+
+Microsoft.Network/virtualNetworks/addressSpace.addressPrefixes[*] → Allowed VNet address ranges
+
+Microsoft.Network/expressRouteCircuits/serviceProvider.bandwidthInMbps → Allowed bandwidth for ExpressRoute
+
+🔐 Security & Identity
+Microsoft.KeyVault/vaults/sku.name → Vault SKU (Standard, Premium)
+
+Microsoft.KeyVault/vaults/enabledForDeployment → Allow VM deployment access
+
+Microsoft.KeyVault/vaults/enabledForTemplateDeployment → Allow ARM template access
+
+Microsoft.KeyVault/vaults/enabledForDiskEncryption → Allow disk encryption access
+
+🗄️ Databases
+Microsoft.Sql/servers/version → SQL Server version
+
+Microsoft.Sql/servers/databases/transparentDataEncryption.status → Require TDE enabled
+
+Microsoft.Sql/servers/databases/auditingSettings.state → Require auditing enabled
+
+🌐 App Services
+Microsoft.Web/sites/httpsOnly → Require HTTPS only
+
+Microsoft.Web/sites/clientAffinityEnabled → Enforce client affinity
+
+Microsoft.Web/sites/siteConfig.ftpsState → Enforce FTPS only
+
+📋 General Properties (All Resources)
+type → Resource type
+
+location → Resource location
+
+name → Resource name
+
+tags → Resource tags
+
+kind → Resource kind

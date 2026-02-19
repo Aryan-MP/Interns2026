@@ -1,0 +1,30 @@
+{
+  "properties": {
+    "displayName": "Disallow Subnets which do not have NICs",
+    "policyType": "Custom",
+    "mode": "All",
+    "description": "This policy disallows subnets with no NICs attached.",
+    "metadata": {
+      "category": "Virtual Networks"
+    },
+    "policyRule": {
+      "if": {
+        
+            "allOf": [
+              {
+                "field": "type",
+                "equals": "Microsoft.Network/networkInterfaces"
+              },
+              {
+                "field": "Microsoft.Network/networkInterfaces/ipConfigurations[*].subnet.id",
+                "notContains": "frontend-subnet"
+              }
+            ]
+          }
+        
+      },
+      "then": {
+        "effect": "deny"
+      }
+    }
+}

@@ -1,0 +1,30 @@
+{
+  "properties": {
+    "displayName": "Allow only Standard sku Public IP",
+    "policyType": "Custom",
+    "mode": "All",
+    "description": "This policy disallows subnets with no NICs attached.",
+    "metadata": {
+      "category": "Virtual Networks/Public IP addresses"
+    },
+    "policyRule": {
+      "if": {
+        
+            "allOf": [
+              {
+                "field": "type",
+                "equals": "Microsoft.Network/publicIPAddresses"
+              },
+              {
+                "field": "Microsoft.Network/publicIPAddresses/sku.name",
+                "notContains": "Standard"
+              }
+            ]
+          }
+        
+      },
+      "then": {
+        "effect": "deny"
+      }
+    }
+}

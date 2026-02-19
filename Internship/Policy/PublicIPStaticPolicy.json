@@ -1,0 +1,37 @@
+{
+  "properties": {
+    "displayName": "Public IP allows only Static IP and Basic sku",
+    "policyType": "Custom",
+    "mode": "All",
+    "description": "Public IP allows only Static IP and Basic sku.",
+    "metadata": {
+      "category": "Network"
+    },
+    "policyRule": {
+      "if": {
+        
+          
+            "allOf": [
+              {
+                "field": "type",
+                "equals": "Microsoft.Network/publicIPAddresses"
+              },
+              {
+                "field": "Microsoft.Network/publicIPAddresses/sku.name",
+                "notEquals": "Basic"
+              },
+              {
+                "field": "Microsoft.Network/publicIPAddresses/publicIPAllocationMethod",
+                "notEquals": "Static"
+              }
+            ]
+          }
+        
+      },
+      "then": {
+        "effect": "deny"
+      }
+    }
+  
+}
+

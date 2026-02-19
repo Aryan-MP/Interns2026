@@ -1,9 +1,9 @@
 entra id - paas
- 
+ 
 tenant -> subscription -> resource groups(for managing & grouping resources)
 
 arm - azure resource manager
-for validation 
+for validation
 
 management level -> subscription -> resources groups -> resources
 
@@ -14,17 +14,17 @@ azure vm
 
 app service - paas, vm - iaas
 
-az - as - region 
+az - as - region
 
-availability set - logical set of vms set in a single avail zone with fault domain and update domain setup 
+availability set - logical set of vms set in a single avail zone with fault domain and update domain setup
 
-availability zone - a zone with multiple datacentres setup for high availability and reliability 
+availability zone - a zone with multiple datacentres setup for high availability and reliability
 
-region - a geographical region containing many az at least 3 
+region - a geographical region containing many az at least 3
 
 
-vm config - subs -> res grp -> vm name -> region -> az -> image -> size -> authen type -> passw/ssh -> in/outbound ports -> disk -> networking -> management -> advanced(custom scripts) -> tags -> review + create 
---> ssh 
+vm config - subs -> res grp -> vm name -> region -> az -> image -> size -> authen type -> passw/ssh -> in/outbound ports -> disk -> networking -> management -> advanced(custom scripts) -> tags -> review + create
+--> ssh
 
 
 
@@ -33,7 +33,7 @@ vm config - subs -> res grp -> vm name -> region -> az -> image -> size -> authe
 Networking
 
 ip range (v net)
-subnet 
+subnet
 ip address
 
 
@@ -49,6 +49,14 @@ generalized image - open not protected
 
 
 
+arm 
+cse 
+logon task
 
+ms foundry
+azure ai
 
+basic models img text etc
+
+validation for resources
 

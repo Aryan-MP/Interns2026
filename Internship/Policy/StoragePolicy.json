@@ -1,0 +1,36 @@
+{
+  "properties": {
+    "displayName": "Allow Only East US and Standard sku Size",
+    "policyType": "Custom",
+    "mode": "All",
+    "description": "This policy allows resources only in East US region and only Standard sku size.",
+    "metadata": {
+      "category": "StorageAccount"
+    },
+    "policyRule": {
+      "if": {
+        "anyOf": [
+          {
+            "field": "location",
+            "notEquals": "eastus"
+          },
+          {
+            "allOf": [
+              {
+                "field": "type",
+                "equals": "Microsoft.Storage/storageAccounts"
+              },
+              {
+                "field": "Microsoft.Storage/storageAccounts/sku.name",
+                "notEquals": "Standard_LRS"
+              }
+            ]
+          }
+        ]
+      },
+      "then": {
+        "effect": "deny"
+      }
+    }
+  }
+}
