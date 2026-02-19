@@ -1,0 +1,151 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "loadBalancers_myslb_name": {
+            "defaultValue": "myslb",
+            "type": "String"
+        },
+        "publicIPAddresses_slb_ip_externalid": {
+            "defaultValue": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/FardeenAttar-rg/providers/Microsoft.Network/publicIPAddresses/slb-ip",
+            "type": "String"
+        },
+        "virtualNetworks_vnet_westus2_externalid": {
+            "defaultValue": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/FardeenAttar-rg/providers/Microsoft.Network/virtualNetworks/vnet-westus2",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Network/loadBalancers",
+            "apiVersion": "2024-07-01",
+            "name": "[parameters('loadBalancers_myslb_name')]",
+            "location": "westus2",
+            "sku": {
+                "name": "Standard",
+                "tier": "Regional"
+            },
+            "properties": {
+                "frontendIPConfigurations": [
+                    {
+                        "name": "myalb",
+                        "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('loadBalancers_myslb_name')), '/frontendIPConfigurations/myalb')]",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[parameters('publicIPAddresses_slb_ip_externalid')]"
+                            }
+                        }
+                    }
+                ],
+                "backendAddressPools": [
+                    {
+                        "name": "slb-pool",
+                        "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', parameters('loadBalancers_myslb_name'), 'slb-pool')]",
+                        "properties": {
+                            "loadBalancerBackendAddresses": [
+                                {
+                                    "name": "267c1d57-486a-4ee4-898c-56b1d6622727",
+                                    "properties": {
+                                        "ipAddress": "172.16.0.4",
+                                        "virtualNetwork": {
+                                            "id": "[parameters('virtualNetworks_vnet_westus2_externalid')]"
+                                        }
+                                    }
+                                },
+                                {
+                                    "name": "63d89b5e-601b-468a-b3de-0ba0d035a73e",
+                                    "properties": {
+                                        "ipAddress": "172.16.0.5",
+                                        "virtualNetwork": {
+                                            "id": "[parameters('virtualNetworks_vnet_westus2_externalid')]"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "loadBalancingRules": [
+                    {
+                        "name": "slb-rule",
+                        "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('loadBalancers_myslb_name')), '/loadBalancingRules/slb-rule')]",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('loadBalancers_myslb_name')), '/frontendIPConfigurations/myalb')]"
+                            },
+                            "frontendPort": 80,
+                            "backendPort": 80,
+                            "enableFloatingIP": false,
+                            "idleTimeoutInMinutes": 4,
+                            "protocol": "Tcp",
+                            "enableTcpReset": false,
+                            "loadDistribution": "Default",
+                            "disableOutboundSnat": true,
+                            "enableConnectionTracking": false,
+                            "backendAddressPool": {
+                                "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', parameters('loadBalancers_myslb_name'), 'slb-pool')]"
+                            },
+                            "backendAddressPools": [
+                                {
+                                    "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', parameters('loadBalancers_myslb_name'), 'slb-pool')]"
+                                }
+                            ],
+                            "probe": {
+                                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('loadBalancers_myslb_name')), '/probes/hp')]"
+                            }
+                        }
+                    }
+                ],
+                "probes": [
+                    {
+                        "name": "hp",
+                        "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('loadBalancers_myslb_name')), '/probes/hp')]",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "port": 80,
+                            "intervalInSeconds": 5,
+                            "numberOfProbes": 1,
+                            "probeThreshold": 1,
+                            "noHealthyBackendsBehavior": "AllProbedDown"
+                        }
+                    }
+                ],
+                "inboundNatRules": [],
+                "outboundRules": [],
+                "inboundNatPools": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/loadBalancers/backendAddressPools",
+            "apiVersion": "2024-07-01",
+            "name": "[concat(parameters('loadBalancers_myslb_name'), '/slb-pool')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/loadBalancers', parameters('loadBalancers_myslb_name'))]"
+            ],
+            "properties": {
+                "loadBalancerBackendAddresses": [
+                    {
+                        "name": "267c1d57-486a-4ee4-898c-56b1d6622727",
+                        "properties": {
+                            "ipAddress": "172.16.0.4",
+                            "virtualNetwork": {
+                                "id": "[parameters('virtualNetworks_vnet_westus2_externalid')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "63d89b5e-601b-468a-b3de-0ba0d035a73e",
+                        "properties": {
+                            "ipAddress": "172.16.0.5",
+                            "virtualNetwork": {
+                                "id": "[parameters('virtualNetworks_vnet_westus2_externalid')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}
