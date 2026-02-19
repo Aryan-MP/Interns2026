@@ -1,28 +1,29 @@
-
 # Day 10 – Bicep Deployment and Secure Access to Private VM via Public VM
 
 ## Project Overview
 
-This project demonstrates Infrastructure as Code using Bicep and implements a secure network architecture in Azure. The design ensures that a Private VM is not directly exposed to the internet and can only be accessed through a Public VM acting as a gateway using port forwarding.
+This project demonstrates Infrastructure as Code (IaC) using Bicep and implements a secure Azure network architecture.
 
-The project is divided into two tasks:
+The design ensures:
 
-1. Deploy a Storage Account using Bicep.
-2. Deploy a Virtual Network with Public and Private subnets, two VMs, and configure secure access via port forwarding.
+* A Private VM is not exposed to the internet.
+* A Public VM acts as a secure gateway.
+* Traffic is forwarded securely using Linux iptables NAT rules.
+* Infrastructure is deployed using Azure CLI.
 
 ---
 
-# Task 1 – Create a Storage Account Using Bicep
+# Task 1 – Deploy a Storage Account Using Bicep
 
 ## Objective
 
-* Write infrastructure using Bicep.
-* Deploy resources using Azure CLI.
-* Understand how Bicep simplifies ARM templates.
+* Write infrastructure using Bicep
+* Deploy resources using Azure CLI
+* Understand how Bicep simplifies ARM templates
 
 ---
 
-## File: storage.bicep
+## File: `storage.bicep`
 
 ```bicep
 param storageAccountName string
@@ -47,15 +48,9 @@ output storageId string = storage.id
 
 ## Deployment
 
-Login to Azure:
-
 ```bash
 az login
-```
 
-Deploy the template:
-
-```bash
 az deployment group create \
   --resource-group manoj-rg \
   --template-file storage.bicep \
@@ -66,20 +61,21 @@ az deployment group create \
 
 ## Validation
 
-Navigate to Azure Portal → Resource Group → Verify that the Storage Account has been created successfully.
+Navigate to Azure Portal → Resource Group → Verify the Storage Account has been created successfully.
 
 ---
 
-# Task 2 – Secure VNet with Public and Private VMs
+# Task 2 – Secure Network with Public and Private VMs
 
 ## Objective
 
-Design and deploy a secure network architecture where:
+Deploy a secure architecture where:
 
-* A Public VM acts as a gateway.
-* A Private VM hosts the application.
-* The Private VM has no public IP.
-* Access to the Private VM is only possible through the Public VM using port forwarding.
+* Public Subnet hosts a Gateway VM
+* Private Subnet hosts a Web Server VM
+* Private VM has no Public IP
+* Access to the application is possible only through the Public VM
+* Port forwarding is configured using iptables
 
 ---
 
@@ -88,12 +84,12 @@ Design and deploy a secure network architecture where:
 ```
 Your Laptop
       ↓
-Public VM (Gateway / Jump Host)
-      ↓ (Port Forwarding)
-Private VM (Application Server)
+Public VM (Gateway)
+      ↓  (NAT / Port Forwarding)
+Private VM (Web Server)
 ```
 
-The Private VM is not directly accessible from the internet.
+The Private VM is fully isolated from direct internet access.
 
 ---
 
@@ -107,29 +103,104 @@ Subnets:
 * Public Subnet: 10.0.1.0/24
 * Private Subnet: 10.0.2.0/24
 
+Private VM IP: 10.0.2.10
+
 ---
 
-# Bicep Template: day10-network-vm.bicep
+# Bicep Template: `day10-network-vm.bicep`
 
-This template provisions:
+The following template provisions:
 
 * Network Security Group
-* Virtual Network with Public and Private subnets
-* Public IP Address
+* Virtual Network
+* Public IP
 * Public VM (Gateway)
 * Private VM (Web Server)
-* Nginx installation using Custom Script Extension
-* Port forwarding configuration on Public VM
-
-Deployment automatically:
-
-* Installs Nginx on Private VM
-* Deploys a custom HTML page
-* Configures iptables on Public VM to forward traffic
+* Nginx installation via Custom Script Extension
+* Automatic iptables port forwarding configuration
 
 ---
 
-## Deploy the Environment
+## Template Code
+
+```json
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "adminUsername": {
+            "defaultValue": "azureuser",
+            "type": "String"
+        },
+        "adminPassword": {
+            "defaultValue": "Azureuser@12",
+            "type": "SecureString"
+        },
+        "location": {
+            "defaultValue": "[resourceGroup().location]",
+            "type": "String"
+        },
+        "vmSize": {
+            "defaultValue": "Standard_DC1s_v3",
+            "type": "String"
+        }
+    },
+    "variables": {
+        "vnetName": "PortForwardVNet",
+        "publicSubnetName": "Public-Subnet",
+        "privateSubnetName": "Private-Subnet",
+        "publicVmName": "Gateway-VM",
+        "privateVmName": "WebServer-VM",
+        "publicIPName": "Gateway-Public-IP",
+        "nsgName": "PortForward-NSG",
+        "privateVmIP": "10.0.2.10"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2020-06-01",
+            "name": "[variables('nsgName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "AllowSSH",
+                        "properties": {
+                            "priority": 1000,
+                            "protocol": "Tcp",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "*",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "22"
+                        }
+                    },
+                    {
+                        "name": "AllowHTTP",
+                        "properties": {
+                            "priority": 1010,
+                            "protocol": "Tcp",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "*",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "80"
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}
+```
+
+(For brevity in this README example, only part of the template is shown. Full template is included in the repository file.)
+
+---
+
+# Deployment
 
 ```bash
 az deployment group create \
@@ -140,98 +211,85 @@ az deployment group create \
 
 ---
 
-# Application Setup on Private VM
+# Automatic Configuration
 
-The Custom Script Extension performs the following:
+## Private VM
 
-* Updates package repository
 * Installs Nginx
-* Creates a custom HTML page
-* Enables and starts Nginx service
+* Deploys custom HTML page
+* Starts and enables Nginx
+* Listens on port 80
 
-The application listens on port 80 inside the Private VM.
+## Public VM
+
+* Enables IP forwarding
+* Configures NAT rules
+* Forwards incoming HTTP traffic to Private VM
 
 ---
 
-# Port Forwarding Configuration (Linux – iptables)
-
-On the Public VM, IP forwarding and NAT rules are configured:
+# Port Forwarding Logic
 
 ```bash
-sudo sysctl -w net.ipv4.ip_forward=1
+sysctl -w net.ipv4.ip_forward=1
 
-sudo iptables -t nat -A PREROUTING -p tcp --dport 80 \
+iptables -t nat -A PREROUTING -p tcp --dport 80 \
   -j DNAT --to-destination 10.0.2.10:80
 
-sudo iptables -t nat -A POSTROUTING -j MASQUERADE
+iptables -t nat -A POSTROUTING -j MASQUERADE
 ```
 
-This ensures that:
+Traffic Flow:
 
-* Traffic arriving at Public VM on port 80
-* Is forwarded internally to Private VM on port 80
+1. Browser sends request to Public VM.
+2. Public VM forwards request to Private VM.
+3. Private VM processes request using Nginx.
+4. Response returns through Public VM.
 
 ---
 
 # Access the Application
 
-Open a browser and navigate to:
+Open in browser:
 
 ```
 http://<Public-VM-IP>
 ```
 
-The request flow:
-
-1. Browser sends request to Public VM.
-2. Public VM forwards traffic to Private VM using private IP.
-3. Private VM serves the Nginx page.
-4. Response is returned through the Public VM.
-
-The Private VM remains isolated from direct internet access.
+The page is served from the Private VM.
 
 ---
 
 # Security Design
 
 * Private VM has no Public IP.
-* All inbound traffic is controlled via NSG.
-* Only Public VM is exposed to the internet.
-* Private subnet resources are protected.
-* Port forwarding provides controlled access.
+* Only Public VM is internet-facing.
+* NSG controls inbound traffic.
+* Private subnet resources are isolated.
+* Access occurs only via controlled port forwarding.
 
-This architecture follows a secure jump-host pattern commonly used in enterprise environments.
+This follows a standard enterprise jump-host architecture pattern.
 
 ---
 
 # Validation Checklist
 
-| Component       | Status Requirement     |
+| Component       | Expected Result        |
 | --------------- | ---------------------- |
 | Storage Account | Created via Bicep      |
-| Virtual Network | Created                |
+| VNet            | Created                |
 | Public VM       | Accessible             |
 | Private VM      | No Public IP           |
-| Application     | Installed and Running  |
-| Port Forwarding | Functional             |
+| Nginx           | Installed              |
+| Port Forwarding | Working                |
 | Access Pattern  | Through Public VM Only |
-
----
-
-# Key Concepts Demonstrated
-
-* Infrastructure as Code using Bicep
-* Secure network segmentation
-* Public vs Private subnet architecture
-* Network Security Groups
-* Linux port forwarding using DNAT and MASQUERADE
-* Azure Custom Script Extension
-* Secure access to internal resources
 
 ---
 
 # Conclusion
 
-This project demonstrates secure infrastructure deployment using Bicep and Azure CLI. It implements a controlled access pattern where a Private VM remains protected within a private subnet and is accessed through a Public VM using port forwarding. This design minimizes exposure and aligns with enterprise security best practices.
+This project demonstrates secure infrastructure deployment using Bicep and Azure CLI. It implements a controlled access architecture where a Private VM remains protected within a private subnet and is accessed only through a Public gateway VM using NAT-based port forwarding.
+
+This design minimizes exposure and aligns with enterprise security best practices.
 
 ---
