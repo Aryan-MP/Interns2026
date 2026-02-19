@@ -1,0 +1,15 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "roleName": {
+      "value": "Custom VM Operator"
+    },
+    "principalId": {
+      "value": "12345678-2345-2345-2455-2235243534543"
+    },
+    "principalType": {
+      "value": "User"
+    }
+  }
+}
