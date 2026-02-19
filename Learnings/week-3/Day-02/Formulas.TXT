@@ -1,0 +1,69 @@
+# 📊 CIDR Range
+
+CIDR formula:
+```
+2^(32 - prefix)
+```
+
+Example:
+```
+/24 → 2^(32 - 24) = 2^8 = 256 IP addresses
+```
+
+---
+# 🧮 Calculating Number of Networks
+
+Formula:
+```
+2^X
+```
+
+Where:
+X = Number of bits borrowed
+
+Example:
+Borrow 3 bits
+```
+2^3 = 8 networks
+```
+
+---
+
+ 🧮 Calculating Number of Hosts
+
+Formula:
+```
+2^(Host Bits) - 2
+```
+
+Host Bits:
+```
+32 - Network Bits
+```
+
+Example:
+```
+/24 → 32 - 24 = 8 host bits
+2^8 - 2 = 254 usable hosts
+```
+
+---
+ 
+# 🔢 Binary to Decimal Conversion
+
+Binary to Decimal Example:
+```
+11000000 = 128 + 64 = 192
+```
+
+Decimal to Binary Example:
+```
+192 → 11000000
+```
+
+Each octet:
+```
+128 64 32 16 8 4 2 1
+```
+
+---

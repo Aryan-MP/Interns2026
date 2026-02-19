@@ -1,0 +1,91 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "vnetName": {
+      "type": "string",
+      "defaultValue": "siva-task1",
+      "metadata": {
+        "description": "Name of the Virtual Network."
+      }
+    }
+  },
+  "variables": {
+    "vnetAddressPrefix": "10.0.0.0/24",
+    "developerSubnetName": "Developer-subnet",
+    "developerSubnetPrefix": "10.0.0.0/26",
+    "cloudSubnetName": "cloud-subnet",
+    "cloudSubnetPrefix": "10.0.0.64/26",
+    "securitySubnetName": "security-subnet",
+    "securitySubnetPrefix": "10.0.0.128/27"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-04-01",
+      "name": "[parameters('vnetName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('vnetAddressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('developerSubnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('developerSubnetPrefix')]",
+              "delegations": [],
+              "privateEndpointNetworkPolicies": "Disabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          },
+          {
+            "name": "[variables('cloudSubnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('cloudSubnetPrefix')]",
+              "delegations": [],
+              "privateEndpointNetworkPolicies": "Disabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          },
+          {
+            "name": "[variables('securitySubnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('securitySubnetPrefix')]",
+              "delegations": [],
+              "privateEndpointNetworkPolicies": "Disabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {
+    "vnetId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+    },
+    "developerSubnetId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), variables('developerSubnetName'))]"
+    },
+    "cloudSubnetId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), variables('cloudSubnetName'))]"
+    },
+    "securitySubnetId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), variables('securitySubnetName'))]"
+    }
+  }
+}
