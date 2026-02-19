@@ -59,7 +59,7 @@ Here **complete CIDR reference table from /1 to /32**, showing subnet mask and t
 
 - 128,64,32,16,8,4,2,1
 
-- Adding 128+64=192, so both they have 1, lets 168=128+32+8 they are 1,1,1
+- Adding 128+64=192, so both they have 1,1, lets 168=128+32+8 they are 1,1,1
 
 ## 1. 192.168.1.10
 
@@ -68,3 +68,27 @@ Here **complete CIDR reference table from /1 to /32**, showing subnet mask and t
 ## 2. 10.0.5.1
 
 - 00001010.00000000.00000101.00000001
+
+## Task
+
+- Create one vn and inside create 3 subnet ,subnet1 50ip,subnet2 30ip,subnet3 20ip
+
+![alt text](image.png)
+
+## The Only 3 Private IPv4 Ranges
+
+| Private Block | CIDR | Size           |
+| ------------- | ---- | -------------- |
+| 10.0.0.0      | /8   | 16 million IPs |
+| 172.16.0.0    | /12  | 1 million IPs  |
+| 192.168.0.0   | /16  | 65,536 IPs     |
+
+
+
+
+### Allowed Private IP Ranges
+| Range                           | Size             |
+| ------------------------------- | ---------------- |
+| `10.0.0.0 – 10.255.255.255`     | Large (Class A)  |
+| `172.16.0.0 – 172.31.255.255`   | Medium (Class B) |
+| `192.168.0.0 – 192.168.255.255` | Small (Class C)  |
