@@ -1,0 +1,100 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "variables": {
+    "vnetName": "ARM-VNet",
+    "nsgName": "ARM-NSG",
+    "pipName": "ARM-LB-PIP",
+    "lbName": "ARM-LoadBalancer",
+    "nic1Name": "ARM-VM1-NIC",
+    "nic2Name": "ARM-VM2-NIC"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('nsgName')]",
+      "location": "westus2",
+      "properties": {
+        "securityRules": [
+          { "name": "AllowHTTP", "properties": { "priority": 100, "protocol": "Tcp", "access": "Allow", "direction": "Inbound", "sourceAddressPrefix": "*", "sourcePortRange": "*", "destinationAddressPrefix": "*", "destinationPortRange": "80" } },
+          { "name": "AllowSSH", "properties": { "priority": 110, "protocol": "Tcp", "access": "Allow", "direction": "Inbound", "sourceAddressPrefix": "*", "sourcePortRange": "*", "destinationAddressPrefix": "*", "destinationPortRange": "22" } }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('pipName')]",
+      "location": "westus2",
+      "sku": { "name": "Standard" },
+      "properties": { "publicIPAllocationMethod": "Static" }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('vnetName')]",
+      "location": "westus2",
+      "properties": {
+        "addressSpace": { "addressPrefixes": [ "10.3.0.0/16" ] },
+        "subnets": [ { "name": "default", "properties": { "addressPrefix": "10.3.0.0/24", "networkSecurityGroup": { "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]" } } } ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/loadBalancers",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('lbName')]",
+      "location": "westus2",
+      "sku": { "name": "Standard" },
+      "dependsOn": [ "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]" ],
+      "properties": {
+        "frontendIPConfigurations": [ { "name": "FrontEndIP", "properties": { "publicIPAddress": { "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]" } } } ],
+        "backendAddressPools": [ { "name": "BackendPool" } ],
+        "probes": [ { "name": "HTTP-Probe", "properties": { "protocol": "Http", "port": 80, "requestPath": "/", "intervalInSeconds": 5, "numberOfProbes": 2 } } ],
+        "loadBalancingRules": [ { "name": "Web-Rule", "properties": { "frontendIPConfiguration": { "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations', variables('lbName'), 'FrontEndIP')]" }, "backendAddressPool": { "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', variables('lbName'), 'BackendPool')]" }, "probe": { "id": "[resourceId('Microsoft.Network/loadBalancers/probes', variables('lbName'), 'HTTP-Probe')]" }, "protocol": "Tcp", "frontendPort": 80, "backendPort": 80, "idleTimeoutInMinutes": 4 } } ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('nic1Name')]",
+      "location": "westus2",
+      "dependsOn": [ "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]", "[resourceId('Microsoft.Network/loadBalancers', variables('lbName'))]" ],
+      "properties": { "ipConfigurations": [ { "name": "ipconfig1", "properties": { "privateIPAllocationMethod": "Dynamic", "subnet": { "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), 'default')]" }, "loadBalancerBackendAddressPools": [ { "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', variables('lbName'), 'BackendPool')]" } ] } } ] }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('nic2Name')]",
+      "location": "westus2",
+      "dependsOn": [ "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]", "[resourceId('Microsoft.Network/loadBalancers', variables('lbName'))]" ],
+      "properties": { "ipConfigurations": [ { "name": "ipconfig1", "properties": { "privateIPAllocationMethod": "Dynamic", "subnet": { "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), 'default')]" }, "loadBalancerBackendAddressPools": [ { "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', variables('lbName'), 'BackendPool')]" } ] } } ] }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2020-06-01",
+      "name": "ARM-VM1",
+      "location": "westus2",
+      "dependsOn": [ "[resourceId('Microsoft.Network/networkInterfaces', variables('nic1Name'))]" ],
+      "properties": {
+        "hardwareProfile": { "vmSize": "Standard_B2as_v2" },
+        "osProfile": { "computerName": "armvm1", "adminUsername": "useradmin", "adminPassword": "Student@123456", "customData": "IyEvYmluL2Jhc2gKYXB0LWdldCB1cGRhdGUKYXB0LWdldCBpbnN0YWxsIC15IGFwYWNoZTIKZWNobyAiPGgxIHN0eWxlPSdmb250LXNpemU6IDgwcHg7IGNvbG9yOiBibHVlOyB0ZXh0LWFsaWduOiBjZW50ZXI7IG1hcmdpbi10b3A6IDE1JTsnPldlbGNvbWUgdG8gQVJNIFZNIDEgKEJsdWUpPC9oMT4iID4gL3Zhci93d3cvaHRtbC9pbmRleC5odG1sCnN5c3RlbWN0bCByZXN0YXJ0IGFwYWNoZTI=" },
+        "storageProfile": { "imageReference": { "publisher": "Canonical", "offer": "0001-com-ubuntu-server-jammy", "sku": "22_04-lts-gen2", "version": "latest" }, "osDisk": { "createOption": "FromImage" } },
+        "networkProfile": { "networkInterfaces": [ { "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nic1Name'))]" } ] }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2020-06-01",
+      "name": "ARM-VM2",
+      "location": "westus2",
+      "dependsOn": [ "[resourceId('Microsoft.Network/networkInterfaces', variables('nic2Name'))]" ],
+      "properties": {
+        "hardwareProfile": { "vmSize": "Standard_B2as_v2" },
+        "osProfile": { "computerName": "armvm2", "adminUsername": "useradmin", "adminPassword": "Student@123456", "customData": "IyEvYmluL2Jhc2gKYXB0LWdldCB1cGRhdGUKYXB0LWdldCBpbnN0YWxsIC15IGFwYWNoZTIKZWNobyAiPGgxIHN0eWxlPSdmb250LXNpemU6IDgwcHg7IGNvbG9yOiBncmVlbjsgdGV4dC1hbGlnbjogY2VudGVyOyBtYXJnaW4tdG9wOiAxNSU7Jz5XZWxjb21lIHRvIEFSTSBWTSAyIChHcmVlbik8L2gxPiIgPiAvdmFyL3d3dy9odG1sL2luZGV4Lmh0bWwKc3lzdGVtY3RsIHJlc3RhcnQgYXBhY2hlMg==" },
+        "storageProfile": { "imageReference": { "publisher": "Canonical", "offer": "0001-com-ubuntu-server-jammy", "sku": "22_04-lts-gen2", "version": "latest" }, "osDisk": { "createOption": "FromImage" } },
+        "networkProfile": { "networkInterfaces": [ { "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nic2Name'))]" } ] }
+      }
+    }
+  ]
+}
