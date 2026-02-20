@@ -1,0 +1,172 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+
+  "parameters": {
+    "adminUsername": {
+      "type": "string",
+      "defaultValue": "azureuser"
+    },
+    "adminPassword": {
+      "type": "secureString"
+    }
+  },
+
+  "variables": {
+    "location": "centralindia",
+    "vmName": "win11-client-vm",
+    "vnetName": "win11-vnet",
+    "subnetName": "default",
+    "nsgName": "win11-nsg",
+    "pipName": "win11-pip",
+    "nicName": "win11-nic"
+  },
+
+  "resources": [
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2022-05-01",
+      "name": "[variables('vnetName')]",
+      "location": "[variables('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": ["10.0.0.0/16"]
+        },
+        "subnets": [
+          {
+            "name": "[variables('subnetName')]",
+            "properties": {
+              "addressPrefix": "10.0.0.0/24"
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2022-05-01",
+      "name": "[variables('nsgName')]",
+      "location": "[variables('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "Allow-RDP",
+            "properties": {
+              "priority": 1000,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "3389"
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2022-05-01",
+      "name": "[variables('pipName')]",
+      "location": "[variables('location')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2022-05-01",
+      "name": "[variables('nicName')]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]",
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('subnetName'))]"
+              },
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+              }
+            }
+          }
+        ],
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+        }
+      }
+    },
+
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-03-01",
+      "name": "[variables('vmName')]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_D2s_v3"
+        },
+        "osProfile": {
+          "computerName": "win11vm",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "MicrosoftWindowsDesktop",
+            "offer": "windows-11",
+            "sku": "win11-25h2-pro",
+            "version": "latest"
+          },
+          "osDisk": {
+            "createOption": "FromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2023-03-01",
+      "name": "[concat(variables('vmName'), '/installApps')]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+      ],
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.10",
+        "settings": {
+          "fileUris": [
+            "https://logontaskscripts.blob.core.windows.net/scripts/scrip.ps1"
+          ],
+          "commandToExecute": "powershell -ExecutionPolicy Bypass -File scrip.ps1"
+        }
+      }
+    }
+  ]
+}
