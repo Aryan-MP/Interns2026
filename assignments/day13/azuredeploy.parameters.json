@@ -1,0 +1,16 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmName":                        { "value": "DevVM" },
+    "adminUsername":                 { "value": "azureadmin" },
+    "adminPassword":                 { "value": "Dalalombir110@" },
+    "vmSize":                        { "value": "Standard_B2ms" },
+    "windowsOSVersion":              { "value": "win11-22h2-ent" },
+    "location":                      { "value": "eastus2" },
+    "storageAccountName":            { "value": "kiran21" },
+    "storageAccountResourceGroup":   { "value": "kiranupatil-rg" },
+    "scriptContainerName":           { "value": "kiran21" },
+    "scriptFileName":                { "value": "software.ps1" }
+  }
+}
