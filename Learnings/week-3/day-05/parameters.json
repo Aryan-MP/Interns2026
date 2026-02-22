@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmName": {
+      "value": "Win11ProVM"
+    },
+    "adminUsername": {
+      "value": "azureuser"
+    },
+    "adminPassword": {
+      "value": "Username@234"
+    },
+    "vmSize": {
+      "value": "Standard_L2aos_v4"
+    },
+    "scriptUrl": {
+      "value": "https://sivastorage123456789.blob.core.windows.net/siva/script.ps1"
+    }
+  }
+}
