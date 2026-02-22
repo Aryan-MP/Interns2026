@@ -1,172 +1,196 @@
-## 🚀 Azure ARM Template Deployment Projects
+# Azure ARM Deployment Guide
 
-This repository contains **4 Azure ARM Template deployment tasks** demonstrating Infrastructure as Code (IaC) using JSON templates.
+This document explains how to perform the following tasks using **Azure ARM Templates**.
 
----
+##  Task-1
 
-## 📌 Project Overview
+Create a **Windows Virtual Machine** using ARM Template
+Install **IIS Web Server** using **Custom Script Extension (CSE)**
+Deploy a **Custom HTML Page**
 
-This project showcases how to deploy and configure Azure resources programmatically using ARM Templates.
+##  Task-2
 
-It includes:
-
-| Task | Resource |
-|------|----------|
-| Task 1 | Windows VM + IIS + Networking |
-| Task 2 | Storage Account + Container |
-| Task 3 | Attach Managed Disk to VM |
-| Task 4 | Azure Container Registry |
+Create a **Managed Disk** using ARM Template
+Attach the disk to the already created VM
+Initialize and use the disk inside the VM
 
 ---
 
-## 🧱 Architecture Flow
+# 🔹 Prerequisites
 
-```
-User → ARM Template → Azure Resource Manager → Azure Resources
-```
+Make sure you have:
 
----
+* Active Azure Subscription
+* Resource Group created
+* Azure CLI installed (or use Azure Cloud Shell)
+* RDP client to access Windows VM
+* Required ports allowed:
 
-## 🛠 Prerequisites
-
-Install and login Azure CLI:
-
-```bash
-az login
-```
-
-Verify subscription:
-
-```bash
-az account show
-```
+  * **3389** → RDP
+  * **80** → Web Access
 
 ---
 
-## 📂 Repository Structure
+# Project Structure
+
+Create a working folder like below:
 
 ```
-├── task1-vm.json
-├── task2-storage.json
-├── task3-disk.json
-├── task4-acr.json
+Azure-ARM-Lab/
+│
+├── task1-template.json
+├── task1-parameters.json
+├── install-iis.ps1
+│
+├── task2-template.json
+├── task2-parameters.json
+│
 └── README.md
 ```
 
 ---
 
-## 🖥 Task 1 — Windows VM + IIS ARM Template
-
-This ARM template deploys:
-
-- Virtual Network
-- Subnet
-- Public IP
-- Network Security Group
-- Network Interface
-- Windows Server 2022 VM
-- IIS Web Server (auto-installed)
+# 🚀 TASK-1 : Deploy Windows VM + IIS + Custom Web Page
 
 ---
 
-### 📄 Template Code
+## Step-1: Add ARM Template (VM Deployment)
 
 ```json
 {
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
+
   "parameters": {
-    "adminUsername": {
-      "type": "string"
+    "vmName": { 
+      "type": "string" 
     },
-    "adminPassword": {
-      "type": "secureString"
+    "adminUsername": {
+       "type": "string" 
+    },
+    "adminPassword": { 
+      "type": "secureString" 
+    },
+    "location": { 
+      "type": "string" 
+    },
+    "vmSize": {
+      "type": "string" 
+    },
+    "vnetName": {
+      "type": "string" 
+    },
+    "subnetName": {
+      "type": "string" 
+    },
+    "nsgName": {
+      "type": "string" 
+    },
+    "publicIpName": {
+      "type": "string" 
+    },
+    "nicName": {
+      "type": "string" 
+    },
+    "scriptFileUri": {
+      "type": "string" 
     }
   },
+
   "variables": {
-    "vmName": "Windows1ARM",
-    "vnetName": "myVNet",
-    "subnetName": "mySubnet",
-    "nsgName": "myNSG",
-    "publicIPName": "myPublicIP",
-    "nicName": "myNIC"
+    "addressPrefix": "192.168.0.0/16",
+    "subnetPrefix": "192.168.1.0/24"
   },
+
   "resources": [
-    {
-      "type": "Microsoft.Network/publicIPAddresses",
-      "apiVersion": "2023-04-01",
-      "name": "[variables('publicIPName')]",
-      "location": "[resourceGroup().location]",
-      "sku": { "name": "Standard" },
-      "properties": {
-        "publicIPAllocationMethod": "Static",
-        "publicIPAddressVersion": "IPv4"
-      }
-    },
+
     {
       "type": "Microsoft.Network/networkSecurityGroups",
-      "apiVersion": "2023-04-01",
-      "name": "[variables('nsgName')]",
-      "location": "[resourceGroup().location]",
+      "apiVersion": "2023-02-01",
+      "name": "[parameters('nsgName')]",
+      "location": "[parameters('location')]",
       "properties": {
         "securityRules": [
           {
-            "name": "Allow-HTTP",
+            "name": "Allow-RDP",
             "properties": {
               "priority": 1000,
-              "protocol": "Tcp",
-              "access": "Allow",
               "direction": "Inbound",
-              "sourceAddressPrefix": "*",
+              "access": "Allow",
+              "protocol": "Tcp",
               "sourcePortRange": "*",
-              "destinationAddressPrefix": "*",
-              "destinationPortRange": "80"
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*"
             }
           },
           {
-            "name": "Allow-RDP",
-            "properties": {
-              "priority": 1010,
-              "protocol": "Tcp",
-              "access": "Allow",
-              "direction": "Inbound",
-              "sourceAddressPrefix": "*",
-              "sourcePortRange": "*",
-              "destinationAddressPrefix": "*",
-              "destinationPortRange": "3389"
-            }
+
+                "name": "Allow-HTTP",
+                "properties": {
+                "priority": 1001,
+                "direction": "Inbound",
+                "access": "Allow",
+                "protocol": "Tcp",
+                "sourcePortRange": "*",
+                "destinationPortRange": "80",
+                "sourceAddressPrefix": "*",
+                "destinationAddressPrefix": "*"
+                }
           }
         ]
       }
     },
+
     {
       "type": "Microsoft.Network/virtualNetworks",
-      "apiVersion": "2023-04-01",
-      "name": "[variables('vnetName')]",
-      "location": "[resourceGroup().location]",
+      "apiVersion": "2023-02-01",
+      "name": "[parameters('vnetName')]",
+      "location": "[parameters('location')]",
       "properties": {
         "addressSpace": {
-          "addressPrefixes": ["10.0.0.0/16"]
+          "addressPrefixes": [
+            "[variables('addressPrefix')]"
+          ]
         },
         "subnets": [
           {
-            "name": "[variables('subnetName')]",
+            "name": "[parameters('subnetName')]",
             "properties": {
-              "addressPrefix": "10.0.0.0/24"
+              "addressPrefix": "[variables('subnetPrefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsgName'))]"
+              }
             }
           }
         ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsgName'))]"
+      ]
+    },
+
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2023-02-01",
+      "name": "[parameters('publicIpName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard"
+          },
+      "properties": {
+        "publicIPAllocationMethod": "Static"
       }
     },
+
     {
       "type": "Microsoft.Network/networkInterfaces",
-      "apiVersion": "2023-04-01",
-      "name": "[variables('nicName')]",
-      "location": "[resourceGroup().location]",
+      "apiVersion": "2023-02-01",
+      "name": "[parameters('nicName')]",
+      "location": "[parameters('location')]",
       "dependsOn": [
-        "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))]",
-        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
-        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]",
+        "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIpName'))]"
       ],
       "properties": {
         "ipConfigurations": [
@@ -174,41 +198,39 @@ This ARM template deploys:
             "name": "ipconfig1",
             "properties": {
               "subnet": {
-                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('subnetName'))]"
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnetName'))]"
               },
               "publicIPAddress": {
-                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))]"
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIpName'))]"
               }
             }
           }
-        ],
-        "networkSecurityGroup": {
-          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
-        }
+        ]
       }
     },
+
     {
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2023-03-01",
-      "name": "[variables('vmName')]",
-      "location": "[resourceGroup().location]",
+      "name": "[parameters('vmName')]",
+      "location": "[parameters('location')]",
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+        "[resourceId('Microsoft.Network/networkInterfaces', parameters('nicName'))]"
       ],
       "properties": {
         "hardwareProfile": {
-          "vmSize": "Standard_L2aos_v4"
+          "vmSize": "[parameters('vmSize')]"
         },
         "osProfile": {
-          "computerName": "[variables('vmName')]",
+          "computerName": "[parameters('vmName')]",
           "adminUsername": "[parameters('adminUsername')]",
           "adminPassword": "[parameters('adminPassword')]"
         },
         "storageProfile": {
           "imageReference": {
-            "publisher": "MicrosoftWindowsServer",
-            "offer": "WindowsServer",
-            "sku": "2022-datacenter-g2",
+            "publisher": "MicrosoftWindowsDesktop",
+            "offer": "windows-11",
+            "sku": "win11-25h2-pro",
             "version": "latest"
           },
           "osDisk": {
@@ -218,165 +240,431 @@ This ARM template deploys:
         "networkProfile": {
           "networkInterfaces": [
             {
-              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('nicName'))]"
             }
           ]
         }
       }
     },
+
     {
       "type": "Microsoft.Compute/virtualMachines/extensions",
       "apiVersion": "2023-03-01",
-      "name": "[concat(variables('vmName'), '/IISInstall')]",
-      "location": "[resourceGroup().location]",
+      "name": "[concat(parameters('vmName'), '/CustomScriptExtension')]",
+      "location": "[parameters('location')]",
       "dependsOn": [
-        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
       ],
       "properties": {
         "publisher": "Microsoft.Compute",
         "type": "CustomScriptExtension",
         "typeHandlerVersion": "1.10",
         "settings": {
-          "commandToExecute": "powershell -ExecutionPolicy Unrestricted -Command \"Install-WindowsFeature -Name Web-Server -IncludeManagementTools; echo '<h1>Hello Denith,How are you - IIS Installed via ARM + CSE</h1>' > C:\\\\inetpub\\\\wwwroot\\\\index.html\""
+          "fileUris": [
+            "[parameters('scriptFileUri')]"
+          ],
+          "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File script.ps1"
         }
       }
     }
+
+  ],
+
+  "outputs": {
+
+  "vmName": {
+    "type": "string",
+    "value": "[parameters('vmName')]"
+  },
+
+  "vmId": {
+    "type": "string",
+    "value": "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
+  },
+
+  "publicIPAddress": {
+    "type": "string",
+    "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIpName'))).ipAddress]"
+  },
+
+  "adminUsername": {
+    "type": "string",
+    "value": "[parameters('adminUsername')]"
+  },
+
+  "nicId": {
+    "type": "string",
+    "value": "[resourceId('Microsoft.Network/networkInterfaces', parameters('nicName'))]"
+  },
+
+  "nsgId": {
+    "type": "string",
+    "value": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsgName'))]"
+  },
+
+  "rdpConnectionCommand": {
+    "type": "string",
+    "value": "[concat('mstsc /v:', reference(resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIpName'))).ipAddress)]"
+  }
+}
+}
+
+```
+
+---
+
+## Step-2: Add Parameters File
+
+```json
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmName": { "value": "armWinVM01" },
+    "adminUsername": { "value": "azureuser" },
+    "adminPassword": { "value": "Azureuser@12" },
+    "location": { "value": "eastus" },
+    "vmSize": { "value": "Standard_DC2ds_v3" },
+    "vnetName": { "value": "armVnet01" },
+    "subnetName": { "value": "armSubnet01" },
+    "nsgName": { "value": "armNsg01" },
+    "publicIpName": { "value": "armPublicIp01" },
+    "nicName": { "value": "armNic01" },
+    "scriptFileUri": { 
+      "value": "https://sga1102.blob.core.windows.net/scripts/script.ps1"
+    }
+  }
+}
+
+```
+
+---
+
+## Step-3: Add PowerShell Script (Custom Script Extension)
+
+Create a script that installs IIS and deploys HTML.
+
+```powershell
+Write-Output "Starting Configuration..."
+
+# ==============================
+# Install IIS (Windows Desktop Method)
+# ==============================
+
+Write-Output "Enabling IIS Features..."
+
+Enable-WindowsOptionalFeature -Online -FeatureName IIS-WebServerRole -All -NoRestart
+Enable-WindowsOptionalFeature -Online -FeatureName IIS-WebServer -All -NoRestart
+Enable-WindowsOptionalFeature -Online -FeatureName IIS-CommonHttpFeatures -All -NoRestart
+Enable-WindowsOptionalFeature -Online -FeatureName IIS-HttpErrors -All -NoRestart
+Enable-WindowsOptionalFeature -Online -FeatureName IIS-HttpRedirect -All -NoRestart
+Enable-WindowsOptionalFeature -Online -FeatureName IIS-ApplicationDevelopment -All -NoRestart
+Enable-WindowsOptionalFeature -Online -FeatureName IIS-HealthAndDiagnostics -All -NoRestart
+Enable-WindowsOptionalFeature -Online -FeatureName IIS-Security -All -NoRestart
+Enable-WindowsOptionalFeature -Online -FeatureName IIS-RequestFiltering -All -NoRestart
+Enable-WindowsOptionalFeature -Online -FeatureName IIS-Performance -All -NoRestart
+Enable-WindowsOptionalFeature -Online -FeatureName IIS-WebServerManagementTools -All -NoRestart
+Enable-WindowsOptionalFeature -Online -FeatureName IIS-ManagementConsole -All -NoRestart
+
+Write-Output "IIS Enabled Successfully."
+
+# ==============================
+# Allow HTTP in Windows Firewall
+# ==============================
+
+Write-Output "Configuring Firewall..."
+
+New-NetFirewallRule -DisplayName "Allow HTTP" `
+  -Direction Inbound `
+  -Protocol TCP `
+  -LocalPort 80 `
+  -Action Allow `
+  -Profile Any `
+  -ErrorAction SilentlyContinue
+
+# ==============================
+# Install Google Chrome
+# ==============================
+
+Write-Output "Downloading Chrome..."
+
+$chromeInstaller = "$env:TEMP\chrome_installer.exe"
+
+Invoke-WebRequest `
+  -Uri "https://dl.google.com/chrome/install/latest/chrome/install_chrome.exe" `
+  -OutFile $chromeInstaller
+
+Write-Output "Installing Chrome..."
+
+Start-Process -FilePath $chromeInstaller -ArgumentList "/silent /install" -Wait
+
+Write-Output "Chrome Installed Successfully."
+
+# ==============================
+# Remove Default IIS Page
+# ==============================
+
+$defaultPage = "C:\inetpub\wwwroot\iisstart.htm"
+
+if (Test-Path $defaultPage) {
+    Remove-Item $defaultPage -Force
+}
+
+# ==============================
+# Create Custom HTML Page
+# ==============================
+
+$html = @"
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ARM Deployment Success</title>
+    <style>
+        body {
+            background-color: #111827;
+            color: #ffffff;
+            font-family: Arial;
+            text-align: center;
+            padding-top: 100px;
+        }
+        h1 {
+            font-size: 48px;
+            color: #22c55e;
+        }
+        .box {
+            border: 2px solid #22c55e;
+            padding: 20px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1> ARM Deployment Successful</h1>
+    <div class="box">
+        <p>IIS Installed on Windows 11</p>
+        <p>Google Chrome Installed</p>
+        <p>Custom Script Extension Executed</p>
+    </div>
+</body>
+</html>
+"@
+
+Set-Content -Path "C:\inetpub\wwwroot\index.html" -Value $html -Force
+
+Write-Output "Restarting IIS..."
+
+# Restart IIS Service
+iisreset
+
+Write-Output "Configuration Completed Successfully."
+
+```
+
+---
+
+## Step-4: Deploy the Template
+
+Login to Azure:
+
+```bash
+az login
+```
+
+Set Subscription:
+
+```bash
+az account set --subscription "<SUBSCRIPTION_ID>"
+```
+
+Run Deployment:
+
+```bash
+az deployment group create \
+  --resource-group <RESOURCE_GROUP_NAME> \
+  --template-file task1-template.json \
+  --parameters task1-parameters.json
+```
+
+---
+
+## Step-5: Validate Web Server
+
+After deployment:
+
+Get Public IP from Azure Portal.
+
+Open browser:
+
+```
+http://<Public-IP>
+```
+
+ Your Custom HTML page should load.
+
+---
+
+## Step-6: Verify Inside VM
+
+Connect using RDP:
+
+```
+mstsc → <Public-IP>
+```
+
+Check IIS:
+
+```
+C:\inetpub\wwwroot
+```
+
+Your HTML file should exist.
+
+---
+<img src="Screenshot 2026-02-22 222533.png">
+---
+
+# 💾 TASK-2 : Create and Attach Managed Disk
+
+---
+
+## Step-1: Add Disk ARM Template
+
+Paste your **Disk Creation + Attach Template** below:
+
+```json
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+
+  "parameters": {
+    "vmName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the virtual machine to which the disk will be attached"
+      }
+    },
+    "diskName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the managed disk to be created and attached to the VM"
+      }
+    },
+    "diskSizeGB": {
+      "type": "int",
+      "defaultValue": 512
+    }
+  },
+
+  "resources": [
+
+    {
+      "type": "Microsoft.Compute/disks",
+      "apiVersion": "2023-04-02",
+      "name": "[parameters('diskName')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "properties": {
+        "creationData": {
+          "createOption": "Empty"
+        },
+        "diskSizeGB": "[parameters('diskSizeGB')]"
+      }
+    },
+
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-03-01",
+      "name": "[parameters('vmName')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/disks', parameters('diskName'))]"
+      ],
+      "properties": {
+        "storageProfile": {
+          "dataDisks": [
+            {
+              "lun": 1,
+              "name": "[parameters('diskName')]",
+              "createOption": "Attach",
+              "managedDisk": {
+                "id": "[resourceId('Microsoft.Compute/disks', parameters('diskName'))]"
+              }
+            }
+          ]
+        }
+      }
+    }
+
   ]
+}
+
+```
+
+---
+
+## Step-2: Add Parameters File
+
+```json
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "14.0.0.0",
+
+"vmname": { 
+  "value": "armWinVM01"
+  },
+"diskName": {
+  "value": "armDataDisk01"
+  }
 }
 ```
 
 ---
 
-## 🚀 Deployment Command
+## Step-3: Deploy Disk Template
 
 ```bash
 az deployment group create \
- --resource-group <RG_NAME> \
- --template-file template.json \
- --parameters adminUsername=azureuser adminPassword=<Password>
-```
-<img src="Screenshot (23).png" alt="">
-
-
-## 💾 Task 2 — Storage Account + Container
-
-### Resources Created
-
-- Storage Account
-- Blob Container
-
-### Deploy
-
-```bash
-az deployment group create \
- --resource-group <RG_NAME> \
- --template-file task2-storage.json \
- --parameters storageAccountName=<uniqueName>
-```
-<img src="Screenshot (22).png" alt="">
----
-
-## 💽 Task 3 — Attach Data Disk to Existing VM
-
-Creates and attaches a **managed disk** to an existing VM.
-
-### Deploy
-
-```bash
-az deployment group create \
- --resource-group <RG_NAME> \
- --template-file task3-disk.json \
- --parameters vmName=<VM_NAME>
-```
-<img src="Screenshot (24).png" alt="">
----
-
-## 📦 Task 4 — Azure Container Registry
-
-Deploys an ACR instance.
-
-### Deploy
-
-```bash
-az deployment group create \
- --resource-group <RG_NAME> \
- --template-file task4-acr.json \
- --parameters registryName=<uniqueRegistryName>
+  --resource-group <RESOURCE_GROUP_NAME> \
+  --template-file task2-template.json \
+  --parameters task2-parameters.json
 ```
 
 ---
 
-## 🧠 Key Concepts Demonstrated
+## Step-4: Initialize Disk in VM
 
-- Infrastructure as Code
-- ARM Template syntax
-- Parameters & Variables
-- Resource dependencies
-- Managed disks
-- VM Extensions
-- Networking
-- Storage provisioning
-- Container Registry automation
+RDP into VM.
 
----
+Open Disk Management:
 
-## 🔎 Template Validation Command
-
-Always validate template before deploying:
-
-```bash
-az deployment group validate \
- --resource-group denithmathewek-rg \
- --template-file template.json
+```
+diskmgmt.msc
 ```
 
----
+You will see a new disk.
 
-## 🏆 Skills Demonstrated
+### Perform:
 
-✔ Azure ARM Templates  
-✔ Cloud Infrastructure Automation  
-✔ Networking Configuration  
-✔ Compute Deployment  
-✔ Storage Provisioning  
-✔ Container Registry Setup  
-
----
-
-## 📈 Real-World Use Cases
-
-- Automated Dev/Test environments
-- CI/CD infrastructure provisioning
-- Disaster recovery setups
-- Repeatable enterprise deployments
+1. Right Click → **Online**
+2. Initialize Disk (GPT)
+3. New Simple Volume
+4. Assign Drive Letter (Example: F:)
+5. Format → NTFS
 
 ---
 
-## 👨‍💻 Author
+## Step-5: Validate Disk
 
-**Denith**
+Open:
 
----
+```
+This PC
+```
 
-## ⭐ Best Practices Followed
-
-- Parameterized templates
-- Resource dependency ordering
-- Secure password handling
-- Modular deployment approach
+New drive should appear.
 
 ---
-
-## 📜 License
-
-This project is for learning and demonstration purposes.
-
----
-
-## 🎯 Conclusion
-
-This repository demonstrates how Azure infrastructure can be deployed fully automatically using ARM templates without manual portal configuration.
-
----
-
-⭐ If you found this useful, consider starring the repo!
