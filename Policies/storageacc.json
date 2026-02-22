@@ -1,0 +1,78 @@
+{
+  "mode": "Indexed",
+  "policyType": "Custom",
+  "displayName": "Storage Account Security Hardening - Advanced",
+  "description": "Enforces security best practices for storage accounts with tag-based exemptions",
+  "parameters": {
+    "allowedSKUs": {
+      "type": "Array",
+      "metadata": {
+        "displayName": "Allowed Storage SKUs",
+        "description": "List of storage account SKUs that are permitted"
+      },
+      "defaultValue": ["Premium_LRS", "Standard_GRS", "Standard_ZRS"]
+    },
+    "minimumTLSVersion": {
+      "type": "String",
+      "metadata": {
+        "displayName": "Minimum TLS Version",
+        "description": "The minimum TLS version required"
+      },
+      "allowedValues": ["TLS1_2", "TLS1_3"],
+      "defaultValue": "TLS1_2"
+    },
+    "exemptTagName": {
+      "type": "String",
+      "metadata": {
+        "displayName": "Exemption Tag Name",
+        "description": "Tag name that exempts a resource from this policy"
+      },
+      "defaultValue": "PolicyExempt"
+    },
+    "exemptTagValue": {
+      "type": "String",
+      "metadata": {
+        "displayName": "Exemption Tag Value",
+        "description": "Tag value that grants exemption"
+      },
+      "defaultValue": "SecurityOverride"
+    }
+  },
+  "policyRule": {
+    "if": {
+      "allOf": [
+        {
+          "field": "type",
+          "equals": "Microsoft.Storage/storageAccounts"
+        },
+        {
+          "field": "[concat('tags[', parameters('exemptTagName'), ']')]",
+          "notEquals": "[parameters('exemptTagValue')]"
+        },
+        {
+          "anyOf": [
+            {
+              "field": "Microsoft.Storage/storageAccounts/sku.name",
+              "notIn": "[parameters('allowedSKUs')]"
+            },
+            {
+              "field": "Microsoft.Storage/storageAccounts/supportsHttpsTrafficOnly",
+              "notEquals": true
+            },
+            {
+              "field": "Microsoft.Storage/storageAccounts/allowBlobPublicAccess",
+              "equals": true
+            },
+            {
+              "field": "Microsoft.Storage/storageAccounts/minimumTlsVersion",
+              "notEquals": "[parameters('minimumTLSVersion')]"
+            }
+          ]
+        }
+      ]
+    },
+    "then": {
+      "effect": "deny"
+    }
+  }
+}
