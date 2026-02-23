@@ -1,0 +1,41 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "roleDefinationID": {
+            "type": "string"
+        },
+        "principleID": {
+            "type": "string"
+        }
+    },
+    "variables": {
+        "ownerDefinationID": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635",
+        "roleAssignmentName": "[guid(parameters('principleID'),variables('ownerDefinationID'),resourceGroup().id)]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Authorization/roleAssignment",
+            "apiVersion": "2022-04-01",
+            "name": "[variables('roleAssignmentName')]",
+            "properties": {
+                "roleDefinationID": "[parameters('roleDefinationID')]",
+                "principleID": "[parameters('principleID')]" 
+            }
+        }
+    ],
+    "outputs": {
+        "name": {
+            "type": "string",
+            "value": "[variables('roleAssignmentName')]"
+        },
+        "resourceGroupName": {
+            "type": "string",
+            "value": "[resourceGroup().name]"
+        },
+        "resourceID": {
+            "type": "string",
+            "value": "[resourceID('Microsoft.Authorization/roleAssignment',variables('roleAssignmentName'))]"
+        }
+    }
+}

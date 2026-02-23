@@ -1,0 +1,196 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "adminUsername": {
+      "type": "string"
+    },
+    "adminPassword": {
+      "type": "secureString"
+    },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_D2s_v3"
+    },
+    "scriptUri": {
+      "type": "string",
+      "defaultValue": "https://spektra12234321.blob.core.windows.net/script/simple.ps1?sp=r&st=2026-02-20T10:39:18Z&se=2026-02-20T18:54:18Z&sv=2024-11-04&sr=b&sig=Hm5z4s8MUfhFGw4RFGhvnwiOxG%2BnVBRzvsd0lVAJ3Jg%3D"
+    }
+  },
+  "variables": {
+    "vnetName": "vnet01",
+    "subnetName": "subnet01",
+    "nsgName": "nsg01",
+    "pipName": "pip01",
+    "nicName": "nic01",
+    "vmName": "winvm01",
+    "location": "[resourceGroup().location]"
+  },
+  "resources": [
+
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2023-02-01",
+      "name": "[variables('nsgName')]",
+      "location": "[variables('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "Allow-RDP",
+            "properties": {
+              "priority": 1000,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "destinationAddressPrefix": "*"
+            }
+          },
+          {
+            "name": "Allow-HTTP",
+            "properties": {
+              "priority": 1010,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "80",
+              "destinationAddressPrefix": "*"
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-02-01",
+      "name": "[variables('vnetName')]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+      ],
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [ "10.0.0.0/16" ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('subnetName')]",
+            "properties": {
+              "addressPrefix": "10.0.0.0/24",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2023-02-01",
+      "name": "[variables('pipName')]",
+      "location": "[variables('location')]",
+      "sku": { "name": "Standard" },
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2023-02-01",
+      "name": "[variables('nicName')]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('subnetName'))]"
+              },
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-03-01",
+      "name": "[variables('vmName')]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "osProfile": {
+          "computerName": "winvm01",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "2022-datacenter",
+            "version": "latest"
+          },
+          "osDisk": {
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "Standard_LRS"
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2023-03-01",
+      "name": "[concat(variables('vmName'), '/customScript')]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+      ],
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.10",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "fileUris": [
+            "[parameters('scriptUri')]"
+          ],
+          "commandToExecute": "powershell -ExecutionPolicy Bypass -File simple.ps1"
+        }
+      }
+    }
+
+  ]
+}
