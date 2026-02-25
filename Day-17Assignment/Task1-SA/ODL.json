@@ -1,0 +1,206 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "storageAccountName": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 24,
+      "metadata": {
+        "description": "Name of the storage account. Must be globally unique, 3-24 characters, lowercase letters and numbers only."
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Azure region for the storage account."
+      }
+    },
+    "skuName": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_RAGRS",
+        "Standard_ZRS",
+        "Premium_LRS",
+        "Premium_ZRS"
+      ],
+      "metadata": {
+        "description": "Storage account SKU / replication strategy."
+      }
+    },
+    "kind": {
+      "type": "string",
+      "defaultValue": "StorageV2",
+      "allowedValues": [
+        "StorageV2",
+        "Storage",
+        "BlobStorage",
+        "FileStorage",
+        "BlockBlobStorage"
+      ],
+      "metadata": {
+        "description": "Kind of storage account."
+      }
+    },
+    "accessTier": {
+      "type": "string",
+      "defaultValue": "Hot",
+      "allowedValues": [
+        "Hot",
+        "Cool"
+      ],
+      "metadata": {
+        "description": "Access tier for blob storage (Hot or Cool). Applies to StorageV2 and BlobStorage kinds."
+      }
+    },
+    "enableHttpsTrafficOnly": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enforce HTTPS-only traffic to the storage account."
+      }
+    },
+    "minimumTlsVersion": {
+      "type": "string",
+      "defaultValue": "TLS1_2",
+      "allowedValues": [
+        "TLS1_0",
+        "TLS1_1",
+        "TLS1_2"
+      ],
+      "metadata": {
+        "description": "Minimum TLS version required for requests to the storage account."
+      }
+    },
+    "allowBlobPublicAccess": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Allow or disallow public access to blobs. Setting to false is recommended for security."
+      }
+    },
+    "enableBlobSoftDelete": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable soft delete for blob data."
+      }
+    },
+    "blobSoftDeleteRetentionDays": {
+      "type": "int",
+      "defaultValue": 7,
+      "minValue": 1,
+      "maxValue": 365,
+      "metadata": {
+        "description": "Number of days to retain soft-deleted blobs."
+      }
+    },
+    "enableContainerSoftDelete": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable soft delete for blob containers."
+      }
+    },
+    "containerSoftDeleteRetentionDays": {
+      "type": "int",
+      "defaultValue": 7,
+      "minValue": 1,
+      "maxValue": 365,
+      "metadata": {
+        "description": "Number of days to retain soft-deleted containers."
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {
+        "environment": "dev",
+        "deployedBy": "ARM"
+      },
+      "metadata": {
+        "description": "Tags to apply to the storage account."
+      }
+    }
+  },
+  "variables": {
+    "storageAccountApiVersion": "2023-01-01"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "[variables('storageAccountApiVersion')]",
+      "name": "[parameters('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "sku": {
+        "name": "[parameters('skuName')]"
+      },
+      "kind": "[parameters('kind')]",
+      "properties": {
+        "accessTier": "[parameters('accessTier')]",
+        "supportsHttpsTrafficOnly": "[parameters('enableHttpsTrafficOnly')]",
+        "minimumTlsVersion": "[parameters('minimumTlsVersion')]",
+        "allowBlobPublicAccess": "[parameters('allowBlobPublicAccess')]",
+        "encryption": {
+          "services": {
+            "blob": {
+              "enabled": true
+            },
+            "file": {
+              "enabled": true
+            }
+          },
+          "keySource": "Microsoft.Storage"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices",
+      "apiVersion": "[variables('storageAccountApiVersion')]",
+      "name": "[concat(parameters('storageAccountName'), '/default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+      ],
+      "properties": {
+        "deleteRetentionPolicy": {
+          "enabled": "[parameters('enableBlobSoftDelete')]",
+          "days": "[parameters('blobSoftDeleteRetentionDays')]"
+        },
+        "containerDeleteRetentionPolicy": {
+          "enabled": "[parameters('enableContainerSoftDelete')]",
+          "days": "[parameters('containerSoftDeleteRetentionDays')]"
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "storageAccountId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+    },
+    "storageAccountName": {
+      "type": "string",
+      "value": "[parameters('storageAccountName')]"
+    },
+    "primaryBlobEndpoint": {
+      "type": "string",
+      "value": "[reference(parameters('storageAccountName')).primaryEndpoints.blob]"
+    },
+    "primaryFileEndpoint": {
+      "type": "string",
+      "value": "[reference(parameters('storageAccountName')).primaryEndpoints.file]"
+    },
+    "primaryQueueEndpoint": {
+      "type": "string",
+      "value": "[reference(parameters('storageAccountName')).primaryEndpoints.queue]"
+    },
+    "primaryTableEndpoint": {
+      "type": "string",
+      "value": "[reference(parameters('storageAccountName')).primaryEndpoints.table]"
+    }
+  }
+}
