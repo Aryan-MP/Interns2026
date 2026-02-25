@@ -10,12 +10,11 @@
     "accountType": {
       "type": "string",
       "defaultValue": "Standard_LRS",
-      "allowedValues": [ "Standard_LRS", "Standard_GRS", "Standard_ZRS" ],
-      "metadata": { "description": "The SKU/redundancy type of the storage account." }
+      "allowedValues": [ "Standard_LRS", "Standard_GRS", "Standard_ZRS" ]
     }
   },
   "variables": {
-    "storageAccountName": "[substring(concat('cloudlab', uniqueString(resourceGroup().id)), 0, 24)]"
+    "storageAccountName": "[concat('cloudlab', uniqueString(resourceGroup().id))]"
   },
   "resources": [
     {
