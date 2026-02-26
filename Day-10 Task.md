@@ -118,7 +118,7 @@ day10-network-vm.bicep
 
 ---
 
-## ✍️ Add Template Code
+##  Add Template Code
 
 ```json
 {
@@ -382,7 +382,7 @@ day10-network-vm.bicep
                 "autoUpgradeMinorVersion": true,
                 "settings": {},
                 "protectedSettings": {
-                    "commandToExecute": "apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y nginx && cat > /var/www/html/index.html <<'EOF'\n<!DOCTYPE html>\n<html>\n<head>\n<title>Private VM Web Server</title>\n<style>\nbody { font-family: Arial; background: linear-gradient(135deg, #667eea, #764ba2); color: white; text-align: center; padding: 50px; }\nh1 { font-size: 3em; }\n.highlight { color: #ffd700; font-weight: bold; }\n</style>\n</head>\n<body>\n<h1>Port Forwarding Success!</h1>\n<p>This page is served from the <span class=\"highlight\">Private VM</span></p>\n<p>Accessed via <span class=\"highlight\">iptables port forwarding</span></p>\n<p>Private IP: <span class=\"highlight\">10.0.2.10</span></p>\n</body>\n</html>\nEOF\nsystemctl enable nginx && systemctl start nginx"
+                    "commandToExecute": "while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 5; done; apt-get update -y && apt-get install -y nginx || (sleep 30 && apt-get update -y && apt-get install -y nginx); echo '<h1>Port Forwarding Success!</h1>' > /var/www/html/index.html; systemctl enable nginx && systemctl start nginx"
                 }
             }
         },
@@ -408,21 +408,28 @@ day10-network-vm.bicep
         }
     ],
     "outputs": {
-        "publicIP": {
-            "type": "String",
-            "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))).ipAddress]"
-        },
-        "sshCommand": {
-            "type": "String",
-            "value": "[concat('ssh ', parameters('adminUsername'), '@', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))).ipAddress)]"
-        },
-        "webUrl": {
-            "type": "String",
-            "value": "[concat('http://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))).ipAddress)]"
-        }
+    "publicIP": {
+        "type": "String",
+        "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))).ipAddress]"
+    },
+    "sshCommand": {
+        "type": "String",
+        "value": "[concat('ssh ', parameters('adminUsername'), '@', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))).ipAddress)]"
+    },
+    "webUrl": {
+        "type": "String",
+        "value": "[concat('http://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))).ipAddress)]"
+    },
+    "gatewayVmPrivateIP": {
+        "type": "String",
+        "value": "[reference(resourceId('Microsoft.Network/networkInterfaces','nic-public'),'2020-06-01').ipConfigurations[0].properties.privateIPAddress]"
+    },
+    "webServerVmPrivateIP": {
+        "type": "String",
+        "value": "[reference(resourceId('Microsoft.Network/networkInterfaces','nic-private'),'2020-06-01').ipConfigurations[0].properties.privateIPAddress]"
     }
 }
-
+}
 ---
 
 ##  Deploy the Environment
