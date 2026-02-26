@@ -1,0 +1,127 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "loadBalancers_vm_lb_name": {
+            "defaultValue": "vm-lb",
+            "type": "String"
+        },
+        "publicIPAddresses_vm_lb_pubip_externalid": {
+            "defaultValue": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/bhavesh-spektra-rg/providers/Microsoft.Network/publicIPAddresses/vm-lb-pubip",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Network/loadBalancers",
+            "apiVersion": "2024-07-01",
+            "name": "[parameters('loadBalancers_vm_lb_name')]",
+            "location": "eastus",
+            "sku": {
+                "name": "Standard",
+                "tier": "Regional"
+            },
+            "properties": {
+                "frontendIPConfigurations": [
+                    {
+                        "name": "[concat(parameters('loadBalancers_vm_lb_name'), '-pubip')]",
+                        "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('loadBalancers_vm_lb_name')), concat('/frontendIPConfigurations/', parameters('loadBalancers_vm_lb_name'), '-pubip'))]",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[parameters('publicIPAddresses_vm_lb_pubip_externalid')]"
+                            }
+                        }
+                    }
+                ],
+                "backendAddressPools": [
+                    {
+                        "name": "[concat(parameters('loadBalancers_vm_lb_name'), '-backend')]",
+                        "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', parameters('loadBalancers_vm_lb_name'), concat(parameters('loadBalancers_vm_lb_name'), '-backend'))]",
+                        "properties": {
+                            "loadBalancerBackendAddresses": [
+                                {
+                                    "name": "bhavesh-spektra-rg_vm1-lb25ipconfig1",
+                                    "properties": {}
+                                },
+                                {
+                                    "name": "bhavesh-spektra-rg_vm2-b7ipconfig1",
+                                    "properties": {}
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "loadBalancingRules": [
+                    {
+                        "name": "[concat(parameters('loadBalancers_vm_lb_name'), '-rule')]",
+                        "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('loadBalancers_vm_lb_name')), concat('/loadBalancingRules/', parameters('loadBalancers_vm_lb_name'), '-rule'))]",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('loadBalancers_vm_lb_name')), concat('/frontendIPConfigurations/', parameters('loadBalancers_vm_lb_name'), '-pubip'))]"
+                            },
+                            "frontendPort": 80,
+                            "backendPort": 80,
+                            "enableFloatingIP": false,
+                            "idleTimeoutInMinutes": 4,
+                            "protocol": "Tcp",
+                            "enableTcpReset": false,
+                            "loadDistribution": "Default",
+                            "disableOutboundSnat": true,
+                            "enableConnectionTracking": false,
+                            "backendAddressPool": {
+                                "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', parameters('loadBalancers_vm_lb_name'), concat(parameters('loadBalancers_vm_lb_name'), '-backend'))]"
+                            },
+                            "backendAddressPools": [
+                                {
+                                    "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', parameters('loadBalancers_vm_lb_name'), concat(parameters('loadBalancers_vm_lb_name'), '-backend'))]"
+                                }
+                            ],
+                            "probe": {
+                                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('loadBalancers_vm_lb_name')), concat('/probes/', parameters('loadBalancers_vm_lb_name'), '-probe'))]"
+                            }
+                        }
+                    }
+                ],
+                "probes": [
+                    {
+                        "name": "[concat(parameters('loadBalancers_vm_lb_name'), '-probe')]",
+                        "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('loadBalancers_vm_lb_name')), concat('/probes/', parameters('loadBalancers_vm_lb_name'), '-probe'))]",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "port": 80,
+                            "intervalInSeconds": 5,
+                            "numberOfProbes": 1,
+                            "probeThreshold": 1,
+                            "noHealthyBackendsBehavior": "AllProbedDown"
+                        }
+                    }
+                ],
+                "inboundNatRules": [],
+                "outboundRules": [],
+                "inboundNatPools": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/loadBalancers/backendAddressPools",
+            "apiVersion": "2024-07-01",
+            "name": "[concat(parameters('loadBalancers_vm_lb_name'), '/', parameters('loadBalancers_vm_lb_name'), '-backend')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/loadBalancers', parameters('loadBalancers_vm_lb_name'))]"
+            ],
+            "properties": {
+                "loadBalancerBackendAddresses": [
+                    {
+                        "name": "bhavesh-spektra-rg_vm1-lb25ipconfig1",
+                        "properties": {}
+                    },
+                    {
+                        "name": "bhavesh-spektra-rg_vm2-b7ipconfig1",
+                        "properties": {}
+                    }
+                ]
+            }
+        }
+    ]
+}

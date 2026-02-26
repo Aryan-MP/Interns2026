@@ -1,0 +1,92 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "virtualMachines_vm1_lb_name": {
+            "defaultValue": "vm1-lb",
+            "type": "String"
+        },
+        "disks_vm1_lb_OsDisk_1_86125da3d6cd49f8857d87486580b21a_externalid": {
+            "defaultValue": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/bhavesh-spektra-rg/providers/Microsoft.Compute/disks/vm1-lb_OsDisk_1_86125da3d6cd49f8857d87486580b21a",
+            "type": "String"
+        },
+        "networkInterfaces_vm1_lb25_externalid": {
+            "defaultValue": "/subscriptions/4dd60a42-8e1f-4d8b-b07a-fae39d4a2973/resourceGroups/bhavesh-spektra-rg/providers/Microsoft.Network/networkInterfaces/vm1-lb25",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2024-11-01",
+            "name": "[parameters('virtualMachines_vm1_lb_name')]",
+            "location": "eastus",
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_DC1s_v3"
+                },
+                "additionalCapabilities": {
+                    "hibernationEnabled": false
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "canonical",
+                        "offer": "ubuntu-24_04-lts",
+                        "sku": "server",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "osType": "Linux",
+                        "name": "[concat(parameters('virtualMachines_vm1_lb_name'), '_OsDisk_1_86125da3d6cd49f8857d87486580b21a')]",
+                        "createOption": "FromImage",
+                        "caching": "ReadWrite",
+                        "managedDisk": {
+                            "id": "[parameters('disks_vm1_lb_OsDisk_1_86125da3d6cd49f8857d87486580b21a_externalid')]"
+                        },
+                        "deleteOption": "Delete"
+                    },
+                    "dataDisks": [],
+                    "diskControllerType": "SCSI"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('virtualMachines_vm1_lb_name')]",
+                    "adminUsername": "[parameters('virtualMachines_vm1_lb_name')]",
+                    "linuxConfiguration": {
+                        "disablePasswordAuthentication": false,
+                        "provisionVMAgent": true,
+                        "patchSettings": {
+                            "patchMode": "ImageDefault",
+                            "assessmentMode": "ImageDefault"
+                        }
+                    },
+                    "secrets": [],
+                    "allowExtensionOperations": true,
+                    "requireGuestProvisionSignal": true
+                },
+                "securityProfile": {
+                    "uefiSettings": {
+                        "secureBootEnabled": true,
+                        "vTpmEnabled": true
+                    },
+                    "securityType": "TrustedLaunch"
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[parameters('networkInterfaces_vm1_lb25_externalid')]",
+                            "properties": {
+                                "deleteOption": "Detach"
+                            }
+                        }
+                    ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": true
+                    }
+                }
+            }
+        }
+    ]
+}
