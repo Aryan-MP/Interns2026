@@ -8,8 +8,8 @@ Start-Transcript -Path "$OutDir\script.log" -Force
 Write-Host "===== CSE Script Started ====="
 
 # =========================================================================================
-# Beautiful Vibrant HTML Content
-# =========================================================================================
+# Beautiful Vibrant HTML Content 
+# =========================================================================================  
 $HtmlContent = @"
 <!DOCTYPE html>
 <html>
@@ -103,31 +103,24 @@ try {
     $Chrome = $false
 }
 
-# ============================================
-# Install VS Code via Chocolatey
+# ============================================================
+# Install VS Code (System-wide, with shortcuts + PATH)
 # ============================================
 try {
-    # Ensure TLS 1.2
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
-    # Install Chocolatey if missing
-    if (!(Get-Command choco -ErrorAction SilentlyContinue)) {
-        Write-Host "Installing Chocolatey..."
-        Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-    }
-
-    # Install VS Code
-    Write-Host "Installing VS Code via Chocolatey..."
-    choco install vscode -y
-
+    $VSCodeInstallerURL = "https://update.code.visualstudio.com/latest/win32-x64-system/stable"
+    $InstallerPath = "$env:TEMP\VSCodeSetup.exe"
+    Write-Host "Downloading VS Code stable installer..."
+    Invoke-WebRequest -Uri $VSCodeInstallerURL -OutFile $InstallerPath -UseBasicParsing
+    Write-Host "Installing VS Code silently..."
+    Start-Process -FilePath $InstallerPath -ArgumentList "/VERYSILENT /NORESTART /MERGETASKS=!runcode,desktopicon,addtopath" -Wait
     $VSCode = $true
 } catch {
-    Write-Error "VS Code install via Chocolatey failed: $_"
+    Write-Error "VS Code install failed: $_"
     $VSCode = $false
 }
-
+ 
 # ============================================
-# Create Logon Task for Extensions
+# Create Logon Script for Extensions
 # ============================================
 try {
     $Extensions = @("ms-python.python","ms-vscode.powershell","ms-toolsai.jupyter")
@@ -135,11 +128,10 @@ try {
 
     $ExtensionScript = @"
 # Auto-install VS Code extensions for the logged-in user
-Start-Sleep -Seconds 15
 \$extensions = @("ms-python.python","ms-vscode.powershell","ms-toolsai.jupyter")
 foreach (\$ext in \$extensions) {
     try {
-        & 'C:\Program Files\Microsoft VS Code\bin\code.cmd' --install-extension \$ext --force
+        code --install-extension \$ext --force
     } catch {
         Write-Output "Failed to install extension: \$ext"
     }
@@ -150,7 +142,7 @@ foreach (\$ext in \$extensions) {
 
     $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -File `"$LogonScriptPath`""
     $Trigger = New-ScheduledTaskTrigger -AtLogOn
-    $Principal = New-ScheduledTaskPrincipal -UserId "NT AUTHORITY\INTERACTIVE" -RunLevel Limited
+    $Principal = New-ScheduledTaskPrincipal -GroupId "Users" -RunLevel Limited
     Register-ScheduledTask -TaskName "VSCodeInstallExtensions" -Action $Action -Trigger $Trigger -Principal $Principal -Force
     $TaskCreated = $true
 } catch {

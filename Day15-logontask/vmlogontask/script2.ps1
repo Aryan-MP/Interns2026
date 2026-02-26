@@ -7,9 +7,9 @@ Start-Transcript -Path "$OutDir\script.log" -Force
 
 Write-Host "===== CSE Script Started ====="
 
-# ============================================
+# =========================================================================================
 # Beautiful Vibrant HTML Content
-# ============================================
+# =========================================================================================
 $HtmlContent = @"
 <!DOCTYPE html>
 <html>
@@ -52,7 +52,7 @@ $HtmlContent = @"
 </head>
 <body>
     <div class="container">
-        <h1>🚀 Azure Windows 11 Pro VM</h1>
+        <h1>Azure Windows 11 Pro VM</h1>
         <p>IIS Web Server Successfully Deployed</p>
         <p>Region: East US 2</p>
         <button class="btn" onclick="alert('Your IIS Server is Running Successfully!')">
@@ -104,35 +104,52 @@ try {
 }
 
 # ============================================
-# Install VS Code
+# Install VS Code via Chocolatey
 # ============================================
 try {
-    # $VSCodeInstallerURL = "https://update.code.visualstudio.com/latest/win32-x64-user/stable"
-    $VSCodeInstallerURL = "https://update.code.visualstudio.com/latest/win32-x64-system/stable"
-    $InstallerPath = "$env:TEMP\VSCodeSetup.exe"
-    Write-Host "Downloading VS Code stable installer..."
-    Invoke-WebRequest -Uri $VSCodeInstallerURL -OutFile $InstallerPath -UseBasicParsing
-    Write-Host "Installing VS Code silently..."
-    Start-Process -FilePath $InstallerPath -ArgumentList "/VERYSILENT /NORESTART" -Wait
+    # Ensure TLS 1.2
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+    # Install Chocolatey if missing
+    if (!(Get-Command choco -ErrorAction SilentlyContinue)) {
+        Write-Host "Installing Chocolatey..."
+        Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+    }
+
+    # Install VS Code
+    Write-Host "Installing VS Code via Chocolatey..."
+    choco install vscode -y
+
     $VSCode = $true
 } catch {
-    Write-Error "VS Code install failed: $_"
+    Write-Error "VS Code install via Chocolatey failed: $_"
     $VSCode = $false
 }
 
 # ============================================
-# Create Logon Script for Extensions
+# Create Logon Task for Extensions (Updated)
+# ============================================
+t# ============================================
+# Create Logon Task for Extensions (Corrected)
 # ============================================
 try {
     $Extensions = @("ms-python.python","ms-vscode.powershell","ms-toolsai.jupyter")
     $LogonScriptPath = "C:\ProgramData\VSCode-InstallExtensions.ps1"
 
+    # Detect VS Code path dynamically
+    $VSCodePath = (Get-Command code.cmd -ErrorAction SilentlyContinue).Source
+    if (-not $VSCodePath) {
+        $VSCodePath = "C:\Program Files\Microsoft VS Code\bin\code.cmd"
+    }
+
+    # Build extension install script
     $ExtensionScript = @"
-# Auto-install VS Code extensions for the logged-in user
+Start-Sleep -Seconds 30
 \$extensions = @("ms-python.python","ms-vscode.powershell","ms-toolsai.jupyter")
 foreach (\$ext in \$extensions) {
     try {
-        code --install-extension \$ext --force
+        & "$VSCodePath" --install-extension \$ext --force
+        Write-Output "Installed extension: \$ext"
     } catch {
         Write-Output "Failed to install extension: \$ext"
     }
@@ -143,7 +160,7 @@ foreach (\$ext in \$extensions) {
 
     $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -File `"$LogonScriptPath`""
     $Trigger = New-ScheduledTaskTrigger -AtLogOn
-    $Principal = New-ScheduledTaskPrincipal -GroupId "Users" -RunLevel Limited
+    $Principal = New-ScheduledTaskPrincipal -UserId "$env:USERNAME" -RunLevel Highest
     Register-ScheduledTask -TaskName "VSCodeInstallExtensions" -Action $Action -Trigger $Trigger -Principal $Principal -Force
     $TaskCreated = $true
 } catch {
