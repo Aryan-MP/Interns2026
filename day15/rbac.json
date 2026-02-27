@@ -1,0 +1,22 @@
+{
+  "Name": "Safe VM Operator",
+  "IsCustom": true,
+  "Description": "Allows a user to read, start, and restart Virtual Machines, but strictly prevents them from deleting the VM or altering its size.",
+  "Actions": [
+    "Microsoft.Compute/virtualMachines/read",
+    "Microsoft.Compute/virtualMachines/start/action",
+    "Microsoft.Compute/virtualMachines/restart/action",
+    "Microsoft.Compute/virtualMachines/deallocate/action",
+    "Microsoft.Network/networkInterfaces/read"
+  ],
+  "NotActions": [
+    "Microsoft.Compute/virtualMachines/delete",
+    "Microsoft.Compute/virtualMachines/write",
+    "Microsoft.Authorization/*/write"
+  ],
+  "DataActions": [],
+  "NotDataActions": [],
+  "AssignableScopes": [
+    "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/tkirangowda15-rg"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "properties": {
+    "displayName": "Enforce Cost-Effective VM Governance",
+    "description": "Ensures VMs can only be deployed in approved regions using approved SKUs to control costs.",
+    "mode": "Indexed",
+    "parameters": {
+      "allowedLocations": {
+        "type": "Array",
+        "metadata": { "displayName": "Allowed Locations" },
+        "defaultValue": [ "westus2" ]
+      },
+      "allowedSkus": {
+        "type": "Array",
+        "metadata": { "displayName": "Allowed Size SKUs" },
+        "defaultValue": [ "Standard_B2s", "Standard_B2as_v2" ]
+      }
+    },
+    "policyRule": {
+      "if": {
+        "allOf": [
+          { "field": "type", "equals": "Microsoft.Compute/virtualMachines" },
+          {
+            "anyOf": [
+              { "field": "location", "notIn": "[parameters('allowedLocations')]" },
+              { "field": "Microsoft.Compute/virtualMachines/sku.name", "notIn": "[parameters('allowedSkus')]" }
+            ]
+          }
+        ]
+      },
+      "then": {
+        "effect": "Deny"
+      }
+    }
+  }
+}
