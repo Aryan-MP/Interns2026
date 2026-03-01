@@ -1,0 +1,35 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+
+    "location": {
+      "value": "centralindia"
+    },
+
+    "vmSize": {
+      "value": "Standard_D2as_v5"
+    },
+
+    "adminUsername": {
+      "value": "demouser"
+    },
+
+    "adminPassword": {
+      "value": "Azure@Pass175!"
+    },
+
+    "sqlAdminUsername": {
+      "value": "sqladmin"
+    },
+
+    "sqlAdminPassword": {
+      "value": "Sql@Pass175!"
+    },
+
+    "sqlDatabaseName": {
+      "value": "appdb"
+    }
+
+  }
+}

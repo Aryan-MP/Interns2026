@@ -1,0 +1,792 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": { "description": "Azure region for all resources." }
+    },
+    "adminUsername": {
+      "type": "string",
+      "metadata": { "description": "Admin username for all VMs." }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": { "description": "Admin password for all VMs." }
+    },
+    "vmSize": {
+      "type": "string",
+      "metadata": { "description": "VM size for all VMs." }
+    },
+    "sqlAdminUsername": {
+      "type": "string",
+      "metadata": { "description": "SQL Server administrator username." }
+    },
+    "sqlAdminPassword": {
+      "type": "securestring",
+      "metadata": { "description": "SQL Server administrator password." }
+    },
+    "sqlDatabaseName": {
+      "type": "string",
+      "defaultValue": "appdb",
+      "metadata": { "description": "Name of the SQL database." }
+    }
+  },
+
+  "variables": {
+
+    "vnetName": "main-vnet",
+    "vnetPrefix": "10.0.0.0/16",
+
+    "sub1Name": "sub1-web",
+    "sub1Prefix": "10.0.1.0/24",
+
+    "sub2Name": "sub2-app",
+    "sub2Prefix": "10.0.2.0/24",
+
+    "sub3Name": "sub3-database",
+    "sub3Prefix": "10.0.3.0/24",
+
+    "nsgWeb":  "nsg-web",
+    "nsgApp":  "nsg-app",
+    "nsgData": "nsg-database",
+
+    "extLbName":         "ext-loadbalancer",
+    "extLbPipName":      "ext-lb-pip",
+    "extLbFrontend":     "ext-lb-frontend",
+    "extLbBackendWeb":   "ext-lb-backend-web",
+    "extLbProbeHTTPS":   "ext-lb-probe-https",
+    "extLbProbeSSH":     "ext-lb-probe-ssh",
+    "extLbRuleHTTPS":    "ext-lb-rule-https",
+    "extLbRuleSSH":      "ext-lb-rule-ssh",
+
+    "intLbName":       "int-loadbalancer",
+    "intLbFrontend":   "int-lb-frontend",
+    "intLbBackend":    "int-lb-backend",
+    "intLbProbe":      "int-lb-probe-http",
+    "intLbRule":       "int-lb-rule-http",
+    "intLbPrivateIP":  "10.0.2.250",
+
+    "webVmNames":  [ "web-vm1", "web-vm2" ],
+    "appVmNames":  [ "app-vm1", "app-vm2" ],
+    "webAvailSetName":  "web-availset",
+    "appAvailSetName":  "app-availset",
+
+    "sqlServerName":        "[concat('sqlsrv-', uniqueString(resourceGroup().id))]",
+    "privateEndpointName":  "sql-private-endpoint",
+    "privateDnsZoneName":   "privatelink.database.windows.net",
+    "privateDnsLinkName":   "sql-dns-vnet-link",
+
+    "motdScript": "[base64('#!/bin/bash\nPRIVATE_IP=$(hostname -I | awk \"{print $1}\")\nHOSTNAME_VAL=$(hostname)\ncat > /etc/motd << EOF\n=========================================\n  Azure 3-Tier Architecture\n  VM Name   : $HOSTNAME_VAL\n  Private IP: $PRIVATE_IP\n=========================================\nEOF\n')]"
+  },
+
+  "resources": [
+
+    // =============================================================
+    // NSG — Web Tier (Sub1)
+    // Allows: HTTPS:443 from internet, SSH:22 to jump-box only,
+    //         LB health probes, outbound HTTP:80 to Sub2
+    // =============================================================
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('nsgWeb')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "Allow-HTTPS-Inbound",
+            "properties": {
+              "priority": 100, "protocol": "Tcp", "access": "Allow", "direction": "Inbound",
+              "sourceAddressPrefix": "Internet", "sourcePortRange": "*",
+              "destinationAddressPrefix": "*", "destinationPortRange": "443"
+            }
+          },
+          {
+            "name": "Allow-SSH-Inbound",
+            "properties": {
+              "priority": 110, "protocol": "Tcp", "access": "Allow", "direction": "Inbound",
+              "sourceAddressPrefix": "Internet", "sourcePortRange": "*",
+              "destinationAddressPrefix": "*", "destinationPortRange": "22"
+            }
+          },
+          {
+            "name": "Allow-LB-Probe",
+            "properties": {
+              "priority": 120, "protocol": "*", "access": "Allow", "direction": "Inbound",
+              "sourceAddressPrefix": "AzureLoadBalancer", "sourcePortRange": "*",
+              "destinationAddressPrefix": "*", "destinationPortRange": "*"
+            }
+          },
+          {
+            "name": "Deny-All-Other-Inbound",
+            "properties": {
+              "priority": 4000, "protocol": "*", "access": "Deny", "direction": "Inbound",
+              "sourceAddressPrefix": "*", "sourcePortRange": "*",
+              "destinationAddressPrefix": "*", "destinationPortRange": "*"
+            }
+          },
+          {
+            "name": "Allow-HTTP-Outbound-To-App",
+            "properties": {
+              "priority": 100, "protocol": "Tcp", "access": "Allow", "direction": "Outbound",
+              "sourceAddressPrefix": "*", "sourcePortRange": "*",
+              "destinationAddressPrefix": "[variables('sub2Prefix')]", "destinationPortRange": "80"
+            }
+          },
+          {
+            "name": "Allow-SSH-Outbound-To-App",
+            "properties": {
+              "priority": 110, "protocol": "Tcp", "access": "Allow", "direction": "Outbound",
+              "sourceAddressPrefix": "[variables('sub1Prefix')]", "sourcePortRange": "*",
+              "destinationAddressPrefix": "[variables('sub2Prefix')]", "destinationPortRange": "22"
+            }
+          }
+        ]
+      }
+    },
+
+    // =============================================================
+    // NSG — App Tier (Sub2)
+    // Allows: HTTP:80 from Sub1, SSH:22 from Sub1 only,
+    //         LB probes, outbound TCP:1433 to Sub3
+    // =============================================================
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('nsgApp')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "Allow-HTTP-From-Web",
+            "properties": {
+              "priority": 100, "protocol": "Tcp", "access": "Allow", "direction": "Inbound",
+              "sourceAddressPrefix": "[variables('sub1Prefix')]", "sourcePortRange": "*",
+              "destinationAddressPrefix": "*", "destinationPortRange": "80"
+            }
+          },
+          {
+            "name": "Allow-SSH-From-Web-Tier",
+            "properties": {
+              "priority": 110, "protocol": "Tcp", "access": "Allow", "direction": "Inbound",
+              "sourceAddressPrefix": "[variables('sub1Prefix')]", "sourcePortRange": "*",
+              "destinationAddressPrefix": "*", "destinationPortRange": "22"
+            }
+          },
+          {
+            "name": "Allow-LB-Probe",
+            "properties": {
+              "priority": 120, "protocol": "*", "access": "Allow", "direction": "Inbound",
+              "sourceAddressPrefix": "AzureLoadBalancer", "sourcePortRange": "*",
+              "destinationAddressPrefix": "*", "destinationPortRange": "*"
+            }
+          },
+          {
+            "name": "Deny-All-Other-Inbound",
+            "properties": {
+              "priority": 4000, "protocol": "*", "access": "Deny", "direction": "Inbound",
+              "sourceAddressPrefix": "*", "sourcePortRange": "*",
+              "destinationAddressPrefix": "*", "destinationPortRange": "*"
+            }
+          },
+          {
+            "name": "Allow-SQL-Outbound-To-Database",
+            "properties": {
+              "priority": 100, "protocol": "Tcp", "access": "Allow", "direction": "Outbound",
+              "sourceAddressPrefix": "*", "sourcePortRange": "*",
+              "destinationAddressPrefix": "[variables('sub3Prefix')]", "destinationPortRange": "1433"
+            }
+          }
+        ]
+      }
+    },
+
+    // =============================================================
+    // NSG — Data Tier (Sub3)
+    // Allows: TCP:1433 from Sub2 only. Deny everything else.
+    // =============================================================
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('nsgData')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "Allow-SQL-From-App",
+            "properties": {
+              "priority": 100, "protocol": "Tcp", "access": "Allow", "direction": "Inbound",
+              "sourceAddressPrefix": "[variables('sub2Prefix')]", "sourcePortRange": "*",
+              "destinationAddressPrefix": "*", "destinationPortRange": "1433"
+            }
+          },
+          {
+            "name": "Deny-All-Inbound",
+            "properties": {
+              "priority": 4096, "protocol": "*", "access": "Deny", "direction": "Inbound",
+              "sourceAddressPrefix": "*", "sourcePortRange": "*",
+              "destinationAddressPrefix": "*", "destinationPortRange": "*"
+            }
+          },
+          {
+            "name": "Deny-All-Outbound",
+            "properties": {
+              "priority": 4096, "protocol": "*", "access": "Deny", "direction": "Outbound",
+              "sourceAddressPrefix": "*", "sourcePortRange": "*",
+              "destinationAddressPrefix": "*", "destinationPortRange": "*"
+            }
+          }
+        ]
+      }
+    },
+
+    // =============================================================
+    // Virtual Network + 3 Subnets
+    // =============================================================
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('vnetName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgWeb'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgApp'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgData'))]"
+      ],
+      "properties": {
+        "addressSpace": { "addressPrefixes": [ "[variables('vnetPrefix')]" ] },
+        "subnets": [
+          {
+            "name": "[variables('sub1Name')]",
+            "properties": {
+              "addressPrefix": "[variables('sub1Prefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgWeb'))]"
+              }
+            }
+          },
+          {
+            "name": "[variables('sub2Name')]",
+            "properties": {
+              "addressPrefix": "[variables('sub2Prefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgApp'))]"
+              }
+            }
+          },
+          {
+            "name": "[variables('sub3Name')]",
+            "properties": {
+              "addressPrefix": "[variables('sub3Prefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgData'))]"
+              },
+              "privateEndpointNetworkPolicies": "Disabled"
+            }
+          }
+        ]
+      }
+    },
+
+    // =============================================================
+    // External Load Balancer — Public IP
+    // =============================================================
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('extLbPipName')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Standard" },
+      "properties": { "publicIPAllocationMethod": "Static" }
+    },
+
+    // =============================================================
+    // External Load Balancer
+    // Rule 1: HTTPS:443 → web-vm1, web-vm2 (separate backend pool)
+    // Rule 2: SSH:22    → jump-box only    (separate backend pool)
+    // =============================================================
+    {
+      "type": "Microsoft.Network/loadBalancers",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('extLbName')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Standard" },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('extLbPipName'))]"
+      ],
+      "properties": {
+        "frontendIPConfigurations": [
+          {
+            "name": "[variables('extLbFrontend')]",
+            "properties": {
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('extLbPipName'))]"
+              }
+            }
+          }
+        ],
+        "backendAddressPools": [
+          { "name": "[variables('extLbBackendWeb')]" }
+        ],
+        "probes": [
+          {
+            "name": "[variables('extLbProbeHTTPS')]",
+            "properties": {
+              "protocol": "Https", "port": 443, "requestPath": "/",
+              "intervalInSeconds": 15, "numberOfProbes": 2
+            }
+          },
+          {
+            "name": "[variables('extLbProbeSSH')]",
+            "properties": {
+              "protocol": "Tcp", "port": 22,
+              "intervalInSeconds": 15, "numberOfProbes": 2
+            }
+          }
+        ],
+        "loadBalancingRules": [
+          {
+            "name": "[variables('extLbRuleHTTPS')]",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('extLbName')), '/frontendIPConfigurations/', variables('extLbFrontend'))]"
+              },
+              "backendAddressPool": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('extLbName')), '/backendAddressPools/', variables('extLbBackendWeb'))]"
+              },
+              "probe": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('extLbName')), '/probes/', variables('extLbProbeHTTPS'))]"
+              },
+              "protocol": "Tcp", "frontendPort": 443, "backendPort": 443,
+              "enableFloatingIP": false, "idleTimeoutInMinutes": 4
+            }
+          },
+          {
+            "name": "[variables('extLbRuleSSH')]",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('extLbName')), '/frontendIPConfigurations/', variables('extLbFrontend'))]"
+              },
+              "backendAddressPool": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('extLbName')), '/backendAddressPools/', variables('extLbBackendWeb'))]"
+              },
+              "probe": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('extLbName')), '/probes/', variables('extLbProbeSSH'))]"
+              },
+              "protocol": "Tcp", "frontendPort": 22, "backendPort": 22,
+              "enableFloatingIP": false, "idleTimeoutInMinutes": 4
+            }
+          }
+        ]
+      }
+    },
+
+    // =============================================================
+    // Internal Load Balancer — private IP in Sub2
+    // =============================================================
+    {
+      "type": "Microsoft.Network/loadBalancers",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('intLbName')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Standard" },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "properties": {
+        "frontendIPConfigurations": [
+          {
+            "name": "[variables('intLbFrontend')]",
+            "properties": {
+              "privateIPAddress": "[variables('intLbPrivateIP')]",
+              "privateIPAllocationMethod": "Static",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('sub2Name'))]"
+              }
+            }
+          }
+        ],
+        "backendAddressPools": [ { "name": "[variables('intLbBackend')]" } ],
+        "probes": [
+          {
+            "name": "[variables('intLbProbe')]",
+            "properties": {
+              "protocol": "Http", "port": 80, "requestPath": "/",
+              "intervalInSeconds": 15, "numberOfProbes": 2
+            }
+          }
+        ],
+        "loadBalancingRules": [
+          {
+            "name": "[variables('intLbRule')]",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('intLbName')), '/frontendIPConfigurations/', variables('intLbFrontend'))]"
+              },
+              "backendAddressPool": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('intLbName')), '/backendAddressPools/', variables('intLbBackend'))]"
+              },
+              "probe": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('intLbName')), '/probes/', variables('intLbProbe'))]"
+              },
+              "protocol": "Tcp", "frontendPort": 80, "backendPort": 80,
+              "enableFloatingIP": false, "idleTimeoutInMinutes": 4
+            }
+          }
+        ]
+      }
+    },
+
+    // =============================================================
+    // Availability Sets
+    // =============================================================
+    {
+      "type": "Microsoft.Compute/availabilitySets",
+      "apiVersion": "2023-03-01",
+      "name": "[variables('webAvailSetName')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Aligned" },
+      "properties": { "platformFaultDomainCount": 2, "platformUpdateDomainCount": 2 }
+    },
+    {
+      "type": "Microsoft.Compute/availabilitySets",
+      "apiVersion": "2023-03-01",
+      "name": "[variables('appAvailSetName')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Aligned" },
+      "properties": { "platformFaultDomainCount": 2, "platformUpdateDomainCount": 2 }
+    },
+
+    // =============================================================
+    // NICs — Web VMs (Sub1, HTTPS backend pool)
+    // =============================================================
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2023-04-01",
+      "name": "[concat(variables('webVmNames')[copyIndex()], '-nic')]",
+      "location": "[parameters('location')]",
+      "copy": { "name": "webNicCopy", "count": 2 },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/loadBalancers', variables('extLbName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('sub1Name'))]"
+              },
+              "loadBalancerBackendAddressPools": [
+                {
+                  "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('extLbName')), '/backendAddressPools/', variables('extLbBackendWeb'))]"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+
+    // =============================================================
+    // NICs — App VMs (Sub2, Internal LB backend pool)
+    // =============================================================
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2023-04-01",
+      "name": "[concat(variables('appVmNames')[copyIndex()], '-nic')]",
+      "location": "[parameters('location')]",
+      "copy": { "name": "appNicCopy", "count": 2 },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/loadBalancers', variables('intLbName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('sub2Name'))]"
+              },
+              "loadBalancerBackendAddressPools": [
+                {
+                  "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('intLbName')), '/backendAddressPools/', variables('intLbBackend'))]"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+
+    // =============================================================
+    // VMs — Web Tier (Sub1)
+    // =============================================================
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-03-01",
+      "name": "[variables('webVmNames')[copyIndex()]]",
+      "location": "[parameters('location')]",
+      "copy": { "name": "webVmCopy", "count": 2 },
+      "dependsOn": [
+        "webNicCopy",
+        "[resourceId('Microsoft.Compute/availabilitySets', variables('webAvailSetName'))]"
+      ],
+      "properties": {
+        "availabilitySet": {
+          "id": "[resourceId('Microsoft.Compute/availabilitySets', variables('webAvailSetName'))]"
+        },
+        "hardwareProfile": { "vmSize": "[parameters('vmSize')]" },
+        "osProfile": {
+          "computerName": "[variables('webVmNames')[copyIndex()]]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]",
+          "linuxConfiguration": { "disablePasswordAuthentication": false }
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "Canonical",
+            "offer": "0001-com-ubuntu-server-jammy",
+            "sku": "22_04-lts-gen2",
+            "version": "latest"
+          },
+          "osDisk": {
+            "createOption": "FromImage",
+            "managedDisk": { "storageAccountType": "Standard_LRS" }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            { "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('webVmNames')[copyIndex()], '-nic'))]" }
+          ]
+        }
+      }
+    },
+
+    // =============================================================
+    // VMs — App Tier (Sub2)
+    // =============================================================
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-03-01",
+      "name": "[variables('appVmNames')[copyIndex()]]",
+      "location": "[parameters('location')]",
+      "copy": { "name": "appVmCopy", "count": 2 },
+      "dependsOn": [
+        "appNicCopy",
+        "[resourceId('Microsoft.Compute/availabilitySets', variables('appAvailSetName'))]"
+      ],
+      "properties": {
+        "availabilitySet": {
+          "id": "[resourceId('Microsoft.Compute/availabilitySets', variables('appAvailSetName'))]"
+        },
+        "hardwareProfile": { "vmSize": "[parameters('vmSize')]" },
+        "osProfile": {
+          "computerName": "[variables('appVmNames')[copyIndex()]]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]",
+          "linuxConfiguration": { "disablePasswordAuthentication": false }
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "Canonical",
+            "offer": "0001-com-ubuntu-server-jammy",
+            "sku": "22_04-lts-gen2",
+            "version": "latest"
+          },
+          "osDisk": {
+            "createOption": "FromImage",
+            "managedDisk": { "storageAccountType": "Standard_LRS" }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            { "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('appVmNames')[copyIndex()], '-nic'))]" }
+          ]
+        }
+      }
+    },
+
+    // =============================================================
+    // Custom Script Extension — Web VMs MOTD
+    // =============================================================
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2023-03-01",
+      "name": "[concat(variables('webVmNames')[copyIndex()], '/motd-script')]",
+      "location": "[parameters('location')]",
+      "copy": { "name": "webMotdCopy", "count": 2 },
+      "dependsOn": [ "webVmCopy" ],
+      "properties": {
+        "publisher": "Microsoft.Azure.Extensions",
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.1",
+        "autoUpgradeMinorVersion": true,
+        "settings": { "script": "[variables('motdScript')]" }
+      }
+    },
+
+    // =============================================================
+    // Custom Script Extension — App VMs MOTD
+    // =============================================================
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2023-03-01",
+      "name": "[concat(variables('appVmNames')[copyIndex()], '/motd-script')]",
+      "location": "[parameters('location')]",
+      "copy": { "name": "appMotdCopy", "count": 2 },
+      "dependsOn": [ "appVmCopy" ],
+      "properties": {
+        "publisher": "Microsoft.Azure.Extensions",
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.1",
+        "autoUpgradeMinorVersion": true,
+        "settings": { "script": "[variables('motdScript')]" }
+      }
+    },
+
+    // =============================================================
+    // Azure SQL Server (public network access disabled)
+    // =============================================================
+    {
+      "type": "Microsoft.Sql/servers",
+      "apiVersion": "2023-02-01-preview",
+      "name": "[variables('sqlServerName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "administratorLogin": "[parameters('sqlAdminUsername')]",
+        "administratorLoginPassword": "[parameters('sqlAdminPassword')]",
+        "publicNetworkAccess": "Disabled"
+      }
+    },
+
+    // =============================================================
+    // Azure SQL Database (Serverless — cost efficient)
+    // =============================================================
+    {
+      "type": "Microsoft.Sql/servers/databases",
+      "apiVersion": "2023-02-01-preview",
+      "name": "[concat(variables('sqlServerName'), '/', parameters('sqlDatabaseName'))]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
+      ],
+      "sku": {
+        "name": "GP_S_Gen5_1",
+        "tier": "GeneralPurpose"
+      },
+      "properties": {
+        "collation": "SQL_Latin1_General_CP1_CI_AS",
+        "maxSizeBytes": 34359738368,
+        "autoPauseDelay": 60,
+        "minCapacity": 0.5
+      }
+    },
+
+    // =============================================================
+    // Private Endpoint — SQL in Sub3
+    // =============================================================
+    {
+      "type": "Microsoft.Network/privateEndpoints",
+      "apiVersion": "2023-04-01",
+      "name": "[variables('privateEndpointName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "properties": {
+        "subnet": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('sub3Name'))]"
+        },
+        "privateLinkServiceConnections": [
+          {
+            "name": "sql-private-link",
+            "properties": {
+              "privateLinkServiceId": "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]",
+              "groupIds": [ "sqlServer" ]
+            }
+          }
+        ]
+      }
+    },
+
+    // =============================================================
+    // Private DNS Zone for SQL private link resolution
+    // =============================================================
+    {
+      "type": "Microsoft.Network/privateDnsZones",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('privateDnsZoneName')]",
+      "location": "global"
+    },
+
+    // =============================================================
+    // Link DNS Zone to VNet
+    // =============================================================
+    {
+      "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+      "apiVersion": "2020-06-01",
+      "name": "[concat(variables('privateDnsZoneName'), '/', variables('privateDnsLinkName'))]",
+      "location": "global",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "properties": {
+        "registrationEnabled": false,
+        "virtualNetwork": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+        }
+      }
+    },
+
+    // =============================================================
+    // DNS Zone Group — binds Private Endpoint to DNS Zone
+    // =============================================================
+    {
+      "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+      "apiVersion": "2023-04-01",
+      "name": "[concat(variables('privateEndpointName'), '/sql-dns-zone-group')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateEndpoints', variables('privateEndpointName'))]",
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneName'))]"
+      ],
+      "properties": {
+        "privateDnsZoneConfigs": [
+          {
+            "name": "sql-dns-config",
+            "properties": {
+              "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneName'))]"
+            }
+          }
+        ]
+      }
+    }
+
+  ],
+
+  "outputs": {
+    "IMPORTANT_ExternalLBPublicIP": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('extLbPipName'))).ipAddress]",
+      "metadata": { "description": "Use this IP for web traffic (HTTPS:443) and SSH (port 22) to web VMs." }
+    },
+    "InternalLBPrivateIP": {
+      "type": "string",
+      "value": "[variables('intLbPrivateIP')]",
+      "metadata": { "description": "Internal LB IP that routes web-tier traffic to app VMs." }
+    },
+    "SqlServerFQDN": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Sql/servers', variables('sqlServerName'))).fullyQualifiedDomainName]",
+      "metadata": { "description": "SQL Server FQDN — resolves to private IP inside VNet only." }
+    }
+  }
+}
