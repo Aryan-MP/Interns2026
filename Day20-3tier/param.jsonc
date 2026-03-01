@@ -1,0 +1,11 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": { "value": "eastus2" },
+    "adminUsername": { "value": "demo" },
+    "adminPassword": { "value": "Demo@123456789" },
+    "vmSize": { "value": "Standard_D2s_v3" },
+    "mysqlServerName": { "value": "fardeenmysql8473921" }
+  }
+}

@@ -1,0 +1,316 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+
+  "parameters": {
+    "location": { "type": "string" },
+    "adminUsername": { "type": "string" },
+    "adminPassword": { "type": "secureString" },
+    "vmSize": { "type": "string" },
+    "mysqlServerName": { "type": "string" }
+  },
+
+  "variables": {
+    "vnetName": "threeTierVnet",
+    "frontendSubnet": "frontend-subnet",
+    "backendSubnet": "backend-subnet"
+  },
+
+  "resources": [
+
+    // ---------------- VNET ----------------
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-02-01",
+      "name": "[variables('vnetName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [ "10.0.0.0/16" ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('frontendSubnet')]",
+            "properties": { "addressPrefix": "10.0.1.0/24" }
+          },
+          {
+            "name": "[variables('backendSubnet')]",
+            "properties": { "addressPrefix": "10.0.2.0/24" }
+          }
+        ]
+      }
+    },
+
+    // ---------------- PUBLIC IP ----------------
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2023-02-01",
+      "name": "frontendPublicIP",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Standard" },
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+
+    // ---------------- FRONTEND LOAD BALANCER ----------------
+    {
+      "type": "Microsoft.Network/loadBalancers",
+      "apiVersion": "2023-02-01",
+      "name": "frontendLB",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Standard" },
+      "dependsOn": [ "frontendPublicIP" ],
+      "properties": {
+        "frontendIPConfigurations": [
+          {
+            "name": "FrontEnd",
+            "properties": {
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses','frontendPublicIP')]"
+              }
+            }
+          }
+        ],
+        "backendAddressPools": [
+          { "name": "frontendPool" }
+        ],
+        "probes": [
+          {
+            "name": "httpProbe",
+            "properties": {
+              "protocol": "Tcp",
+              "port": 80,
+              "intervalInSeconds": 5,
+              "numberOfProbes": 2
+            }
+          }
+        ],
+        "loadBalancingRules": [
+          {
+            "name": "httpRule",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers','frontendLB'),'/frontendIPConfigurations/FrontEnd')]"
+              },
+              "backendAddressPool": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers','frontendLB'),'/backendAddressPools/frontendPool')]"
+              },
+              "probe": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers','frontendLB'),'/probes/httpProbe')]"
+              },
+              "protocol": "Tcp",
+              "frontendPort": 80,
+              "backendPort": 80,
+              "enableFloatingIP": false,
+              "idleTimeoutInMinutes": 4
+            }
+          }
+        ]
+      }
+    },
+
+    // ---------------- INTERNAL LOAD BALANCER ----------------
+    {
+      "type": "Microsoft.Network/loadBalancers",
+      "apiVersion": "2023-02-01",
+      "name": "backendILB",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Standard" },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "properties": {
+        "frontendIPConfigurations": [
+          {
+            "name": "internalFrontEnd",
+            "properties": {
+              "subnet": {
+                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks',variables('vnetName')),'/subnets/',variables('backendSubnet'))]"
+              },
+              "privateIPAllocationMethod": "Dynamic"
+            }
+          }
+        ],
+        "backendAddressPools": [
+          { "name": "backendPool" }
+        ]
+      }
+    },
+
+    // ---------------- FRONTEND NIC ----------------
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2023-02-01",
+      "name": "[concat('frontendNIC', copyIndex())]",
+      "location": "[parameters('location')]",
+      "copy": { "name": "frontendNICcopy", "count": 2 },
+      "dependsOn": [
+        "frontendLB",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "subnet": {
+                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks',variables('vnetName')),'/subnets/',variables('frontendSubnet'))]"
+              },
+              "privateIPAllocationMethod": "Dynamic",
+              "loadBalancerBackendAddressPools": [
+                {
+                  "id": "[concat(resourceId('Microsoft.Network/loadBalancers','frontendLB'),'/backendAddressPools/frontendPool')]"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+
+    // ---------------- BACKEND NIC ----------------
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2023-02-01",
+      "name": "[concat('backendNIC', copyIndex())]",
+      "location": "[parameters('location')]",
+      "copy": { "name": "backendNICcopy", "count": 2 },
+      "dependsOn": [
+        "backendILB",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "subnet": {
+                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks',variables('vnetName')),'/subnets/',variables('backendSubnet'))]"
+              },
+              "privateIPAllocationMethod": "Dynamic",
+              "loadBalancerBackendAddressPools": [
+                {
+                  "id": "[concat(resourceId('Microsoft.Network/loadBalancers','backendILB'),'/backendAddressPools/backendPool')]"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+
+    // ---------------- FRONTEND VMs ----------------
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-03-01",
+      "name": "[concat('frontendVM', copyIndex())]",
+      "location": "[parameters('location')]",
+      "copy": { "name": "frontendVMcopy", "count": 2 },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces',concat('frontendNIC',copyIndex()))]"
+      ],
+      "properties": {
+        "hardwareProfile": { "vmSize": "[parameters('vmSize')]" },
+        "osProfile": {
+          "computerName": "[concat('frontendVM', copyIndex())]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "Canonical",
+            "offer": "0001-com-ubuntu-server-jammy",
+            "sku": "22_04-lts",
+            "version": "latest"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces',concat('frontendNIC',copyIndex()))]"
+            }
+          ]
+        }
+      }
+    },
+
+    // ---------------- BACKEND VMs ----------------
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-03-01",
+      "name": "[concat('backendVM', copyIndex())]",
+      "location": "[parameters('location')]",
+      "copy": { "name": "backendVMcopy", "count": 2 },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces',concat('backendNIC',copyIndex()))]"
+      ],
+      "properties": {
+        "hardwareProfile": { "vmSize": "[parameters('vmSize')]" },
+        "osProfile": {
+          "computerName": "[concat('backendVM', copyIndex())]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "Canonical",
+            "offer": "0001-com-ubuntu-server-jammy",
+            "sku": "22_04-lts",
+            "version": "latest"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces',concat('backendNIC',copyIndex()))]"
+            }
+          ]
+        }
+      }
+    },
+
+    // ---------------- MYSQL FLEXIBLE SERVER ----------------
+    {
+      "type": "Microsoft.DBforMySQL/flexibleServers",
+      "apiVersion": "2023-06-01-preview",
+      "name": "myMysqlServer",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard_B1ms",
+        "tier": "Burstable"
+      },
+      "properties": {
+        "administratorLogin": "mysqladmin",
+        "administratorLoginPassword": "[parameters('adminPassword')]",
+        "version": "8.0.21",
+        "storage": {
+          "storageSizeGB": 20
+        },
+        "backup": {
+          "backupRetentionDays": 7,
+          "geoRedundantBackup": "Disabled"
+        },
+        "highAvailability": {
+          "mode": "Disabled"
+        },
+        "network": {
+          "publicNetworkAccess": "Enabled"
+        }
+      }
+    },
+
+    // ---------------- TEST DATABASE ----------------
+    {
+      "type": "Microsoft.DBforMySQL/flexibleServers/databases",
+      "apiVersion": "2023-06-01-preview",
+      "name": "myMysqlServer/testdb",
+      "dependsOn": [ "myMysqlServer" ],
+      "properties": {
+        "charset": "utf8",
+        "collation": "utf8_general_ci"
+      }
+    }
+
+  ]
+}
