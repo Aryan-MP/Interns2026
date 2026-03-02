@@ -1,0 +1,113 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "accountName": {
+            "defaultValue": "[concat('aoai-foundry-', uniqueString(resourceGroup().id))]",
+            "type": "String",
+            "metadata": {
+                "description": "Name of the Azure OpenAI / AI Foundry account"
+            }
+        },
+        "location": {
+            "defaultValue": "[resourceGroup().location]",
+            "type": "String",
+            "metadata": {
+                "description": "Azure region for deployment. GPT-4.1-mini must be available in your selected region."
+            }
+        },
+        "sku": {
+            "defaultValue": "S0",
+            "allowedValues": [
+                "S0"
+            ],
+            "type": "String",
+            "metadata": {
+                "description": "SKU for the Azure OpenAI account"
+            }
+        },
+        "deploymentName": {
+            "defaultValue": "gpt-41-mini",
+            "type": "String",
+            "metadata": {
+                "description": "Name for the GPT-4.1 mini model deployment"
+            }
+        },
+        "modelVersion": {
+            "defaultValue": "2025-04-14",
+            "type": "String",
+            "metadata": {
+                "description": "GPT-4.1 mini model version"
+            }
+        },
+        "tpmCapacity": {
+            "defaultValue": 10,
+            "type": "Int",
+            "metadata": {
+                "description": "Capacity in thousands of tokens per minute (10 = 10K TPM)"
+            }
+        }
+    },
+    "variables": {
+        "modelName": "gpt-4.1-mini"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.CognitiveServices/accounts",
+            "apiVersion": "2024-10-01",
+            "name": "[parameters('accountName')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "[parameters('sku')]"
+            },
+            "kind": "AIServices",
+            "properties": {
+                "customSubDomainName": "[parameters('accountName')]",
+                "publicNetworkAccess": "Enabled",
+                "disableLocalAuth": false
+            }
+        },
+        {
+            "type": "Microsoft.CognitiveServices/accounts/deployments",
+            "apiVersion": "2024-10-01",
+            "name": "[concat(parameters('accountName'), '/', parameters('deploymentName'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.CognitiveServices/accounts', parameters('accountName'))]"
+            ],
+            "sku": {
+                "name": "GlobalStandard",
+                "capacity": "[parameters('tpmCapacity')]"
+            },
+            "properties": {
+                "model": {
+                    "format": "OpenAI",
+                    "name": "[variables('modelName')]",
+                    "version": "[parameters('modelVersion')]"
+                },
+                "versionUpgradeOption": "OnceNewDefaultVersionAvailable"
+            }
+        }
+    ],
+    "outputs": {
+        "endpoint": {
+            "type": "String",
+            "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('accountName'))).endpoint]"
+        },
+        "apiKey": {
+            "type": "String",
+            "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('accountName')), '2024-10-01').key1]"
+        },
+        "deploymentName": {
+            "type": "String",
+            "value": "[parameters('deploymentName')]"
+        },
+        "modelName": {
+            "type": "String",
+            "value": "[variables('modelName')]"
+        },
+        "tpm": {
+            "type": "Int",
+            "value": "[mul(parameters('tpmCapacity'), 1000)]"
+        }
+    }
+}

@@ -1,0 +1,950 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "allowedValues": [
+                "eastus",
+                "eastus2",
+                "westus",
+                "westus2",
+                "westus3",
+                "centralus",
+                "northcentralus",
+                "southcentralus",
+                "northeurope",
+                "westeurope",
+                "uksouth",
+                "ukwest",
+                "francecentral",
+                "germanywestcentral",
+                "switzerlandnorth",
+                "norwayeast",
+                "eastasia",
+                "southeastasia",
+                "japaneast",
+                "japanwest",
+                "australiaeast",
+                "australiasoutheast",
+                "canadacentral",
+                "canadaeast",
+                "brazilsouth",
+                "uaenorth",
+                "southafricanorth",
+                "koreacentral",
+                "centralindia",
+                "southindia",
+                "westindia"
+            ],
+            "type": "String",
+            "metadata": {
+                "description": "Location for all resources."
+            }
+        },
+        "adminUsername": {
+            "type": "String",
+            "metadata": {
+                "description": "Admin username for VMs."
+            }
+        },
+        "adminPassword": {
+            "type": "SecureString",
+            "metadata": {
+                "description": "Admin password for VMs."
+            }
+        },
+        "sqlAdminLogin": {
+            "defaultValue": "sqladmin",
+            "type": "String",
+            "metadata": {
+                "description": "SQL Server admin login."
+            }
+        },
+        "sqlAdminPassword": {
+            "type": "SecureString",
+            "metadata": {
+                "description": "SQL Server admin password. Must not contain > < | & ^ characters."
+            }
+        },
+        "vmSize": {
+            "defaultValue": "Standard_B2s",
+            "type": "String",
+            "metadata": {
+                "description": "Size of the VMs."
+            }
+        },
+        "prefix": {
+            "defaultValue": "prod",
+            "type": "String",
+            "metadata": {
+                "description": "Short prefix applied to all resource names. Change this to redeploy without name conflicts."
+            }
+        },
+        "vnetName": {
+            "defaultValue": "[concat(parameters('prefix'), '-three-tier-vnet')]",
+            "type": "String",
+            "metadata": {
+                "description": "Virtual Network name."
+            }
+        },
+        "webSubnetName": {
+            "defaultValue": "[concat(parameters('prefix'), '-web-subnet')]",
+            "type": "String",
+            "metadata": {
+                "description": "Web tier subnet name."
+            }
+        },
+        "appSubnetName": {
+            "defaultValue": "[concat(parameters('prefix'), '-app-subnet')]",
+            "type": "String",
+            "metadata": {
+                "description": "App tier subnet name."
+            }
+        },
+        "dbSubnetName": {
+            "defaultValue": "[concat(parameters('prefix'), '-db-subnet')]",
+            "type": "String",
+            "metadata": {
+                "description": "DB tier subnet name."
+            }
+        },
+        "publicIPName": {
+            "defaultValue": "[concat(parameters('prefix'), '-publicip-frontend')]",
+            "type": "String",
+            "metadata": {
+                "description": "Public IP address name."
+            }
+        },
+        "webLBName": {
+            "defaultValue": "[concat(parameters('prefix'), '-web-lb')]",
+            "type": "String",
+            "metadata": {
+                "description": "Web load balancer name."
+            }
+        },
+        "appLBName": {
+            "defaultValue": "[concat(parameters('prefix'), '-app-lb')]",
+            "type": "String",
+            "metadata": {
+                "description": "App load balancer name."
+            }
+        },
+        "webNSGName": {
+            "defaultValue": "[concat(parameters('prefix'), '-web-nsg')]",
+            "type": "String",
+            "metadata": {
+                "description": "Web subnet NSG name."
+            }
+        },
+        "appNSGName": {
+            "defaultValue": "[concat(parameters('prefix'), '-app-nsg')]",
+            "type": "String",
+            "metadata": {
+                "description": "App subnet NSG name."
+            }
+        },
+        "dbNSGName": {
+            "defaultValue": "[concat(parameters('prefix'), '-db-nsg')]",
+            "type": "String",
+            "metadata": {
+                "description": "DB subnet NSG name."
+            }
+        },
+        "webVM1Name": {
+            "defaultValue": "[concat(parameters('prefix'), '-web-vm1')]",
+            "type": "String",
+            "metadata": {
+                "description": "Web VM 1 name."
+            }
+        },
+        "webVM2Name": {
+            "defaultValue": "[concat(parameters('prefix'), '-web-vm2')]",
+            "type": "String",
+            "metadata": {
+                "description": "Web VM 2 name."
+            }
+        },
+        "appVM1Name": {
+            "defaultValue": "[concat(parameters('prefix'), '-app-vm1')]",
+            "type": "String",
+            "metadata": {
+                "description": "App VM 1 name."
+            }
+        },
+        "appVM2Name": {
+            "defaultValue": "[concat(parameters('prefix'), '-app-vm2')]",
+            "type": "String",
+            "metadata": {
+                "description": "App VM 2 name."
+            }
+        },
+        "sqlDBName": {
+            "defaultValue": "[concat(parameters('prefix'), '-three-tier-db')]",
+            "type": "String",
+            "metadata": {
+                "description": "SQL Database name."
+            }
+        },
+        "privateEndpointName": {
+            "defaultValue": "[concat(parameters('prefix'), '-sql-private-endpoint')]",
+            "type": "String",
+            "metadata": {
+                "description": "Private endpoint name for SQL."
+            }
+        }
+    },
+    "variables": {
+        "vnetAddressPrefix": "10.0.0.0/16",
+        "webSubnetPrefix": "10.0.1.0/24",
+        "appSubnetPrefix": "10.0.2.0/24",
+        "dbSubnetPrefix": "10.0.3.0/24",
+        "sqlServerName": "[concat(parameters('prefix'), '-sqlserver-', uniqueString(resourceGroup().id))]",
+        "webLBFrontendIP": "[concat(parameters('prefix'), '-webLBFrontendIPConfig')]",
+        "appLBFrontendIP": "[concat(parameters('prefix'), '-appLBFrontendIPConfig')]",
+        "webLBBackendPool": "[concat(parameters('prefix'), '-webBackendPool')]",
+        "appLBBackendPool": "[concat(parameters('prefix'), '-appBackendPool')]",
+        "webLBProbeName": "[concat(parameters('prefix'), '-webHttpProbe')]",
+        "appLBProbeName": "[concat(parameters('prefix'), '-appHttpProbe')]",
+        "webVM1NicName": "[concat(parameters('webVM1Name'), '-nic')]",
+        "webVM2NicName": "[concat(parameters('webVM2Name'), '-nic')]",
+        "appVM1NicName": "[concat(parameters('appVM1Name'), '-nic')]",
+        "appVM2NicName": "[concat(parameters('appVM2Name'), '-nic')]",
+        "dnsLabel": "[concat(parameters('prefix'), '-threetier-', uniqueString(resourceGroup().id))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2023-04-01",
+            "name": "[parameters('publicIPName')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Standard"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[variables('dnsLabel')]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2023-04-01",
+            "name": "[parameters('webNSGName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "Allow-HTTP",
+                        "properties": {
+                            "priority": 100,
+                            "protocol": "Tcp",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "*",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "80"
+                        }
+                    },
+                    {
+                        "name": "Allow-HTTPS",
+                        "properties": {
+                            "priority": 110,
+                            "protocol": "Tcp",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "*",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "443"
+                        }
+                    },
+                    {
+                        "name": "Allow-RDP",
+                        "properties": {
+                            "priority": 120,
+                            "protocol": "Tcp",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "*",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "3389"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2023-04-01",
+            "name": "[parameters('appNSGName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "Allow-App-From-Web",
+                        "properties": {
+                            "priority": 100,
+                            "protocol": "Tcp",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "[variables('webSubnetPrefix')]",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "8080"
+                        }
+                    },
+                    {
+                        "name": "Allow-RDP",
+                        "properties": {
+                            "priority": 110,
+                            "protocol": "Tcp",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "[variables('webSubnetPrefix')]",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "3389"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2023-04-01",
+            "name": "[parameters('dbNSGName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "Allow-SQL-From-App",
+                        "properties": {
+                            "priority": 100,
+                            "protocol": "Tcp",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "[variables('appSubnetPrefix')]",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "1433"
+                        }
+                    },
+                    {
+                        "name": "Deny-All-Inbound",
+                        "properties": {
+                            "priority": 4096,
+                            "protocol": "*",
+                            "access": "Deny",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "*",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "*"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2023-04-01",
+            "name": "[parameters('vnetName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('webNSGName'))]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('appNSGName'))]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('dbNSGName'))]"
+            ],
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('vnetAddressPrefix')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[parameters('webSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[variables('webSubnetPrefix')]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('webNSGName'))]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[parameters('appSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[variables('appSubnetPrefix')]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('appNSGName'))]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[parameters('dbSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[variables('dbSubnetPrefix')]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('dbNSGName'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/loadBalancers",
+            "apiVersion": "2023-04-01",
+            "name": "[parameters('webLBName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPName'))]"
+            ],
+            "sku": {
+                "name": "Standard"
+            },
+            "properties": {
+                "frontendIPConfigurations": [
+                    {
+                        "name": "[variables('webLBFrontendIP')]",
+                        "properties": {
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPName'))]"
+                            }
+                        }
+                    }
+                ],
+                "backendAddressPools": [
+                    {
+                        "name": "[variables('webLBBackendPool')]"
+                    }
+                ],
+                "probes": [
+                    {
+                        "name": "[variables('webLBProbeName')]",
+                        "properties": {
+                            "protocol": "Http",
+                            "port": 80,
+                            "requestPath": "/",
+                            "intervalInSeconds": 15,
+                            "numberOfProbes": 2
+                        }
+                    }
+                ],
+                "loadBalancingRules": [
+                    {
+                        "name": "web-http-rule",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('webLBName')), '/frontendIPConfigurations/', variables('webLBFrontendIP'))]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('webLBName')), '/backendAddressPools/', variables('webLBBackendPool'))]"
+                            },
+                            "probe": {
+                                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('webLBName')), '/probes/', variables('webLBProbeName'))]"
+                            },
+                            "protocol": "Tcp",
+                            "frontendPort": 80,
+                            "backendPort": 80,
+                            "enableFloatingIP": false,
+                            "idleTimeoutInMinutes": 5
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2023-04-01",
+            "name": "[variables('webVM1NicName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]",
+                "[resourceId('Microsoft.Network/loadBalancers', parameters('webLBName'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('webSubnetName'))]"
+                            },
+                            "loadBalancerBackendAddressPools": [
+                                {
+                                    "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('webLBName')), '/backendAddressPools/', variables('webLBBackendPool'))]"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2023-04-01",
+            "name": "[variables('webVM2NicName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]",
+                "[resourceId('Microsoft.Network/loadBalancers', parameters('webLBName'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('webSubnetName'))]"
+                            },
+                            "loadBalancerBackendAddressPools": [
+                                {
+                                    "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('webLBName')), '/backendAddressPools/', variables('webLBBackendPool'))]"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2023-03-01",
+            "name": "[parameters('webVM1Name')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('webVM1NicName'))]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('vmSize')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "MicrosoftWindowsServer",
+                        "offer": "WindowsServer",
+                        "sku": "2022-Datacenter-g2",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "createOption": "FromImage",
+                        "managedDisk": {
+                            "storageAccountType": "Premium_LRS"
+                        }
+                    }
+                },
+                "osProfile": {
+                    "computerName": "[parameters('webVM1Name')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]"
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('webVM1NicName'))]"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2023-03-01",
+            "name": "[parameters('webVM2Name')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('webVM2NicName'))]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('vmSize')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "MicrosoftWindowsServer",
+                        "offer": "WindowsServer",
+                        "sku": "2022-Datacenter-g2",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "createOption": "FromImage",
+                        "managedDisk": {
+                            "storageAccountType": "Premium_LRS"
+                        }
+                    }
+                },
+                "osProfile": {
+                    "computerName": "[parameters('webVM2Name')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]"
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('webVM2NicName'))]"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/loadBalancers",
+            "apiVersion": "2023-04-01",
+            "name": "[parameters('appLBName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+            ],
+            "sku": {
+                "name": "Standard"
+            },
+            "properties": {
+                "frontendIPConfigurations": [
+                    {
+                        "name": "[variables('appLBFrontendIP')]",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('appSubnetName'))]"
+                            }
+                        }
+                    }
+                ],
+                "backendAddressPools": [
+                    {
+                        "name": "[variables('appLBBackendPool')]"
+                    }
+                ],
+                "probes": [
+                    {
+                        "name": "[variables('appLBProbeName')]",
+                        "properties": {
+                            "protocol": "Http",
+                            "port": 8080,
+                            "requestPath": "/health",
+                            "intervalInSeconds": 15,
+                            "numberOfProbes": 2
+                        }
+                    }
+                ],
+                "loadBalancingRules": [
+                    {
+                        "name": "app-rule",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('appLBName')), '/frontendIPConfigurations/', variables('appLBFrontendIP'))]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('appLBName')), '/backendAddressPools/', variables('appLBBackendPool'))]"
+                            },
+                            "probe": {
+                                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('appLBName')), '/probes/', variables('appLBProbeName'))]"
+                            },
+                            "protocol": "Tcp",
+                            "frontendPort": 8080,
+                            "backendPort": 8080,
+                            "enableFloatingIP": false,
+                            "idleTimeoutInMinutes": 5
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2023-04-01",
+            "name": "[variables('appVM1NicName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]",
+                "[resourceId('Microsoft.Network/loadBalancers', parameters('appLBName'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('appSubnetName'))]"
+                            },
+                            "loadBalancerBackendAddressPools": [
+                                {
+                                    "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('appLBName')), '/backendAddressPools/', variables('appLBBackendPool'))]"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2023-04-01",
+            "name": "[variables('appVM2NicName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]",
+                "[resourceId('Microsoft.Network/loadBalancers', parameters('appLBName'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('appSubnetName'))]"
+                            },
+                            "loadBalancerBackendAddressPools": [
+                                {
+                                    "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('appLBName')), '/backendAddressPools/', variables('appLBBackendPool'))]"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2023-03-01",
+            "name": "[parameters('appVM1Name')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('appVM1NicName'))]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('vmSize')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "MicrosoftWindowsServer",
+                        "offer": "WindowsServer",
+                        "sku": "2022-Datacenter-g2",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "createOption": "FromImage",
+                        "managedDisk": {
+                            "storageAccountType": "Premium_LRS"
+                        }
+                    }
+                },
+                "osProfile": {
+                    "computerName": "[parameters('appVM1Name')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]"
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('appVM1NicName'))]"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2023-03-01",
+            "name": "[parameters('appVM2Name')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('appVM2NicName'))]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('vmSize')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "MicrosoftWindowsServer",
+                        "offer": "WindowsServer",
+                        "sku": "2022-Datacenter-g2",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "createOption": "FromImage",
+                        "managedDisk": {
+                            "storageAccountType": "Premium_LRS"
+                        }
+                    }
+                },
+                "osProfile": {
+                    "computerName": "[parameters('appVM2Name')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]"
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('appVM2NicName'))]"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Sql/servers",
+            "apiVersion": "2022-05-01-preview",
+            "name": "[variables('sqlServerName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "administratorLogin": "[parameters('sqlAdminLogin')]",
+                "administratorLoginPassword": "[parameters('sqlAdminPassword')]",
+                "publicNetworkAccess": "Disabled"
+            }
+        },
+        {
+            "type": "Microsoft.Sql/servers/databases",
+            "apiVersion": "2022-05-01-preview",
+            "name": "[concat(variables('sqlServerName'), '/', parameters('sqlDBName'))]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
+            ],
+            "sku": {
+                "name": "GP_Gen5_2",
+                "tier": "GeneralPurpose",
+                "capacity": 2
+            },
+            "properties": {
+                "collation": "SQL_Latin1_General_CP1_CI_AS",
+                "maxSizeBytes": 34359738368
+            }
+        },
+        {
+            "type": "Microsoft.Network/privateEndpoints",
+            "apiVersion": "2023-04-01",
+            "name": "[parameters('privateEndpointName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+            ],
+            "properties": {
+                "subnet": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('dbSubnetName'))]"
+                },
+                "privateLinkServiceConnections": [
+                    {
+                        "name": "sql-private-link",
+                        "properties": {
+                            "privateLinkServiceId": "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]",
+                            "groupIds": [
+                                "sqlServer"
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/privateDnsZones",
+            "apiVersion": "2020-06-01",
+            "name": "privatelink.database.windows.net",
+            "location": "global"
+        },
+        {
+            "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+            "apiVersion": "2020-06-01",
+            "name": "[concat('privatelink.database.windows.net/', parameters('prefix'), '-sql-dns-vnet-link')]",
+            "location": "global",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.database.windows.net')]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+            ],
+            "properties": {
+                "registrationEnabled": false,
+                "virtualNetwork": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+            "apiVersion": "2023-04-01",
+            "name": "[concat(parameters('privateEndpointName'), '/sql-dns-zone-group')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/privateEndpoints', parameters('privateEndpointName'))]",
+                "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.database.windows.net')]"
+            ],
+            "properties": {
+                "privateDnsZoneConfigs": [
+                    {
+                        "name": "sql-dns-config",
+                        "properties": {
+                            "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.database.windows.net')]"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "apiVersion": "2023-03-01",
+            "name": "[concat(parameters('webVM1Name'), '/InstallIISAndConfigurePage')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', parameters('webVM1Name'))]",
+                "[resourceId('Microsoft.Sql/servers/databases', variables('sqlServerName'), parameters('sqlDBName'))]",
+                "[resourceId('Microsoft.Network/privateEndpoints/privateDnsZoneGroups', parameters('privateEndpointName'), 'sql-dns-zone-group')]"
+            ],
+            "properties": {
+                "publisher": "Microsoft.Compute",
+                "type": "CustomScriptExtension",
+                "typeHandlerVersion": "1.10",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "commandToExecute": "[concat('cmd /c \"echo ', reference(resourceId('Microsoft.Sql/servers', variables('sqlServerName'))).fullyQualifiedDomainName, ' > C:\\\\cfg.txt && echo ', parameters('sqlDBName'), ' >> C:\\\\cfg.txt && echo ', parameters('sqlAdminLogin'), ' >> C:\\\\cfg.txt && echo ', parameters('sqlAdminPassword'), ' >> C:\\\\cfg.txt && powershell -NonInteractive -EncodedCommand JABsAGkAbgBlAHMAIAA9ACAARwBlAHQALQBDAG8AbgB0AGUAbgB0ACAAJwBDADoAXABjAGYAZwAuAHQAeAB0ACcACgAkAHMAcQBsAFMAZQByAHYAZQByACAAPQAgACQAbABpAG4AZQBzAFsAMABdAC4AVAByAGkAbQAoACkACgAkAHMAcQBsAEQAQgAgAD0AIAAkAGwAaQBuAGUAcwBbADEAXQAuAFQAcgBpAG0AKAApAAoAJABzAHEAbABVAHMAZQByACAAPQAgACQAbABpAG4AZQBzAFsAMgBdAC4AVAByAGkAbQAoACkACgAkAHMAcQBsAFAAYQBzAHMAIAA9ACAAJABsAGkAbgBlAHMAWwAzAF0ALgBUAHIAaQBtACgAKQAKACQAdgBtAE4AYQBtAGUAIAA9ACAAJABlAG4AdgA6AEMATwBNAFAAVQBUAEUAUgBOAEEATQBFAAoACgBJAG4AcwB0AGEAbABsAC0AVwBpAG4AZABvAHcAcwBGAGUAYQB0AHUAcgBlACAALQBOAGEAbQBlACAAVwBlAGIALQBTAGUAcgB2AGUAcgAsAFcAZQBiAC0AQQBzAHAALQBOAGUAdAA0ADUALABOAEUAVAAtAEYAcgBhAG0AZQB3AG8AcgBrAC0ANAA1AC0AQQBTAFAATgBFAFQAIAAtAEkAbgBjAGwAdQBkAGUATQBhAG4AYQBnAGUAbQBlAG4AdABUAG8AbwBsAHMAIAB8ACAATwB1AHQALQBOAHUAbABsAAoACgBBAGQAZAAtAFQAeQBwAGUAIAAtAEEAcwBzAGUAbQBiAGwAeQBOAGEAbQBlACAAUwB5AHMAdABlAG0ALgBEAGEAdABhAAoAJABjAG8AbgBuAFMAdAByACAAPQAgACIAUwBlAHIAdgBlAHIAPQAkAHMAcQBsAFMAZQByAHYAZQByADsARABhAHQAYQBiAGEAcwBlAD0AJABzAHEAbABEAEIAOwBVAHMAZQByACAASQBkAD0AJABzAHEAbABVAHMAZQByADsAUABhAHMAcwB3AG8AcgBkAD0AJABzAHEAbABQAGEAcwBzADsARQBuAGMAcgB5AHAAdAA9AFQAcgB1AGUAOwBUAHIAdQBzAHQAUwBlAHIAdgBlAHIAQwBlAHIAdABpAGYAaQBjAGEAdABlAD0ARgBhAGwAcwBlADsAQwBvAG4AbgBlAGMAdABpAG8AbgAgAFQAaQBtAGUAbwB1AHQAPQAzADAAOwAiAAoACgB0AHIAeQAgAHsACgAgACAAIAAgACQAYwBvAG4AbgAgAD0AIABOAGUAdwAtAE8AYgBqAGUAYwB0ACAAUwB5AHMAdABlAG0ALgBEAGEAdABhAC4AUwBxAGwAQwBsAGkAZQBuAHQALgBTAHEAbABDAG8AbgBuAGUAYwB0AGkAbwBuACgAJABjAG8AbgBuAFMAdAByACkACgAgACAAIAAgACQAYwBvAG4AbgAuAE8AcABlAG4AKAApAAoACgAgACAAIAAgACQAYwAgAD0AIAAkAGMAbwBuAG4ALgBDAHIAZQBhAHQAZQBDAG8AbQBtAGEAbgBkACgAKQAKACAAIAAgACAAJABjAC4AQwBvAG0AbQBhAG4AZABUAGUAeAB0ACAAPQAgACIASQBGACAATgBPAFQAIABFAFgASQBTAFQAUwAgACgAUwBFAEwARQBDAFQAIAAqACAARgBSAE8ATQAgAHMAeQBzAG8AYgBqAGUAYwB0AHMAIABXAEgARQBSAEUAIABuAGEAbQBlAD0AJwBFAG0AcABsAG8AeQBlAGUAcwAnACAAQQBOAEQAIAB4AHQAeQBwAGUAPQAnAFUAJwApACAAQwBSAEUAQQBUAEUAIABUAEEAQgBMAEUAIABFAG0AcABsAG8AeQBlAGUAcwAgACgAUwBsAE4AbwAgAEkATgBUACAAUABSAEkATQBBAFIAWQAgAEsARQBZACwAIABOAGEAbQBlACAATgBWAEEAUgBDAEgAQQBSACgAMQAwADAAKQApACIACgAgACAAIAAgACQAYwAuAEUAeABlAGMAdQB0AGUATgBvAG4AUQB1AGUAcgB5ACgAKQAgAHwAIABPAHUAdAAtAE4AdQBsAGwACgAKACAAIAAgACAAJABjADIAIAA9ACAAJABjAG8AbgBuAC4AQwByAGUAYQB0AGUAQwBvAG0AbQBhAG4AZAAoACkACgAgACAAIAAgACQAYwAyAC4AQwBvAG0AbQBhAG4AZABUAGUAeAB0ACAAPQAgACIASQBGACAATgBPAFQAIABFAFgASQBTAFQAUwAgACgAUwBFAEwARQBDAFQAIAAxACAARgBSAE8ATQAgAEUAbQBwAGwAbwB5AGUAZQBzACAAVwBIAEUAUgBFACAAUwBsAE4AbwA9ADEAKQAgAEkATgBTAEUAUgBUACAASQBOAFQATwAgAEUAbQBwAGwAbwB5AGUAZQBzACAAKABTAGwATgBvACwATgBhAG0AZQApACAAVgBBAEwAVQBFAFMAIAAoADEALAAnAEEAbABpAGMAZQAgAEoAbwBoAG4AcwBvAG4AJwApACwAKAAyACwAJwBCAG8AYgAgAFMAbQBpAHQAaAAnACkALAAoADMALAAnAEMAYQByAG8AbAAgAFcAaABpAHQAZQAnACkALAAoADQALAAnAEQAYQB2AGkAZAAgAEIAcgBvAHcAbgAnACkALAAoADUALAAnAEUAbQBtAGEAIABEAGEAdgBpAHMAJwApACwAKAA2ACwAJwBGAHIAYQBuAGsAIABXAGkAbABzAG8AbgAnACkALAAoADcALAAnAEcAcgBhAGMAZQAgAEwAZQBlACcAKQAsACgAOAAsACcASABlAG4AcgB5ACAAVABhAHkAbABvAHIAJwApACwAKAA5ACwAJwBJAHMAbABhACAATQBhAHIAdABpAG4AJwApACwAKAAxADAALAAnAEoAYQBjAGsAIABBAG4AZABlAHIAcwBvAG4AJwApACIACgAgACAAIAAgACQAYwAyAC4ARQB4AGUAYwB1AHQAZQBOAG8AbgBRAHUAZQByAHkAKAApACAAfAAgAE8AdQB0AC0ATgB1AGwAbAAKAAoAIAAgACAAIAAkAGMAMwAgAD0AIAAkAGMAbwBuAG4ALgBDAHIAZQBhAHQAZQBDAG8AbQBtAGEAbgBkACgAKQAKACAAIAAgACAAJABjADMALgBDAG8AbQBtAGEAbgBkAFQAZQB4AHQAIAA9ACAAIgBTAEUATABFAEMAVAAgAFMAbABOAG8ALAAgAE4AYQBtAGUAIABGAFIATwBNACAARQBtAHAAbABvAHkAZQBlAHMAIABPAFIARABFAFIAIABCAFkAIABTAGwATgBvACIACgAgACAAIAAgACQAcgBlAGEAZABlAHIAIAA9ACAAJABjADMALgBFAHgAZQBjAHUAdABlAFIAZQBhAGQAZQByACgAKQAKACAAIAAgACAAJAByAG8AdwBzACAAPQAgACIAIgAKACAAIAAgACAAdwBoAGkAbABlACAAKAAkAHIAZQBhAGQAZQByAC4AUgBlAGEAZAAoACkAKQAgAHsACgAgACAAIAAgACAAIAAgACAAJAByAG8AdwBzACAAKwA9ACAAIgA8AHQAcgA+ADwAdABkAD4AIgAgACsAIAAkAHIAZQBhAGQAZQByAFsAIgBTAGwATgBvACIAXQAgACsAIAAiADwALwB0AGQAPgA8AHQAZAA+ACIAIAArACAAJAByAGUAYQBkAGUAcgBbACIATgBhAG0AZQAiAF0AIAArACAAIgA8AC8AdABkAD4APAAvAHQAcgA+ACIACgAgACAAIAAgAH0ACgAgACAAIAAgACQAcgBlAGEAZABlAHIALgBDAGwAbwBzAGUAKAApAAoAIAAgACAAIAAkAGMAbwBuAG4ALgBDAGwAbwBzAGUAKAApAAoAIAAgACAAIAAkAGQAYgBTAHQAYQB0AHUAcwAgAD0AIAAiAEMAbwBuAG4AZQBjAHQAZQBkACAATwBLACIACgB9ACAAYwBhAHQAYwBoACAAewAKACAAIAAgACAAJAByAG8AdwBzACAAPQAgACIAPAB0AHIAPgA8AHQAZAAgAGMAbwBsAHMAcABhAG4APQAnADIAJwA+AEUAcgByAG8AcgAgAGMAbwBuAG4AZQBjAHQAaQBuAGcAIAB0AG8AIABEAEIAOgAgACIAIAArACAAJABfAC4ARQB4AGMAZQBwAHQAaQBvAG4ALgBNAGUAcwBzAGEAZwBlACAAKwAgACIAPAAvAHQAZAA+ADwALwB0AHIAPgAiAAoAIAAgACAAIAAkAGQAYgBTAHQAYQB0AHUAcwAgAD0AIAAiAEUAcgByAG8AcgA6ACAAIgAgACsAIAAkAF8ALgBFAHgAYwBlAHAAdABpAG8AbgAuAE0AZQBzAHMAYQBnAGUACgB9AAoACgAkAGgAdABtAGwAIAA9ACAAIgA8ACEARABPAEMAVABZAFAARQAgAGgAdABtAGwAPgA8AGgAdABtAGwAPgA8AGgAZQBhAGQAPgA8AHQAaQB0AGwAZQA+AFQAaAByAGUAZQAtAFQAaQBlAHIAIABBAHAAcAA8AC8AdABpAHQAbABlAD4APABzAHQAeQBsAGUAPgBiAG8AZAB5AHsAZgBvAG4AdAAtAGYAYQBtAGkAbAB5ADoAQQByAGkAYQBsACwAcwBhAG4AcwAtAHMAZQByAGkAZgA7AG0AYQB4AC0AdwBpAGQAdABoADoAOQAwADAAcAB4ADsAbQBhAHIAZwBpAG4AOgA0ADAAcAB4ACAAYQB1AHQAbwA7AHAAYQBkAGQAaQBuAGcAOgAyADAAcAB4ADsAYgBhAGMAawBnAHIAbwB1AG4AZAA6ACMAZgAwAGYANABmADgAfQBoADEAewBjAG8AbABvAHIAOgAjADIAYwAzAGUANQAwADsAYgBvAHIAZABlAHIALQBiAG8AdAB0AG8AbQA6ADMAcAB4ACAAcwBvAGwAaQBkACAAIwAzADQAOQA4AGQAYgA7AHAAYQBkAGQAaQBuAGcALQBiAG8AdAB0AG8AbQA6ADEAMABwAHgAfQAuAHYAbQAtAGIAYQBkAGcAZQB7AGIAYQBjAGsAZwByAG8AdQBuAGQAOgAjADMANAA5ADgAZABiADsAYwBvAGwAbwByADoAdwBoAGkAdABlADsAcABhAGQAZABpAG4AZwA6ADEAMABwAHgAIAAyADAAcAB4ADsAYgBvAHIAZABlAHIALQByAGEAZABpAHUAcwA6ADIAMABwAHgAOwBkAGkAcwBwAGwAYQB5ADoAaQBuAGwAaQBuAGUALQBiAGwAbwBjAGsAOwBtAGEAcgBnAGkAbgAtAGIAbwB0AHQAbwBtADoAMgAwAHAAeAA7AGYAbwBuAHQALQBzAGkAegBlADoAMgAwAHAAeAA7AGYAbwBuAHQALQB3AGUAaQBnAGgAdAA6AGIAbwBsAGQAfQAuAHMAdABhAHQAdQBzAHsAYgBhAGMAawBnAHIAbwB1AG4AZAA6ACMAZQBhAGYAYQBmADEAOwBwAGEAZABkAGkAbgBnADoAMQAwAHAAeAA7AGIAbwByAGQAZQByAC0AcgBhAGQAaQB1AHMAOgA1AHAAeAA7AG0AYQByAGcAaQBuAC0AYgBvAHQAdABvAG0AOgAyADAAcAB4ADsAYwBvAGwAbwByADoAIwAxAGEANQBjADMANgB9AHQAYQBiAGwAZQB7AHcAaQBkAHQAaAA6ADEAMAAwACUAOwBiAG8AcgBkAGUAcgAtAGMAbwBsAGwAYQBwAHMAZQA6AGMAbwBsAGwAYQBwAHMAZQA7AGIAYQBjAGsAZwByAG8AdQBuAGQAOgB3AGgAaQB0AGUAOwBiAG8AcgBkAGUAcgAtAHIAYQBkAGkAdQBzADoAOABwAHgAOwBvAHYAZQByAGYAbABvAHcAOgBoAGkAZABkAGUAbgA7AGIAbwB4AC0AcwBoAGEAZABvAHcAOgAwACAAMgBwAHgAIAA4AHAAeAAgAHIAZwBiAGEAKAAwACwAMAAsADAALAAwAC4AMQApAH0AdABoAHsAYgBhAGMAawBnAHIAbwB1AG4AZAA6ACMAMwA0ADkAOABkAGIAOwBjAG8AbABvAHIAOgB3AGgAaQB0AGUAOwBwAGEAZABkAGkAbgBnADoAMQAyAHAAeAA7AHQAZQB4AHQALQBhAGwAaQBnAG4AOgBsAGUAZgB0AH0AdABkAHsAcABhAGQAZABpAG4AZwA6ADEAMgBwAHgAOwBiAG8AcgBkAGUAcgAtAGIAbwB0AHQAbwBtADoAMQBwAHgAIABzAG8AbABpAGQAIAAjAGUAYwBmADAAZgAxAH0AdAByADoAaABvAHYAZQByACAAdABkAHsAYgBhAGMAawBnAHIAbwB1AG4AZAA6ACMAZgA4AGYAOQBmAGEAfQA8AC8AcwB0AHkAbABlAD4APAAvAGgAZQBhAGQAPgA8AGIAbwBkAHkAPgA8AGgAMQA+AFQAaAByAGUAZQAtAFQAaQBlAHIAIABBAHIAYwBoAGkAdABlAGMAdAB1AHIAZQAgAEQAZQBtAG8APAAvAGgAMQA+ADwAZABpAHYAIABjAGwAYQBzAHMAPQAnAHYAbQAtAGIAYQBkAGcAZQAnAD4AUwBlAHIAdgBlAGQAIABiAHkAOgAgACQAdgBtAE4AYQBtAGUAPAAvAGQAaQB2AD4APABwACAAYwBsAGEAcwBzAD0AJwBzAHQAYQB0AHUAcwAnAD4ARABCACAAUwB0AGEAdAB1AHMAOgAgACQAZABiAFMAdABhAHQAdQBzADwALwBwAD4APABoADIAPgBFAG0AcABsAG8AeQBlAGUAcwA8AC8AaAAyAD4APAB0AGEAYgBsAGUAPgA8AHQAaABlAGEAZAA+ADwAdAByAD4APAB0AGgAPgBTAGwAIABOAG8APAAvAHQAaAA+ADwAdABoAD4ATgBhAG0AZQA8AC8AdABoAD4APAAvAHQAcgA+ADwALwB0AGgAZQBhAGQAPgA8AHQAYgBvAGQAeQA+ACQAcgBvAHcAcwA8AC8AdABiAG8AZAB5AD4APAAvAHQAYQBiAGwAZQA+ADwALwBiAG8AZAB5AD4APAAvAGgAdABtAGwAPgAiAAoACgBbAFMAeQBzAHQAZQBtAC4ASQBPAC4ARgBpAGwAZQBdADoAOgBXAHIAaQB0AGUAQQBsAGwAVABlAHgAdAAoACIAQwA6AFwAaQBuAGUAdABwAHUAYgBcAHcAdwB3AHIAbwBvAHQAXABpAG4AZABlAHgALgBoAHQAbQBsACIALAAgACQAaAB0AG0AbAAsACAAWwBTAHkAcwB0AGUAbQAuAFQAZQB4AHQALgBFAG4AYwBvAGQAaQBuAGcAXQA6ADoAVQBUAEYAOAApAAoA\"')]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "apiVersion": "2023-03-01",
+            "name": "[concat(parameters('webVM2Name'), '/InstallIISAndConfigurePage')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', parameters('webVM2Name'))]",
+                "[resourceId('Microsoft.Sql/servers/databases', variables('sqlServerName'), parameters('sqlDBName'))]",
+                "[resourceId('Microsoft.Network/privateEndpoints/privateDnsZoneGroups', parameters('privateEndpointName'), 'sql-dns-zone-group')]"
+            ],
+            "properties": {
+                "publisher": "Microsoft.Compute",
+                "type": "CustomScriptExtension",
+                "typeHandlerVersion": "1.10",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "commandToExecute": "[concat('cmd /c \"echo ', reference(resourceId('Microsoft.Sql/servers', variables('sqlServerName'))).fullyQualifiedDomainName, ' > C:\\\\cfg.txt && echo ', parameters('sqlDBName'), ' >> C:\\\\cfg.txt && echo ', parameters('sqlAdminLogin'), ' >> C:\\\\cfg.txt && echo ', parameters('sqlAdminPassword'), ' >> C:\\\\cfg.txt && powershell -NonInteractive -EncodedCommand JABsAGkAbgBlAHMAIAA9ACAARwBlAHQALQBDAG8AbgB0AGUAbgB0ACAAJwBDADoAXABjAGYAZwAuAHQAeAB0ACcACgAkAHMAcQBsAFMAZQByAHYAZQByACAAPQAgACQAbABpAG4AZQBzAFsAMABdAC4AVAByAGkAbQAoACkACgAkAHMAcQBsAEQAQgAgAD0AIAAkAGwAaQBuAGUAcwBbADEAXQAuAFQAcgBpAG0AKAApAAoAJABzAHEAbABVAHMAZQByACAAPQAgACQAbABpAG4AZQBzAFsAMgBdAC4AVAByAGkAbQAoACkACgAkAHMAcQBsAFAAYQBzAHMAIAA9ACAAJABsAGkAbgBlAHMAWwAzAF0ALgBUAHIAaQBtACgAKQAKACQAdgBtAE4AYQBtAGUAIAA9ACAAJABlAG4AdgA6AEMATwBNAFAAVQBUAEUAUgBOAEEATQBFAAoACgBJAG4AcwB0AGEAbABsAC0AVwBpAG4AZABvAHcAcwBGAGUAYQB0AHUAcgBlACAALQBOAGEAbQBlACAAVwBlAGIALQBTAGUAcgB2AGUAcgAsAFcAZQBiAC0AQQBzAHAALQBOAGUAdAA0ADUALABOAEUAVAAtAEYAcgBhAG0AZQB3AG8AcgBrAC0ANAA1AC0AQQBTAFAATgBFAFQAIAAtAEkAbgBjAGwAdQBkAGUATQBhAG4AYQBnAGUAbQBlAG4AdABUAG8AbwBsAHMAIAB8ACAATwB1AHQALQBOAHUAbABsAAoACgBBAGQAZAAtAFQAeQBwAGUAIAAtAEEAcwBzAGUAbQBiAGwAeQBOAGEAbQBlACAAUwB5AHMAdABlAG0ALgBEAGEAdABhAAoAJABjAG8AbgBuAFMAdAByACAAPQAgACIAUwBlAHIAdgBlAHIAPQAkAHMAcQBsAFMAZQByAHYAZQByADsARABhAHQAYQBiAGEAcwBlAD0AJABzAHEAbABEAEIAOwBVAHMAZQByACAASQBkAD0AJABzAHEAbABVAHMAZQByADsAUABhAHMAcwB3AG8AcgBkAD0AJABzAHEAbABQAGEAcwBzADsARQBuAGMAcgB5AHAAdAA9AFQAcgB1AGUAOwBUAHIAdQBzAHQAUwBlAHIAdgBlAHIAQwBlAHIAdABpAGYAaQBjAGEAdABlAD0ARgBhAGwAcwBlADsAQwBvAG4AbgBlAGMAdABpAG8AbgAgAFQAaQBtAGUAbwB1AHQAPQAzADAAOwAiAAoACgB0AHIAeQAgAHsACgAgACAAIAAgACQAYwBvAG4AbgAgAD0AIABOAGUAdwAtAE8AYgBqAGUAYwB0ACAAUwB5AHMAdABlAG0ALgBEAGEAdABhAC4AUwBxAGwAQwBsAGkAZQBuAHQALgBTAHEAbABDAG8AbgBuAGUAYwB0AGkAbwBuACgAJABjAG8AbgBuAFMAdAByACkACgAgACAAIAAgACQAYwBvAG4AbgAuAE8AcABlAG4AKAApAAoACgAgACAAIAAgACQAYwAgAD0AIAAkAGMAbwBuAG4ALgBDAHIAZQBhAHQAZQBDAG8AbQBtAGEAbgBkACgAKQAKACAAIAAgACAAJABjAC4AQwBvAG0AbQBhAG4AZABUAGUAeAB0ACAAPQAgACIASQBGACAATgBPAFQAIABFAFgASQBTAFQAUwAgACgAUwBFAEwARQBDAFQAIAAqACAARgBSAE8ATQAgAHMAeQBzAG8AYgBqAGUAYwB0AHMAIABXAEgARQBSAEUAIABuAGEAbQBlAD0AJwBFAG0AcABsAG8AeQBlAGUAcwAnACAAQQBOAEQAIAB4AHQAeQBwAGUAPQAnAFUAJwApACAAQwBSAEUAQQBUAEUAIABUAEEAQgBMAEUAIABFAG0AcABsAG8AeQBlAGUAcwAgACgAUwBsAE4AbwAgAEkATgBUACAAUABSAEkATQBBAFIAWQAgAEsARQBZACwAIABOAGEAbQBlACAATgBWAEEAUgBDAEgAQQBSACgAMQAwADAAKQApACIACgAgACAAIAAgACQAYwAuAEUAeABlAGMAdQB0AGUATgBvAG4AUQB1AGUAcgB5ACgAKQAgAHwAIABPAHUAdAAtAE4AdQBsAGwACgAKACAAIAAgACAAJABjADIAIAA9ACAAJABjAG8AbgBuAC4AQwByAGUAYQB0AGUAQwBvAG0AbQBhAG4AZAAoACkACgAgACAAIAAgACQAYwAyAC4AQwBvAG0AbQBhAG4AZABUAGUAeAB0ACAAPQAgACIASQBGACAATgBPAFQAIABFAFgASQBTAFQAUwAgACgAUwBFAEwARQBDAFQAIAAxACAARgBSAE8ATQAgAEUAbQBwAGwAbwB5AGUAZQBzACAAVwBIAEUAUgBFACAAUwBsAE4AbwA9ADEAKQAgAEkATgBTAEUAUgBUACAASQBOAFQATwAgAEUAbQBwAGwAbwB5AGUAZQBzACAAKABTAGwATgBvACwATgBhAG0AZQApACAAVgBBAEwAVQBFAFMAIAAoADEALAAnAEEAbABpAGMAZQAgAEoAbwBoAG4AcwBvAG4AJwApACwAKAAyACwAJwBCAG8AYgAgAFMAbQBpAHQAaAAnACkALAAoADMALAAnAEMAYQByAG8AbAAgAFcAaABpAHQAZQAnACkALAAoADQALAAnAEQAYQB2AGkAZAAgAEIAcgBvAHcAbgAnACkALAAoADUALAAnAEUAbQBtAGEAIABEAGEAdgBpAHMAJwApACwAKAA2ACwAJwBGAHIAYQBuAGsAIABXAGkAbABzAG8AbgAnACkALAAoADcALAAnAEcAcgBhAGMAZQAgAEwAZQBlACcAKQAsACgAOAAsACcASABlAG4AcgB5ACAAVABhAHkAbABvAHIAJwApACwAKAA5ACwAJwBJAHMAbABhACAATQBhAHIAdABpAG4AJwApACwAKAAxADAALAAnAEoAYQBjAGsAIABBAG4AZABlAHIAcwBvAG4AJwApACIACgAgACAAIAAgACQAYwAyAC4ARQB4AGUAYwB1AHQAZQBOAG8AbgBRAHUAZQByAHkAKAApACAAfAAgAE8AdQB0AC0ATgB1AGwAbAAKAAoAIAAgACAAIAAkAGMAMwAgAD0AIAAkAGMAbwBuAG4ALgBDAHIAZQBhAHQAZQBDAG8AbQBtAGEAbgBkACgAKQAKACAAIAAgACAAJABjADMALgBDAG8AbQBtAGEAbgBkAFQAZQB4AHQAIAA9ACAAIgBTAEUATABFAEMAVAAgAFMAbABOAG8ALAAgAE4AYQBtAGUAIABGAFIATwBNACAARQBtAHAAbABvAHkAZQBlAHMAIABPAFIARABFAFIAIABCAFkAIABTAGwATgBvACIACgAgACAAIAAgACQAcgBlAGEAZABlAHIAIAA9ACAAJABjADMALgBFAHgAZQBjAHUAdABlAFIAZQBhAGQAZQByACgAKQAKACAAIAAgACAAJAByAG8AdwBzACAAPQAgACIAIgAKACAAIAAgACAAdwBoAGkAbABlACAAKAAkAHIAZQBhAGQAZQByAC4AUgBlAGEAZAAoACkAKQAgAHsACgAgACAAIAAgACAAIAAgACAAJAByAG8AdwBzACAAKwA9ACAAIgA8AHQAcgA+ADwAdABkAD4AIgAgACsAIAAkAHIAZQBhAGQAZQByAFsAIgBTAGwATgBvACIAXQAgACsAIAAiADwALwB0AGQAPgA8AHQAZAA+ACIAIAArACAAJAByAGUAYQBkAGUAcgBbACIATgBhAG0AZQAiAF0AIAArACAAIgA8AC8AdABkAD4APAAvAHQAcgA+ACIACgAgACAAIAAgAH0ACgAgACAAIAAgACQAcgBlAGEAZABlAHIALgBDAGwAbwBzAGUAKAApAAoAIAAgACAAIAAkAGMAbwBuAG4ALgBDAGwAbwBzAGUAKAApAAoAIAAgACAAIAAkAGQAYgBTAHQAYQB0AHUAcwAgAD0AIAAiAEMAbwBuAG4AZQBjAHQAZQBkACAATwBLACIACgB9ACAAYwBhAHQAYwBoACAAewAKACAAIAAgACAAJAByAG8AdwBzACAAPQAgACIAPAB0AHIAPgA8AHQAZAAgAGMAbwBsAHMAcABhAG4APQAnADIAJwA+AEUAcgByAG8AcgAgAGMAbwBuAG4AZQBjAHQAaQBuAGcAIAB0AG8AIABEAEIAOgAgACIAIAArACAAJABfAC4ARQB4AGMAZQBwAHQAaQBvAG4ALgBNAGUAcwBzAGEAZwBlACAAKwAgACIAPAAvAHQAZAA+ADwALwB0AHIAPgAiAAoAIAAgACAAIAAkAGQAYgBTAHQAYQB0AHUAcwAgAD0AIAAiAEUAcgByAG8AcgA6ACAAIgAgACsAIAAkAF8ALgBFAHgAYwBlAHAAdABpAG8AbgAuAE0AZQBzAHMAYQBnAGUACgB9AAoACgAkAGgAdABtAGwAIAA9ACAAIgA8ACEARABPAEMAVABZAFAARQAgAGgAdABtAGwAPgA8AGgAdABtAGwAPgA8AGgAZQBhAGQAPgA8AHQAaQB0AGwAZQA+AFQAaAByAGUAZQAtAFQAaQBlAHIAIABBAHAAcAA8AC8AdABpAHQAbABlAD4APABzAHQAeQBsAGUAPgBiAG8AZAB5AHsAZgBvAG4AdAAtAGYAYQBtAGkAbAB5ADoAQQByAGkAYQBsACwAcwBhAG4AcwAtAHMAZQByAGkAZgA7AG0AYQB4AC0AdwBpAGQAdABoADoAOQAwADAAcAB4ADsAbQBhAHIAZwBpAG4AOgA0ADAAcAB4ACAAYQB1AHQAbwA7AHAAYQBkAGQAaQBuAGcAOgAyADAAcAB4ADsAYgBhAGMAawBnAHIAbwB1AG4AZAA6ACMAZgAwAGYANABmADgAfQBoADEAewBjAG8AbABvAHIAOgAjADIAYwAzAGUANQAwADsAYgBvAHIAZABlAHIALQBiAG8AdAB0AG8AbQA6ADMAcAB4ACAAcwBvAGwAaQBkACAAIwAzADQAOQA4AGQAYgA7AHAAYQBkAGQAaQBuAGcALQBiAG8AdAB0AG8AbQA6ADEAMABwAHgAfQAuAHYAbQAtAGIAYQBkAGcAZQB7AGIAYQBjAGsAZwByAG8AdQBuAGQAOgAjADMANAA5ADgAZABiADsAYwBvAGwAbwByADoAdwBoAGkAdABlADsAcABhAGQAZABpAG4AZwA6ADEAMABwAHgAIAAyADAAcAB4ADsAYgBvAHIAZABlAHIALQByAGEAZABpAHUAcwA6ADIAMABwAHgAOwBkAGkAcwBwAGwAYQB5ADoAaQBuAGwAaQBuAGUALQBiAGwAbwBjAGsAOwBtAGEAcgBnAGkAbgAtAGIAbwB0AHQAbwBtADoAMgAwAHAAeAA7AGYAbwBuAHQALQBzAGkAegBlADoAMgAwAHAAeAA7AGYAbwBuAHQALQB3AGUAaQBnAGgAdAA6AGIAbwBsAGQAfQAuAHMAdABhAHQAdQBzAHsAYgBhAGMAawBnAHIAbwB1AG4AZAA6ACMAZQBhAGYAYQBmADEAOwBwAGEAZABkAGkAbgBnADoAMQAwAHAAeAA7AGIAbwByAGQAZQByAC0AcgBhAGQAaQB1AHMAOgA1AHAAeAA7AG0AYQByAGcAaQBuAC0AYgBvAHQAdABvAG0AOgAyADAAcAB4ADsAYwBvAGwAbwByADoAIwAxAGEANQBjADMANgB9AHQAYQBiAGwAZQB7AHcAaQBkAHQAaAA6ADEAMAAwACUAOwBiAG8AcgBkAGUAcgAtAGMAbwBsAGwAYQBwAHMAZQA6AGMAbwBsAGwAYQBwAHMAZQA7AGIAYQBjAGsAZwByAG8AdQBuAGQAOgB3AGgAaQB0AGUAOwBiAG8AcgBkAGUAcgAtAHIAYQBkAGkAdQBzADoAOABwAHgAOwBvAHYAZQByAGYAbABvAHcAOgBoAGkAZABkAGUAbgA7AGIAbwB4AC0AcwBoAGEAZABvAHcAOgAwACAAMgBwAHgAIAA4AHAAeAAgAHIAZwBiAGEAKAAwACwAMAAsADAALAAwAC4AMQApAH0AdABoAHsAYgBhAGMAawBnAHIAbwB1AG4AZAA6ACMAMwA0ADkAOABkAGIAOwBjAG8AbABvAHIAOgB3AGgAaQB0AGUAOwBwAGEAZABkAGkAbgBnADoAMQAyAHAAeAA7AHQAZQB4AHQALQBhAGwAaQBnAG4AOgBsAGUAZgB0AH0AdABkAHsAcABhAGQAZABpAG4AZwA6ADEAMgBwAHgAOwBiAG8AcgBkAGUAcgAtAGIAbwB0AHQAbwBtADoAMQBwAHgAIABzAG8AbABpAGQAIAAjAGUAYwBmADAAZgAxAH0AdAByADoAaABvAHYAZQByACAAdABkAHsAYgBhAGMAawBnAHIAbwB1AG4AZAA6ACMAZgA4AGYAOQBmAGEAfQA8AC8AcwB0AHkAbABlAD4APAAvAGgAZQBhAGQAPgA8AGIAbwBkAHkAPgA8AGgAMQA+AFQAaAByAGUAZQAtAFQAaQBlAHIAIABBAHIAYwBoAGkAdABlAGMAdAB1AHIAZQAgAEQAZQBtAG8APAAvAGgAMQA+ADwAZABpAHYAIABjAGwAYQBzAHMAPQAnAHYAbQAtAGIAYQBkAGcAZQAnAD4AUwBlAHIAdgBlAGQAIABiAHkAOgAgACQAdgBtAE4AYQBtAGUAPAAvAGQAaQB2AD4APABwACAAYwBsAGEAcwBzAD0AJwBzAHQAYQB0AHUAcwAnAD4ARABCACAAUwB0AGEAdAB1AHMAOgAgACQAZABiAFMAdABhAHQAdQBzADwALwBwAD4APABoADIAPgBFAG0AcABsAG8AeQBlAGUAcwA8AC8AaAAyAD4APAB0AGEAYgBsAGUAPgA8AHQAaABlAGEAZAA+ADwAdAByAD4APAB0AGgAPgBTAGwAIABOAG8APAAvAHQAaAA+ADwAdABoAD4ATgBhAG0AZQA8AC8AdABoAD4APAAvAHQAcgA+ADwALwB0AGgAZQBhAGQAPgA8AHQAYgBvAGQAeQA+ACQAcgBvAHcAcwA8AC8AdABiAG8AZAB5AD4APAAvAHQAYQBiAGwAZQA+ADwALwBiAG8AZAB5AD4APAAvAGgAdABtAGwAPgAiAAoACgBbAFMAeQBzAHQAZQBtAC4ASQBPAC4ARgBpAGwAZQBdADoAOgBXAHIAaQB0AGUAQQBsAGwAVABlAHgAdAAoACIAQwA6AFwAaQBuAGUAdABwAHUAYgBcAHcAdwB3AHIAbwBvAHQAXABpAG4AZABlAHgALgBoAHQAbQBsACIALAAgACQAaAB0AG0AbAAsACAAWwBTAHkAcwB0AGUAbQAuAFQAZQB4AHQALgBFAG4AYwBvAGQAaQBuAGcAXQA6ADoAVQBUAEYAOAApAAoA\"')]"
+                }
+            }
+        }
+    ],
+    "outputs": {
+        "publicIPAddress": {
+            "type": "String",
+            "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPName'))).ipAddress]"
+        },
+        "publicFQDN": {
+            "type": "String",
+            "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPName'))).dnsSettings.fqdn]"
+        },
+        "sqlServerFQDN": {
+            "type": "String",
+            "value": "[reference(resourceId('Microsoft.Sql/servers', variables('sqlServerName'))).fullyQualifiedDomainName]"
+        },
+        "appLBPrivateIP": {
+            "type": "String",
+            "value": "[reference(resourceId('Microsoft.Network/loadBalancers', parameters('appLBName'))).frontendIPConfigurations[0].properties.privateIPAddress]"
+        }
+    }
+}
