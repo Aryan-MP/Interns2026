@@ -1,0 +1,613 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "9.0.0.0",
+  "parameters": {
+    "adminUsername": {
+      "type": "string",
+      "defaultValue": "azureadmin"
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "defaultValue": "CloudArchitect@2026"
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "westus2"
+    },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_B2as_v2"
+    },
+    "vmCount": {
+      "type": "int",
+      "defaultValue": 2
+    }
+  },
+  "variables": {
+    "vnetName": "ThreeTier-HA-VNet",
+    "webNsgName": "Web-NSG",
+    "appNsgName": "App-NSG",
+    "dbNsgName": "DB-NSG",
+    "webLbPipName": "Web-LB-PublicIP",
+    "webVmPipPrefix": "Web-VM-PublicIP",
+    "webLbName": "Web-Tier-LB",
+    "appLbName": "App-Tier-Internal-LB",
+    "natGwName": "ThreeTier-NAT-GW",
+    "natGwPipName": "ThreeTier-NAT-PIP",
+    "sqlServerName": "[concat('sqlserver-', uniqueString(resourceGroup().id))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('natGwPipName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+    {
+      "type": "Microsoft.Network/natGateways",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('natGwName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('natGwPipName'))]"
+      ],
+      "properties": {
+        "publicIpAddresses": [
+          {
+            "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('natGwPipName'))]"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('webNsgName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "Allow-HTTP",
+            "properties": {
+              "priority": 100,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "Internet",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "80"
+            }
+          },
+          {
+            "name": "Allow-SSH",
+            "properties": {
+              "priority": 110,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "Internet",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "22"
+            }
+          },
+          {
+            "name": "Allow-LB-Probes",
+            "properties": {
+              "priority": 120,
+              "protocol": "*",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "AzureLoadBalancer",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "*"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('appNsgName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "Allow-HTTP-From-WebSubnet",
+            "properties": {
+              "priority": 100,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "10.0.1.0/24",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "80"
+            }
+          },
+          {
+            "name": "Allow-LB-Probes",
+            "properties": {
+              "priority": 110,
+              "protocol": "*",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "AzureLoadBalancer",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "*"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('dbNsgName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "Allow-MySQL-From-AppSubnet",
+            "properties": {
+              "priority": 100,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "10.0.2.0/24",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "3306"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('webLbPipName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2020-06-01",
+      "name": "[concat(variables('webVmPipPrefix'), '-', copyIndex())]",
+      "copy": {
+        "name": "webPipLoop",
+        "count": "[parameters('vmCount')]"
+      },
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('vnetName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('webNsgName'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('appNsgName'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('dbNsgName'))]",
+        "[resourceId('Microsoft.Network/natGateways', variables('natGwName'))]"
+      ],
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.0.0.0/16"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "Web-Subnet",
+            "properties": {
+              "addressPrefix": "10.0.1.0/24",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('webNsgName'))]"
+              }
+            }
+          },
+          {
+            "name": "App-Subnet",
+            "properties": {
+              "addressPrefix": "10.0.2.0/24",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('appNsgName'))]"
+              },
+              "natGateway": {
+                "id": "[resourceId('Microsoft.Network/natGateways', variables('natGwName'))]"
+              }
+            }
+          },
+          {
+            "name": "DB-Subnet",
+            "properties": {
+              "addressPrefix": "10.0.3.0/24",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('dbNsgName'))]"
+              },
+              "natGateway": {
+                "id": "[resourceId('Microsoft.Network/natGateways', variables('natGwName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/loadBalancers",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('webLbName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('webLbPipName'))]"
+      ],
+      "properties": {
+        "frontendIPConfigurations": [
+          {
+            "name": "PublicFrontend",
+            "properties": {
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('webLbPipName'))]"
+              }
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "WebBackendPool"
+          }
+        ],
+        "probes": [
+          {
+            "name": "HttpProbe",
+            "properties": {
+              "protocol": "Tcp",
+              "port": 80,
+              "intervalInSeconds": 15,
+              "numberOfProbes": 2
+            }
+          }
+        ],
+        "loadBalancingRules": [
+          {
+            "name": "HttpRule",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations', variables('webLbName'), 'PublicFrontend')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', variables('webLbName'), 'WebBackendPool')]"
+              },
+              "probe": {
+                "id": "[resourceId('Microsoft.Network/loadBalancers/probes', variables('webLbName'), 'HttpProbe')]"
+              },
+              "protocol": "Tcp",
+              "frontendPort": 80,
+              "backendPort": 80,
+              "idleTimeoutInMinutes": 4
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/loadBalancers",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('appLbName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "properties": {
+        "frontendIPConfigurations": [
+          {
+            "name": "InternalFrontend",
+            "properties": {
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "10.0.2.100",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), 'App-Subnet')]"
+              }
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "AppBackendPool"
+          }
+        ],
+        "probes": [
+          {
+            "name": "HttpProbe",
+            "properties": {
+              "protocol": "Tcp",
+              "port": 80,
+              "intervalInSeconds": 15,
+              "numberOfProbes": 2
+            }
+          }
+        ],
+        "loadBalancingRules": [
+          {
+            "name": "HttpRule",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations', variables('appLbName'), 'InternalFrontend')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', variables('appLbName'), 'AppBackendPool')]"
+              },
+              "probe": {
+                "id": "[resourceId('Microsoft.Network/loadBalancers/probes', variables('appLbName'), 'HttpProbe')]"
+              },
+              "protocol": "Tcp",
+              "frontendPort": 80,
+              "backendPort": 80,
+              "idleTimeoutInMinutes": 4
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-06-01",
+      "name": "[concat('Web-NIC-', copyIndex())]",
+      "location": "[parameters('location')]",
+      "copy": {
+        "name": "webNicLoop",
+        "count": "[parameters('vmCount')]"
+      },
+      "dependsOn": [
+        "webPipLoop",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/loadBalancers', variables('webLbName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(variables('webVmPipPrefix'), '-', copyIndex()))]"
+              },
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), 'Web-Subnet')]"
+              },
+              "loadBalancerBackendAddressPools": [
+                {
+                  "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', variables('webLbName'), 'WebBackendPool')]"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-06-01",
+      "name": "[concat('App-NIC-', copyIndex())]",
+      "location": "[parameters('location')]",
+      "copy": {
+        "name": "appNicLoop",
+        "count": "[parameters('vmCount')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/loadBalancers', variables('appLbName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), 'App-Subnet')]"
+              },
+              "loadBalancerBackendAddressPools": [
+                {
+                  "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', variables('appLbName'), 'AppBackendPool')]"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-06-01",
+      "name": "DB-NIC",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), 'DB-Subnet')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2021-03-01",
+      "name": "[concat('Web-Tier-VM-', copyIndex())]",
+      "location": "[parameters('location')]",
+      "copy": {
+        "name": "webVmLoop",
+        "count": "[parameters('vmCount')]"
+      },
+      "dependsOn": [
+        "webNicLoop"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[concat('webvm', copyIndex())]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]",
+          "customData": "[base64(concat('#!/bin/bash\nWEBNUM=', copyIndex(), '\nexec > /var/log/cloud-init-web.log 2>&1\napt-get update -y\napt-get install -y apache2 php libapache2-mod-php\nrm -f /var/www/html/index.html\ncat > /var/www/html/index.php << ''PHPEOF''\n<?php\nheader(\"Cache-Control: no-store, no-cache, must-revalidate\");\n$r = @file_get_contents(\"http://10.0.2.100\");\nif (!$r) {\n    $r = \"<div id=app-tier><p>App Tier is initializing. Please wait 60 seconds then refresh.</p></div>\";\n}\n?>\n<!DOCTYPE html>\n<html>\n<head>\n<meta charset=UTF-8>\n<title>3-Tier Architecture - Azure Demo</title>\n<style>\nbody{font-family:Arial,sans-serif;background:#0d1117;color:#e6edf3;padding:20px;margin:0}\nh1,h2,h3{margin:0 0 8px 0}\n#web-tier{background:#161b22;border-radius:8px;padding:20px;margin-bottom:16px;border-left:5px solid #1f6feb}\n#web-tier h1{color:#79c0ff}\n#app-tier{background:#0a2616;border-radius:8px;padding:20px;border-left:5px solid #28a745}\n#app-tier h2{color:#28a745}\n#app-tier h3{color:#79c0ff;margin-top:12px}\ntable{width:100%;border-collapse:collapse;margin-top:10px}\nth{background:#21262d;padding:10px;border:1px solid #30363d;color:#79c0ff;text-align:left}\ntd{padding:9px 10px;border:1px solid #30363d}\ntr:nth-child(even){background:#161b22}\n.badge{background:#1f6feb;color:#fff;padding:2px 12px;border-radius:12px;font-size:0.85em}\nsmall{color:#8b949e}\n</style>\n</head>\n<body>\n<div id=web-tier>\n<h1>&#127760; Tier 1 &mdash; Web Presentation Layer</h1>\n<p>Served by: <span class=badge>Web Server WN_PLACEHOLDER</span></p>\n<p><small>&#8635; Hard refresh (Ctrl+F5) to test load balancer switching between Web Server 0 and Web Server 1</small></p>\n</div>\n<?php echo $r; ?>\n</body>\n</html>\nPHPEOF\nsed -i \"s/WN_PLACEHOLDER/$WEBNUM/g\" /var/www/html/index.php\nsystemctl restart apache2\n'))]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "Canonical",
+            "offer": "0001-com-ubuntu-server-jammy",
+            "sku": "22_04-lts-gen2",
+            "version": "latest"
+          },
+          "osDisk": {
+            "createOption": "FromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat('Web-NIC-', copyIndex()))]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2021-03-01",
+      "name": "[concat('App-Tier-VM-', copyIndex())]",
+      "location": "[parameters('location')]",
+      "copy": {
+        "name": "appVmLoop",
+        "count": "[parameters('vmCount')]"
+      },
+      "dependsOn": [
+        "appNicLoop",
+        "[resourceId('Microsoft.Sql/servers/databases', variables('sqlServerName'), 'ThreeTierDB')]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[concat('appvm', copyIndex())]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]",
+          "customData": "[base64(concat('#!/bin/bash\nAPPNUM=', copyIndex(), '\nSQLSRV=', variables('sqlServerName'), '\nSQLU=', parameters('adminUsername'), '\nSQLP=', parameters('adminPassword'), '\nexec > /var/log/cloud-init-app.log 2>&1\napt-get update -y\ncurl -fsSL https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -o /tmp/mspkg.deb\ndpkg -i /tmp/mspkg.deb\napt-get update -y\nACCEPT_EULA=Y apt-get install -y msodbcsql18 unixodbc-dev\napt-get install -y python3-pip python3-flask\npip3 install pyodbc\nmkdir -p /opt/app\ncat > /opt/app/app.py << ''PYEOF''\nfrom flask import Flask\nimport pyodbc\n\napp = Flask(__name__)\n\nCONN_STR = (\n    \"DRIVER={ODBC Driver 18 for SQL Server};\"\n    \"SERVER=tcp:__SQLSRV__.database.windows.net,1433;\"\n    \"DATABASE=ThreeTierDB;\"\n    \"UID=__SQLU__;\"\n    \"PWD=__SQLP__;\"\n    \"Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;\"\n)\nAPP_SERVER = \"__APPNUM__\"\n\n\n@app.route(\"/\")\ndef index():\n    try:\n        conn = pyodbc.connect(CONN_STR)\n        cursor = conn.cursor()\n        cursor.execute(\n            \"SELECT SerialNumber, Name, City FROM CloudInterns ORDER BY SerialNumber\"\n        )\n        rows = cursor.fetchall()\n        conn.close()\n        html = \"<div id=app-tier>\"\n        html += \"<h2>Tier 2 &mdash; Application Logic Layer</h2>\"\n        html += \"<p>Processed by: <b>App Server \" + APP_SERVER + \"</b></p>\"\n        html += \"<h3>CloudInterns &mdash; Live Records from Azure SQL Database:</h3>\"\n        html += \"<table>\"\n        html += \"<tr><th>Serial No.</th><th>Name</th><th>City</th></tr>\"\n        for r in rows:\n            html += \"<tr><td>\" + str(r[0]) + \"</td><td>\" + str(r[1]) + \"</td><td>\" + str(r[2]) + \"</td></tr>\"\n        html += \"</table>\"\n        html += \"<p><small>Total: \" + str(len(rows)) + \" record(s) | Live &mdash; add rows in SQL Portal and refresh instantly</small></p>\"\n        html += \"</div>\"\n        return html\n    except Exception as e:\n        return (\n            \"<div id=app-tier>\"\n            \"<h2>Tier 2 &mdash; Application Logic Layer</h2>\"\n            \"<p><b>App Server \" + APP_SERVER + \"</b> &mdash; Table setup required.</p>\"\n            \"<p>Run the SQL commands in Azure Portal Query Editor to create and populate CloudInterns.</p>\"\n            \"<pre style=overflow:auto;font-size:0.85em>\" + str(e) + \"</pre>\"\n            \"</div>\"\n        )\n\n\nif __name__ == \"__main__\":\n    app.run(host=\"0.0.0.0\", port=80)\n\nPYEOF\nsed -i \"s|__SQLSRV__|$SQLSRV|g\" /opt/app/app.py\nsed -i \"s|__SQLU__|$SQLU|g\" /opt/app/app.py\nsed -i \"s|__SQLP__|$SQLP|g\" /opt/app/app.py\nsed -i \"s|__APPNUM__|$APPNUM|g\" /opt/app/app.py\nnohup python3 /opt/app/app.py > /tmp/flask.log 2>&1 &\necho \"Flask started with PID $!\"\n'))]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "Canonical",
+            "offer": "0001-com-ubuntu-server-jammy",
+            "sku": "22_04-lts-gen2",
+            "version": "latest"
+          },
+          "osDisk": {
+            "createOption": "FromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat('App-NIC-', copyIndex()))]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers",
+      "apiVersion": "2021-11-01",
+      "name": "[variables('sqlServerName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "administratorLogin": "[parameters('adminUsername')]",
+        "administratorLoginPassword": "[parameters('adminPassword')]"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/firewallRules",
+      "apiVersion": "2021-11-01",
+      "name": "[concat(variables('sqlServerName'), '/AllowAzureServices')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
+      ],
+      "properties": {
+        "startIpAddress": "0.0.0.0",
+        "endIpAddress": "0.0.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases",
+      "apiVersion": "2021-11-01",
+      "name": "[concat(variables('sqlServerName'), '/ThreeTierDB')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
+      ],
+      "sku": {
+        "name": "Basic",
+        "tier": "Basic",
+        "capacity": 5
+      }
+    }
+  ],
+  "outputs": {
+    "WebLoadBalancerURL": {
+      "type": "string",
+      "value": "[concat('http://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('webLbPipName'))).ipAddress)]"
+    },
+    "WebVM_0_SSH": {
+      "type": "string",
+      "value": "[concat('ssh azureadmin@', reference(resourceId('Microsoft.Network/publicIPAddresses', concat(variables('webVmPipPrefix'), '-0'))).ipAddress)]"
+    },
+    "SQL_Server_FQDN": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Sql/servers', variables('sqlServerName'))).fullyQualifiedDomainName]"
+    },
+    "AppInternalLB_IP": {
+      "type": "string",
+      "value": "10.0.2.100"
+    }
+  }
+}
