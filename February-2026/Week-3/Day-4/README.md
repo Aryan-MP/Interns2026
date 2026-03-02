@@ -324,7 +324,7 @@ day14-lb-parameters.json
 
 ```bash
 az deployment group create \
-  --resource-group <RESOURCE_GROUP_NAME> \
+  --resource-group manoj-rg \
   --template-file day14-lb-template.json \
   --parameters day14-lb-parameters.json
 ````
