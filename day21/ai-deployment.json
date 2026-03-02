@@ -1,0 +1,57 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "3.0.0.0",
+  "parameters": {
+    "aiHubName": { "type": "string", "defaultValue": "kgt-arm" },
+    "location": { "type": "string", "defaultValue": "eastus2" },
+    "modelDeploymentName": { "type": "string", "defaultValue": "gpt-4o-mini" },
+    "modelName": { "type": "string", "defaultValue": "gpt-4o-mini" },
+    "tpmCapacity": { 
+      "type": "int", 
+      "defaultValue": 10,
+      "metadata": { "description": "Capacity of 10 equals 10,000 Tokens Per Minute." }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "apiVersion": "2024-10-01",
+      "name": "[parameters('aiHubName')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "S0" },
+      "kind": "AIServices",
+      "properties": {
+        "customSubDomainName": "[concat(tolower(parameters('aiHubName')), '-', uniqueString(resourceGroup().id))]",
+        "publicNetworkAccess": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts/deployments",
+      "apiVersion": "2024-10-01",
+      "name": "[concat(parameters('aiHubName'), '/', parameters('modelDeploymentName'))]",
+      "dependsOn": [ "[resourceId('Microsoft.CognitiveServices/accounts', parameters('aiHubName'))]" ],
+      "sku": { 
+        "name": "GlobalStandard", 
+        "capacity": "[parameters('tpmCapacity')]" 
+      },
+      "properties": {
+        "model": {
+          "format": "OpenAI",
+          "name": "[parameters('modelName')]",
+          "version": "2024-07-18"
+        },
+        "versionUpgradeOption": "OnceNewDefaultVersionAvailable"
+      }
+    }
+  ],
+  "outputs": {
+    "AiEndpoint": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('aiHubName'))).endpoint]"
+    },
+    "AiApiKey": {
+      "type": "string",
+      "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('aiHubName')), '2024-10-01').key1]"
+    }
+  }
+}
