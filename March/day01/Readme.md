@@ -1,0 +1,1 @@
+Create an ARM template for Microsoft AI Foundry to deploy the GPT-4.1-mini model, configure it with 10K tokens per minute (TPM), and display the outputs, including the API key, endpoint, and model details, using the command line
