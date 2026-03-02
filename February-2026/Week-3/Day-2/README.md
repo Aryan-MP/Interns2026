@@ -1,410 +1,465 @@
+```markdown
+# Week-2 / Day-12 / README.md
 
-# Day 13 – Azure Policy & Docker Fundamentals
+# Day 12 – Networking Fundamentals & IPv4 Addressing with CIDR Calculations
 
-**Date:** February 18, 2026
-**Intern Name:** Manoj Gowda
-**Internship Domain:** Cloud
-
----
-
-# 1. Session Objective
-
-The objective of Day 13 was to develop a strong understanding of:
-
-* Azure Policy for cloud governance and compliance
-* Docker fundamentals and containerization concepts
-* Core Docker CLI commands used in DevOps workflows
-
-The session combined governance concepts with modern container-based deployment practices, strengthening both security and DevOps knowledge.
+**Date:** February 17, 2026  
+**Intern Name:** Manoj Gowda  
+**Role:** Cloud Engineer Trainee Intern  
+**Organization:** Spektra Systems  
 
 ---
 
-# 2. Azure Policy – Governance & Compliance
+# 1. Objective
 
-## 2.1 Introduction to Azure Policy
+The objective of Day 12 was to build a strong foundation in networking fundamentals required for cloud infrastructure deployment. The session focused on:
 
-Azure Policy is a governance service in Microsoft Azure used to:
+- Core networking components in cloud environments
+- IPv4 addressing structure
+- Public vs Private IP addressing
+- CIDR notation and subnetting
+- Host calculations and subnet design
+- Importance of IP planning in Azure architecture
 
-* Enforce organizational standards
-* Ensure compliance across resources
-* Prevent misconfigurations
-* Maintain security and cost control
-
-It helps organizations define rules that resources must follow.
-
-Azure Policy is critical in enterprise cloud environments where:
-
-* Multiple teams deploy resources
-* Security standards must be maintained
-* Cost optimization is required
-* Compliance reporting is mandatory
+This session laid the groundwork for advanced networking implementations in later labs involving Load Balancers, VPNs, and DNS.
 
 ---
 
-## 2.2 Core Concepts of Azure Policy
+# 2. Introduction to Cloud Networking
 
-### Policy Definition
+Before deploying any infrastructure in the cloud, it is essential to understand networking fundamentals.
 
-A policy definition defines the rule that will be enforced.
+Cloud providers such as Microsoft Azure, AWS, and GCP implement **Software-Defined Networking (SDN)**. Instead of physical routers and switches, networking components are virtualized and controlled through software.
 
-Examples:
+These cloud networking components simulate traditional on-premises data center devices.
 
-* Restrict resource deployment to specific regions
-* Require mandatory tags (Environment, Owner, CostCenter)
-* Enforce specific VM SKUs
-* Block public IP creation
+Cloud networking provides:
 
----
-
-### Policy Initiative
-
-An initiative is a collection of multiple policy definitions grouped together.
-
-Used when:
-
-* Multiple compliance rules must be enforced together
-* Organizational compliance standards must be applied as a package
+- Logical isolation
+- Controlled routing
+- Secure communication
+- Scalable architecture design
 
 ---
 
-### Scope of Azure Policy
+# 3. Key Networking Components
 
-Policies can be applied at different hierarchical levels:
+## 3.1 VPC / VNet (Virtual Private Cloud / Virtual Network)
 
-Management Group
-→ Subscription
-→ Resource Group
-→ Resource
+A Virtual Network (Azure) or VPC (AWS) is a logically isolated network within the cloud.
 
-Policies assigned at higher levels apply to all child scopes.
+It allows you to:
+
+- Define your own IP address range
+- Create subnets
+- Configure routing
+- Control inbound and outbound communication
+- Secure internal workloads
+
+A VNet functions as a private data center network hosted inside Azure.
+
+### Architectural Role
+
+The VNet is the foundation of all cloud networking. All virtual machines, load balancers, gateways, and application services are deployed inside a VNet.
 
 ---
 
-### Policy Assignment
+## 3.2 Subnet
 
-Policy assignment connects:
+A subnet is a segmented portion of a VNet.
 
-Policy Definition + Scope
+Subnets are used to:
 
-Once assigned, Azure continuously evaluates resources for compliance.
+- Organize workloads
+- Separate tiers (Web, Application, Database)
+- Apply specific security policies
+- Control traffic using Network Security Groups
+
+### Example Architecture
+
+```
+
+VNet: 10.0.0.0/16
+├── Public Subnet: 10.0.1.0/24
+└── Private Subnet: 10.0.2.0/24
+
+```
+
+Each subnet isolates a tier of the application while remaining within the same VNet.
 
 ---
 
-## 2.3 Policy Effects
+## 3.3 Router
 
-Azure Policy supports multiple enforcement behaviors:
+A router connects different networks and determines traffic flow.
 
-### Deny
+In cloud environments:
 
-Prevents non-compliant resource creation.
+- The router is managed automatically by the cloud provider.
+- It enables communication between subnets.
+- It connects VNets to the internet or VPN gateways.
+
+The router acts as the traffic decision engine.
+
+---
+
+## 3.4 Switch
+
+A switch connects devices within the same network.
+
+In Azure:
+
+- Switching is virtualized.
+- VMs within the same subnet communicate through virtual switching.
+
+Switches enable local communication within a subnet.
+
+---
+
+## 3.5 Hub-and-Spoke Model
+
+The Hub-and-Spoke model is a network topology where:
+
+- A central Hub network connects multiple Spoke networks.
+
+### Purpose
+
+- Centralized firewall management
+- Shared services (DNS, monitoring, logging)
+- Secure connectivity
+- Simplified governance
+
+### Example Topology
+
+```
+
+```
+     Spoke1
+       |
+```
+
+Spoke2 — Hub — Spoke3
+|
+VPN / Internet
+
+```
+
+The Hub acts as the central control network.
+
+---
+
+# 4. IPv4 Addressing Basics
+
+IPv4 uses a 32-bit addressing scheme.
+
+Format:
+
+```
+
+192.168.1.10
+
+```
+
+Each IPv4 address consists of:
+
+- Network portion
+- Host portion
+
+The division between network and host is determined using CIDR notation.
+
+---
+
+# 5. Public vs Private IP Addresses
+
+## 5.1 Public IP Address
+
+A public IP address:
+
+- Is globally unique
+- Is accessible over the internet
+- Is assigned by ISP or cloud provider
 
 Example:
-If region restriction policy is set to allow only East US, deployment in West US will fail.
+
+```
+
+52.174.23.10
+
+```
+
+Used for:
+
+- Websites
+- Public APIs
+- Internet-facing services
 
 ---
 
-### Audit
+## 5.2 Private IP Address
 
-Flags non-compliant resources but does not block them.
+Private IP addresses are used internally and are not routable on the internet.
 
-Used for monitoring and reporting.
+Defined by RFC1918:
+
+| Range | CIDR |
+|-------|------|
+| 10.0.0.0 – 10.255.255.255 | 10.0.0.0/8 |
+| 172.16.0.0 – 172.31.255.255 | 172.16.0.0/12 |
+| 192.168.0.0 – 192.168.255.255 | 192.168.0.0/16 |
+
+Used for:
+
+- Internal VMs
+- Databases
+- Application layers
+- Backend services
 
 ---
 
-### Append
+# 6. CIDR (Classless Inter-Domain Routing)
 
-Adds additional configuration settings automatically.
+CIDR notation defines how many bits are used for the network portion.
 
----
+Format:
 
-### DeployIfNotExists
+```
 
-Automatically deploys required configurations if missing.
+IP Address / Prefix Length
+
+```
 
 Example:
-Deploy diagnostic settings automatically.
+
+```
+
+10.0.0.0/24
+
+```
+
+CIDR determines:
+
+- Number of subnets
+- Number of hosts per subnet
+- Routing boundaries
 
 ---
 
-### Modify
+# 7. CIDR Calculation Formula
 
-Updates resource properties during deployment to ensure compliance.
-
----
-
-## 2.4 Built-in vs Custom Policies
-
-### Built-in Policies
-
-* Provided by Microsoft
-* Cover common governance scenarios
-* Easy to assign
-
-### Custom Policies
-
-* Created by organizations
-* Used for specific business requirements
-* Defined using JSON structure
-
----
-
-## 2.5 Practical Understanding
-
-Hands-on learning included:
-
-* Creating and assigning policies via Azure Portal
-* Monitoring compliance dashboard
-* Observing policy evaluation results
-* Understanding remediation tasks
-
-Real-world use cases explored:
-
-* Restricting deployment regions
-* Enforcing tagging standards
-* Blocking certain resource types
-* Ensuring cost control measures
-
----
-
-# 3. Introduction to Docker
-
-## 3.1 What is Docker?
-
-Docker is a containerization platform used to package applications along with:
-
-* Runtime
-* Libraries
-* Dependencies
-* Configuration
-
-Containers ensure applications run consistently across environments.
-
----
-
-## 3.2 Virtual Machines vs Containers
-
-### Virtual Machines
-
-* Include full operating system
-* Heavyweight
-* Slower startup
-* Higher resource usage
-
-### Containers
-
-* Share host OS kernel
-* Lightweight
-* Fast startup
-* Lower resource consumption
-* More scalable
-
-Containers improve deployment efficiency and DevOps workflows.
-
----
-
-## 3.3 Docker Architecture
-
-Docker consists of:
-
-### Docker Client
-
-User interface to interact with Docker.
-
-### Docker Daemon
-
-Background service managing containers and images.
-
-### Docker Images
-
-Read-only templates used to create containers.
-
-### Docker Containers
-
-Running instances of images.
-
-### Docker Hub
-
-Public registry for storing and sharing images.
-
----
-
-## 3.4 Benefits of Containerization
-
-* Lightweight deployment
-* Faster application startup
-* Consistent environment across development and production
-* Easy scalability
-* Simplified DevOps automation
-
-Containers enable cloud-native application architecture.
-
----
-
-# 4. Docker CLI Commands – Hands-on Practice
-
-Practical exercises included running and managing containers using CLI.
-
----
-
-## 4.1 Basic Docker Commands
-
-Check Docker version:
+## 7.1 Total IP Addresses
 
 ```
-docker --version
-```
 
-Pull image from Docker Hub:
+Total IPs = 2^(32 - Prefix)
 
 ```
-docker pull <image_name>
-```
 
-List downloaded images:
+## 7.2 Usable Hosts in Azure
 
-```
-docker images
-```
-
-Run container from image:
+Azure reserves 5 IP addresses per subnet.
 
 ```
-docker run <image_name>
-```
 
-List running containers:
+Usable Hosts = Total IPs - 5
 
-```
-docker ps
-```
-
-List all containers:
-
-```
-docker ps -a
-```
-
-Stop container:
-
-```
-docker stop <container_id>
-```
-
-Start container:
-
-```
-docker start <container_id>
-```
-
-Remove container:
-
-```
-docker rm <container_id>
-```
-
-Remove image:
-
-```
-docker rmi <image_id>
 ```
 
 ---
 
-## 4.2 Advanced Useful Commands
-
-Access interactive shell inside container:
-
-```
-docker exec -it <container_id> bash
-```
-
-View container logs:
-
-```
-docker logs <container_id>
-```
-
-Build custom image from Dockerfile:
-
-```
-docker build -t <image_name> .
-```
-
-This command builds an image using instructions defined in a Dockerfile.
+# 8. Practical CIDR Calculation Examples
 
 ---
 
-# 5. Skills Gained
+## Example 1: Hosts in a /24 Network
 
-## Cloud Governance
+Given:
 
-* Understanding Azure Policy framework
-* Enforcing compliance rules
-* Monitoring resource governance
-* Evaluating policy effects
+```
 
-## Containerization
+10.0.0.0/24
 
-* Understanding Docker architecture
-* Running containers using CLI
-* Differentiating VMs and containers
-* Managing images and containers
+```
 
-## DevOps Workflow Understanding
+### Step 1: Calculate Host Bits
 
-* CLI-based operations
-* Container lifecycle management
-* Image creation and deployment process
-* Real-world container deployment practices
+```
 
----
+32 - 24 = 8 host bits
 
-# 6. Architectural Insight
+```
 
-Day 13 connected two major areas:
+### Step 2: Calculate Total IPs
 
-Governance + Application Deployment
+```
 
-Azure Policy ensures:
+2^8 = 256 total IPs
 
-* Infrastructure is compliant
-* Security standards are enforced
-* Costs are controlled
+```
 
-Docker enables:
+### Step 3: Usable IPs in Azure
 
-* Modern application packaging
-* Environment consistency
-* Scalable deployments
+```
 
-Together, they represent core pillars of cloud-native architecture.
+256 - 5 = 251 usable hosts
+
+```
 
 ---
 
-# 7. Final Outcome
+## Example 2: Divide /24 into 4 Subnets
 
-By the end of Day 13, I gained:
+Given:
 
-* Practical understanding of Azure Policy governance model
-* Knowledge of policy definitions, assignments, and compliance evaluation
-* Understanding of Docker architecture and containerization
-* Hands-on experience with Docker CLI commands
-* Insight into modern DevOps deployment practices
+```
+
+10.0.0.0/24
+Need: 4 subnets
+
+```
+
+### Step 1: Determine Subnet Bits
+
+```
+
+2^n = 4
+n = 2
+
+```
+
+### Step 2: New Prefix
+
+```
+
+24 + 2 = /26
+
+```
+
+Each subnet becomes /26.
+
+### Subnet Breakdown
+
+| Subnet | CIDR | IP Range | Usable Hosts |
+|--------|------|----------|--------------|
+| Subnet1 | 10.0.0.0/26 | .0 – .63 | 59 |
+| Subnet2 | 10.0.0.64/26 | .64 – .127 | 59 |
+| Subnet3 | 10.0.0.128/26 | .128 – .191 | 59 |
+| Subnet4 | 10.0.0.192/26 | .192 – .255 | 59 |
+
+(64 total IPs - 5 reserved = 59 usable)
 
 ---
 
-# 8. Conclusion
+## Example 3: Need 100 Hosts per Subnet
 
-Day 13 provided a strong foundation in both:
+We find nearest power of 2:
 
-Cloud Governance (Azure Policy)
-and
-Container Technology (Docker)
+```
 
-Azure Policy demonstrated how enterprises maintain control, security, and compliance across cloud resources.
+2^7 = 128
 
-Docker introduced modern container-based application deployment, which is essential for cloud-native and DevOps-driven environments.
+```
 
-This session strengthened both infrastructure governance knowledge and application deployment skills.
+Host bits required = 7
+
+Prefix:
+
+```
+
+32 - 7 = /25
+
+```
+
+Each subnet must be `/25`.
 
 ---
+
+# 9. Why CIDR Planning Matters in Cloud
+
+Proper subnet design ensures:
+
+- No IP exhaustion
+- Secure network segmentation
+- Scalable architecture
+- Efficient routing
+- Cost-effective deployments
+
+Poor planning can result in:
+
+- Recreating VNets
+- Migration downtime
+- Broken connectivity
+- Service interruptions
+- Architecture redesign
+
+IP planning is critical because VNets cannot be easily resized after deployment without downtime.
+
+---
+
+# 10. Architectural Insight
+
+Networking is the foundation of all cloud deployments.
+
+Before deploying:
+
+- Load Balancers
+- Application Gateways
+- VPN Gateways
+- Kubernetes clusters
+- Private endpoints
+
+CIDR planning must be completed.
+
+A well-designed VNet:
+
+- Separates tiers properly
+- Leaves room for future expansion
+- Avoids overlapping IP ranges
+- Supports hybrid connectivity
+
+Day 12 emphasized that networking mistakes in cloud environments are expensive to fix later.
+
+---
+
+# 11. Key Concepts Learned
+
+- Software-defined networking in cloud
+- VNet and subnet architecture
+- Public vs Private IP ranges
+- IPv4 addressing structure
+- CIDR notation
+- Subnet calculation techniques
+- Azure reserved IP behavior
+- Hub-and-Spoke network model
+- Importance of long-term IP planning
+
+---
+
+# 12. Final Outcome
+
+By the end of Day 12:
+
+- I developed a strong understanding of foundational networking concepts.
+- I learned how to calculate CIDR ranges manually.
+- I understood subnet segmentation strategies.
+- I gained clarity on Azure IP reservation rules.
+- I became capable of planning scalable VNet architectures.
+
+This knowledge directly supports advanced implementations such as Load Balancers, VPN gateways, DNS resolution, and hybrid connectivity architectures.
+
+---
+
+# 13. Conclusion
+
+Day 12 established the core networking knowledge required for cloud engineering.
+
+Understanding IPv4 addressing and CIDR calculations is critical before deploying production infrastructure in Azure.
+
+Accurate IP planning enables:
+
+- High availability design
+- Secure architecture
+- Scalable deployments
+- Long-term maintainability
+
+This session formed the networking backbone for subsequent hands-on Azure labs.
+```
