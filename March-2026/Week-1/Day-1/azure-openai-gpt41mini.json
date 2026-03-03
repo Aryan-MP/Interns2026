@@ -1,0 +1,92 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "openAiName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Azure OpenAI (Cognitive Services) resource."
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "deploymentName": {
+      "type": "string",
+      "defaultValue": "gpt-4-1-mini-deployment",
+      "metadata": {
+        "description": "Name of the model deployment."
+      }
+    },
+    "skuName": {
+      "type": "string",
+      "defaultValue": "S0",
+      "allowedValues": [
+        "S0",
+        "S1",
+        "S2"
+      ],
+      "metadata": {
+        "description": "SKU for the Cognitive Services account."
+      }
+    },
+    "capacity": {
+      "type": "int",
+      "defaultValue": 10,
+      "metadata": {
+        "description": "Instance count for the deployment. Set to 10 for ~10k TPM."
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "apiVersion": "2023-10-01",
+      "name": "[parameters('openAiName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('skuName')]"
+      },
+      "kind": "OpenAI",
+      "properties": {
+        "publicNetworkAccess": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts/deployments",
+      "apiVersion": "2023-05-01",
+      "name": "[concat(parameters('openAiName'), '/', parameters('deploymentName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts', parameters('openAiName'))]"
+      ],
+      "properties": {
+        "model": {
+          "format": "OpenAI",
+          "name": "gpt-4.1-mini",
+          "version": "2024-05-13"
+        },
+        "scaleSettings": {
+          "scaleType": "Standard"
+        }
+      },
+      "sku": {
+        "name": "Standard",
+        "capacity": "[parameters('capacity')]"
+      }
+    }
+  ],
+  "outputs": {
+    "endpoint": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('openAiName')), '2023-10-01').properties.endpoint]"
+    },
+    "primaryKey": {
+      "type": "string",
+      "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('openAiName')), '2023-10-01').key1]"
+    }
+  }
+}
