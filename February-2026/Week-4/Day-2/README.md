@@ -1,8 +1,7 @@
 ```markdown
 # Week 4 – Day 2  
 # Advanced Cloud Architecture Concepts
-
-**Date:** February 27, 2026  
+ 
 **Intern Name:** Manoj Gowda  
 **Role:** Cloud Engineer Trainee Intern  
 **Organization:** Spektra Systems  
