@@ -311,7 +311,3 @@ It strengthened understanding of:
 This marks the beginning of AI model integration within cloud engineering workflows.
 
 ```
-
-
-Tell me what you want to build next.
-```
