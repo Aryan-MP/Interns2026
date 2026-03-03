@@ -1,0 +1,128 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "foundryName": {
+            "type": "string",
+            "defaultValue": "my-foundhub05864",
+            "metadata": {
+                "description": "Name of the Microsoft Foundry resource. Must be globally unique."
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "westus",
+            "metadata": {
+                "description": "Location for all resources. GPT-4.1 mini is available in multiple regions."
+            }
+        },
+        "deploymentName": {
+            "type": "string",
+            "defaultValue": "gpt-4-1-mini-deployment",
+            "metadata": {
+                "description": "Name for the GPT-4.1 mini model deployment"
+            }
+        },
+        "projectName": {
+            "type": "string",
+            "defaultValue": "my-foundrydefaultproj",
+            "metadata": {
+                "description": "Name of the project to associate with the deployment"
+            }
+        },
+        "skuName": {
+            "type": "string",
+            "defaultValue": "S0",
+            "allowedValues": [
+                "S0"
+            ],
+            "metadata": {
+                "description": "SKU for the Foundry resource"
+            }
+        }
+    },
+    "variables": {
+        "modelName": "gpt-4.1-mini",
+        "modelVersion": "2025-04-14",
+        "modelFormat": "OpenAI",
+        "deploymentSku": "Standard",
+        "tokensPerMinute": 10
+    },
+    "resources": [
+        {
+            "type": "Microsoft.CognitiveServices/accounts",
+            "apiVersion": "2023-05-01",
+            "name": "[parameters('foundryName')]",
+            "location": "[parameters('location')]",
+            "kind": "AIServices",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "sku": {
+                "name": "[parameters('skuName')]"
+            },
+            "properties": {
+                "customSubDomainName": "[parameters('foundryName')]",
+                "publicNetworkAccess": "Enabled",
+                "allowProjectManagement": true,
+                "disableLocalAuth": false
+            }
+        },
+        {
+            "type": "Microsoft.CognitiveServices/accounts/deployments",
+            "apiVersion": "2023-05-01",
+            "name": "[format('{0}/{1}', parameters('foundryName'), parameters('deploymentName'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryName'))]"
+            ],
+            "sku": {
+                "name": "[variables('deploymentSku')]",
+                "capacity": "[variables('tokensPerMinute')]"
+            },
+            "properties": {
+                "model": {
+                    "format": "[variables('modelFormat')]",
+                    "name": "[variables('modelName')]",
+                    "version": "[variables('modelVersion')]"
+                },
+                "raiPolicyName": "Microsoft.DefaultV2"
+            }
+        },
+        {
+            "type": "Microsoft.CognitiveServices/accounts/projects",
+            "apiVersion": "2023-05-01",
+            "name": "[format('{0}/{1}', parameters('foundryName'), parameters('projectName'))]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryName'))]",
+                "[resourceId('Microsoft.CognitiveServices/accounts/deployments', parameters('foundryName'), parameters('deploymentName'))]"
+            ],
+            "properties": {
+                "friendlyName": "[parameters('projectName')]",
+                "description": "Project for deploying AI models"
+            }
+        }
+    ],
+    "outputs": {
+        "foundryEndpoint": {
+            "type": "string",
+            "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryName'))).endpoint]"
+        },
+        "foundryId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryName'))]"
+        },
+        "deploymentName": {
+            "type": "string",
+            "value": "[parameters('deploymentName')]"
+        },
+        "modelName": {
+            "type": "string",
+            "value": "[variables('modelName')]"
+        },
+        "tokensPerMinute": {
+            "type": "int",
+            "value": "[variables('tokensPerMinute')]"
+        }
+    }
+}
