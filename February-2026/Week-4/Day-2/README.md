@@ -1,6 +1,4 @@
 ```markdown
-# Week-4 / Day-2 / README.md
-
 # Week 4 – Day 2  
 # Advanced Cloud Architecture Concepts
 
