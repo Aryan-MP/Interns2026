@@ -1,7 +1,6 @@
 ```markdown
 # Day 3 – 3-Tier Architecture Deployment Using ARM Template
 
-**Date:** February 28, 2026  
 **Intern Name:** Manoj Gowda  
 **Role:** Cloud Engineer Trainee Intern  
 **Organization:** Spektra Systems  
