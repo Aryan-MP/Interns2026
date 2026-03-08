@@ -1,6 +1,7 @@
 # Virtual environment
 venv/
-.venv/
+.chainlit/
+chatvenv
 
 # Environment files
 .env
