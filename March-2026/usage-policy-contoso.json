@@ -1,0 +1,37 @@
+{
+  "Version": "1.0",
+  "PolicyName": "Contoso-Lab-Usage-Guardrails",
+  "OwnerEmail": "finops-alerts@contoso.com",
+  "Rules": [
+    {
+      "ResourceType": "VirtualMachines",
+      "MaxCoresPerUser": 1,
+      "AllowedSku": [
+        "Standard_B1s"
+      ],
+      "AlertOnViolation": true,
+      "Message": "Only B1s class workload is allowed for this lab."
+    },
+    {
+      "ResourceType": "StorageAccounts",
+      "MaxAccountsPerUser": 2,
+      "AllowedSku": [
+        "Standard_LRS"
+      ],
+      "AlertOnViolation": true,
+      "Message": "Only Standard_LRS storage accounts are allowed."
+    }
+  ],
+  "Budget": {
+    "PerUserUsdLimit": 15,
+    "AlertAtPercent": [
+      70,
+      90,
+      100
+    ],
+    "AlertEmails": [
+      "finops-alerts@contoso.com",
+      "instructor@contoso.com"
+    ]
+  }
+}
